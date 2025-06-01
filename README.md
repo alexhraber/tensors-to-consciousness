@@ -1,5 +1,6 @@
 # tensors-to-consciousness
 
+[![MLX v0.25.2](https://img.shields.io/badge/MLX-v0.25.2-blueviolet?logo=apple&logoColor=white)](https://github.com/ml-explore/mlx/releases/tag/v0.25.2)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alexhraber/tensors-to-consciousness)
 
