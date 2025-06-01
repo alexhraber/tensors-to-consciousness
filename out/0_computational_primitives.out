@@ -1,0 +1,25 @@
+🧮 COMPUTATIONAL PRIMITIVES
+==================================================
+
+--- Tensors as Computational Objects ---
+Scalar (0D): 42.0 - represents a single value
+Vector (1D): array([1, 2, 3], dtype=float32) - represents direction & magnitude
+Matrix (2D): (2, 2) - represents linear transformations
+3D Tensor: (2, 3, 4) - represents higher-dimensional data
+
+--- Fundamental Operations ---
+Element-wise: array([1, 2, 3, 4], dtype=float32) ⊙ array([2, 3, 4, 5], dtype=float32) = array([2, 6, 12, 20], dtype=float32)
+Linear combination: 2*array([1, 2, 3, 4], dtype=float32) + 3*array([2, 3, 4, 5], dtype=float32) = array([8, 13, 18, 23], dtype=float32)
+Dot product: <array([1, 2, 3, 4], dtype=float32), array([2, 3, 4, 5], dtype=float32)> = 40.0
+Matrix mult:
+array([[1, 2],
+       [3, 4]], dtype=float32) @
+array([[5, 6],
+       [7, 8]], dtype=float32) =
+array([[19, 22],
+       [43, 50]], dtype=float32)
+
+--- Reduction Operations ---
+Mean (central tendency): 0.0104
+Variance (spread): 0.9922
+L2 norm (magnitude): 31.5008

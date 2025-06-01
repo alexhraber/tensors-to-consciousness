@@ -1,0 +1,26 @@
+🔬 ADVANCED COMPUTATIONAL THEORY
+==================================================
+
+--- Manifold Learning Theory ---
+Swiss roll shape: (1000, 3)
+Intrinsic dimension: 2, Ambient dimension: 3
+Data range: [-11.04, 12.56]
+
+--- Information Bottleneck Theory ---
+high_capacity: compression 1.2x, info=0.4778
+medium_capacity: compression 2.5x, info=0.4686
+low_capacity: compression 5.0x, info=0.3988
+
+--- Attention Theory ---
+Attention weights shape: (3, 4)
+Attention weights (row sums): array([1, 1, 1], dtype=float32)
+Max attention per query: array([0.416813, 0.567601, 0.762643], dtype=float32)
+
+--- Riemannian Optimization ---
+Optimizing on sphere manifold:
+Initial: obj=0.818419, ||x||=1.000000
+Step 1: obj=0.792538, constraint_error=0.00000000
+Step 4: obj=0.718591, constraint_error=0.00000006
+Step 7: obj=0.650122, constraint_error=0.00000024
+Step 10: obj=0.586988, constraint_error=0.00000006
+Final point: array([0.706506, -0.366584, -0.605364], dtype=float32)

@@ -1,0 +1,20 @@
+🧠 NEURAL NETWORK THEORY
+==================================================
+
+--- Universal Approximation Theory ---
+
+--- Information Flow Analysis ---
+Layer 1 (linear): mean=0.1550, std=1.0060
+Layer 1 (ReLU):   mean=0.4941, std=0.6304
+Layer 2 (linear): mean=-0.0364, std=0.4405
+Layer 2 (ReLU):   mean=0.1524, std=0.2801
+Layer 3 (linear): mean=-0.1263, std=0.1408
+
+--- Gradient Flow Analysis ---
+Gradient magnitudes by parameter:
+
+--- Activation Function Analysis ---
+    relu: mean=0.3947, std=0.5864
+    tanh: mean=0.0049, std=0.6197
+ sigmoid: mean=0.5020, std=0.2050
+    gelu: mean=0.2797, std=0.5899

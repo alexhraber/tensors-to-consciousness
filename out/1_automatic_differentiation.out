@@ -1,0 +1,13 @@
+∇ AUTOMATIC DIFFERENTIATION THEORY
+==================================================
+
+--- Chain Rule in Action ---
+f(2.0) = sin(2.0²) = -0.756802
+f'(2.0) automatic = -2.614574
+f'(2.0) analytical = -2.614574
+Error: 0.0000000000
+
+--- Multivariable Gradients ---
+Rosenbrock at array([0, 0], dtype=float32): f = 1.000000
+Gradient: ∇f = array([-2, 0], dtype=float32)
+Gradient magnitude: ||∇f|| = 2.000000
