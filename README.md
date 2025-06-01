@@ -1,5 +1,8 @@
 # tensors-to-consciousness
 
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alexhraber/tensors-to-consciousness)
+
 ## Mathematical Foundations of AI/ML with MLX
 
 A comprehensive journey through the theoretical foundations of artificial intelligence and machine learning, implemented using [Apple's MLX framework](https://ml-explore.github.io/mlx/build/html/index.html) on Apple Silicon.
