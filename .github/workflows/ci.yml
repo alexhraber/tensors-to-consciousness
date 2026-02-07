@@ -67,7 +67,8 @@ jobs:
               - "tools/runtime.py"
               - "tools/setup.py"
               - "tools/validate.py"
-              - "tools/viz_terminal.py"
+              - "tools/tui.py"
+              - "tools/shinkei.py"
               - "tools/common_viz.py"
               - "tools/input_controls.py"
             tests:
@@ -124,16 +125,20 @@ jobs:
         run: |
           python -m py_compile $(git ls-files '*.py')
 
-      - name: Unit and integration tests
+      - name: Unit tests
         run: |
-          python -m tests
+          python -m tests --suite unit
+
+      - name: Integration tests
+        run: |
+          python -m tests --suite integration
 
       - name: CLI smoke checks
         run: |
           python main.py --help
           python -m tools.setup --help
           python -m tools.validate --help
-          python -m tools.viz_terminal --help
+          python -m tools.tui --help
 
       - name: Record timing metrics
         if: always()

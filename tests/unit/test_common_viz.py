@@ -47,7 +47,7 @@ class CommonVizTests(unittest.TestCase):
         scope = {
             "_private": np.ones((20, 20), dtype=np.float32),
             "scalar": np.array(1.0, dtype=np.float32),
-            "small": np.ones((2, 1), dtype=np.float32),  # size < 4 should be ignored
+            "small": np.ones((2, 1), dtype=np.float32),
             "big": np.ones((20, 20), dtype=np.float32),
             "medium": np.ones((10, 10), dtype=np.float32),
             "other": np.ones((8, 8), dtype=np.float32),
@@ -144,3 +144,4 @@ class CommonVizTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

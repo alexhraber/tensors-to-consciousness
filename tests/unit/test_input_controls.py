@@ -25,8 +25,6 @@ class InputControlsTests(unittest.TestCase):
     def test_generated_metadata_and_viz_meta_override(self) -> None:
         with patch.dict(os.environ, {"T2C_INPUTS": "{}"}, clear=False):
             _ = self.input_controls.tune_normal("jax", (2, 2))
-        scope = {"_": 1, "VIZ_META": {}}
-        # Use call-site label created by assignment line below.
         generated = None
 
         def _make() -> None:
@@ -95,3 +93,4 @@ class InputControlsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

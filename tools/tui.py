@@ -55,7 +55,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def _clear_screen() -> None:
-    sys.stdout.write("\x1b[2J\x1b[H")
+    # Stable redraw without hard screen flash.
+    sys.stdout.write("\x1b[H\x1b[J")
     sys.stdout.flush()
 
 
@@ -69,19 +70,64 @@ def _leave_alt() -> None:
     sys.stdout.flush()
 
 
-def _read_char(fd: int, timeout_s: float = 0.15) -> str:
+def _read_char(fd: int, timeout_s: float = 5.0) -> str:
     ready, _, _ = select.select([fd], [], [], timeout_s)
     if not ready:
         return ""
     return os.read(fd, 1).decode(errors="ignore")
 
 
-def _edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
+def _field_specs(view: str) -> list[tuple[str, str, object]]:
+    if view == "simplified":
+        return [
+            ("seed", "Random seed", int),
+            ("freq", "Signal frequency", float),
+            ("amplitude", "Signal amplitude", float),
+        ]
+    if view == "advanced":
+        return [
+            ("seed", "Random seed", int),
+            ("samples", "Sample count", int),
+            ("freq", "Signal frequency", float),
+            ("amplitude", "Signal amplitude", float),
+            ("damping", "Damping factor", float),
+            ("noise", "Noise level", float),
+        ]
+    return [
+        ("seed", "Random seed", int),
+        ("samples", "Sample count", int),
+        ("grid", "Field resolution", int),
+        ("freq", "Signal frequency", float),
+        ("amplitude", "Signal amplitude", float),
+        ("phase", "Phase shift", float),
+        ("damping", "Damping factor", float),
+        ("noise", "Noise level", float),
+    ]
+
+
+def _guided_edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
     termios.tcsetattr(fd, termios.TCSADRAIN, old)
     try:
-        sys.stdout.write("\x1b[2K\rEdit (key=value, e.g. freq=2.7, samples=2400): ")
-        sys.stdout.flush()
-        line = input().strip()
+        print("\nParameter Input")
+        print(f"View: {state.view} (complexity-aware fields)")
+        for key, label, caster in _field_specs(state.view):
+            current = getattr(state, key)
+            raw = input(f"- {label} [{key}] ({current}): ").strip()
+            if not raw:
+                continue
+            try:
+                setattr(state, key, caster(raw))
+            except (TypeError, ValueError):
+                print(f"  invalid value for {key}; keeping {current}")
+    finally:
+        tty.setcbreak(fd)
+    shinkei.normalize_state(state)
+
+
+def _quick_edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
+    termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    try:
+        line = input("Quick edit key=value (blank to cancel): ").strip()
     finally:
         tty.setcbreak(fd)
     if "=" not in line:
@@ -101,11 +147,10 @@ def _edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
         return
     caster, attr = edits[key]
     try:
-        casted = caster(value)
+        setattr(state, attr, caster(value))
+        shinkei.normalize_state(state)
     except (TypeError, ValueError):
         return
-    setattr(state, attr, casted)
-    shinkei.normalize_state(state)
 
 
 def _command_console(fd: int, old: list[int], state: shinkei.VizState, framework: str) -> bool:
@@ -191,6 +236,31 @@ def _command_console(fd: int, old: list[int], state: shinkei.VizState, framework
         print("Unknown command. Type `help`.")
 
 
+def _frame_line(text: str, width: int = 104) -> str:
+    if len(text) >= width - 2:
+        text = text[: width - 5] + "..."
+    return "│" + text.ljust(width - 2) + "│"
+
+
+def _render_header(framework: str, state: shinkei.VizState, renderer: str, width: int = 104) -> None:
+    top = "┌" + ("─" * (width - 2)) + "┐"
+    bot = "└" + ("─" * (width - 2)) + "┘"
+    print(top)
+    print(
+        _frame_line(
+            f" t2c studio · {framework} · view={state.view} · renderer={renderer} ",
+            width=width,
+        )
+    )
+    print(
+        _frame_line(
+            f" seed={state.seed} samples={state.samples} grid={state.grid} freq={state.freq:.3f} amp={state.amplitude:.3f} damp={state.damping:.3f} noise={state.noise:.3f} phase={state.phase:.3f} ",
+            width=width,
+        )
+    )
+    print(bot)
+
+
 def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str) -> int:
     common_viz = shinkei.load_common_viz()
     if not sys.stdin.isatty():
@@ -202,60 +272,65 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
     old = termios.tcgetattr(fd)
     _enter_alt()
     tty.setcbreak(fd)
+    needs_render = True
     try:
         while True:
-            _clear_screen()
-            arr, stage, caption = shinkei.stage_payload(np, state)
-            arr_f = np.asarray(arr, dtype=np.float32)
-            renderer = shinkei.renderer_name(use_plots, use_heatmap)
-            print(
-                "\x1b[38;2;120;231;255mtensors-to-consciousness · visualization studio\x1b[0m "
-                f"\x1b[38;2;255;184;108m[{framework}]\x1b[0m"
-            )
-            print(
-                f"view={stage}  renderer={renderer}  seed={state.seed}  samples={state.samples}  grid={state.grid}"
-            )
-            print(
-                f"freq={state.freq:.3f}  amplitude={state.amplitude:.3f}  damping={state.damping:.3f}  noise={state.noise:.3f}  phase={state.phase:.3f}"
-            )
-            print()
+            if needs_render:
+                _clear_screen()
+                arr, stage, caption = shinkei.stage_payload(np, state)
+                arr_f = np.asarray(arr, dtype=np.float32)
+                renderer = shinkei.renderer_name(use_plots, use_heatmap)
+                _render_header(framework=framework, state=state, renderer=renderer)
+                print()
 
-            if use_plots:
-                png = common_viz._matplotlib_plot_png(arr_f, stage=stage, tensor_name=framework)
-                if png:
-                    print(common_viz._kitty_from_png_bytes(png, cells_w=80, cells_h=22))
+                if use_plots:
+                    png = common_viz._matplotlib_plot_png(arr_f, stage=stage, tensor_name=framework)
+                    if png:
+                        print(common_viz._kitty_from_png_bytes(png, cells_w=80, cells_h=22))
+                    elif use_heatmap:
+                        print(common_viz._pixel_heatmap(arr_f, width=80, height=30))
+                    else:
+                        print(common_viz._ascii_heatmap(arr_f, width=96, height=28))
                 elif use_heatmap:
                     print(common_viz._pixel_heatmap(arr_f, width=80, height=30))
                 else:
                     print(common_viz._ascii_heatmap(arr_f, width=96, height=28))
-            elif use_heatmap:
-                print(common_viz._pixel_heatmap(arr_f, width=80, height=30))
-            else:
-                print(common_viz._ascii_heatmap(arr_f, width=96, height=28))
 
-            print()
-            print(common_viz._format_caption(caption))
-            print(
-                "Controls: [1] simplified  [2] advanced  [3] ultra  [e] edit  [:] console  [r] reseed  [q] quit"
-            )
-            sys.stdout.flush()
+                print()
+                print(common_viz._format_caption(caption))
+                print(
+                    "Controls: [1] simple  [2] advanced  [3] ultra  [i] guided input  [e] quick key=value  [:] command mode  [r] reseed  [q] quit"
+                )
+                sys.stdout.flush()
+                needs_render = False
 
             ch = _read_char(fd)
+            if not ch:
+                continue
             if ch == "q":
                 break
             if ch == "1":
                 state.view = "simplified"
+                needs_render = True
             elif ch == "2":
                 state.view = "advanced"
+                needs_render = True
             elif ch == "3":
                 state.view = "ultra"
+                needs_render = True
             elif ch == "r":
                 state.seed = (state.seed + 1) % 2_000_000_000
+                needs_render = True
+            elif ch == "i":
+                _guided_edit_state(fd, state, old)
+                needs_render = True
             elif ch == "e":
-                _edit_state(fd, state, old)
+                _quick_edit_state(fd, state, old)
+                needs_render = True
             elif ch == ":":
                 if not _command_console(fd, old, state, framework):
                     break
+                needs_render = True
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
         _leave_alt()

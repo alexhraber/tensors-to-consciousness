@@ -5,14 +5,12 @@ import builtins
 import io
 import unittest
 from contextlib import redirect_stderr
-from pathlib import Path
 from unittest.mock import patch
 
-import main as t2c
 from tools import setup
-from tools import validate
-from tools import tui
 from tools import shinkei
+from tools import tui
+from tools import validate
 
 
 class ValidateEntrypointTests(unittest.TestCase):
@@ -47,7 +45,7 @@ class SetupFlowIntegrationTests(unittest.TestCase):
         write_config_mock.assert_called_once()
 
 
-class VizTerminalTests(unittest.TestCase):
+class TuiEntrypointTests(unittest.TestCase):
     def test_to_ascii_respects_dimensions(self) -> None:
         try:
             import numpy as np
@@ -115,25 +113,6 @@ class VizTerminalTests(unittest.TestCase):
         self.assertEqual(arr_ultra.ndim, 2)
 
 
-class RuntimeExecutionFlowTests(unittest.TestCase):
-    def test_t2c_main_executes_module_zero(self) -> None:
-        args = argparse.Namespace(
-            target="0",
-            framework=None,
-            venv=None,
-            no_setup=True,
-        )
-        with patch.object(t2c, "parse_args", return_value=args):
-            with patch.object(
-                t2c, "ensure_setup_if_needed", return_value=({"framework": "numpy", "venv": ".venv-np"}, False)
-            ):
-                with patch.object(t2c, "python_in_venv", return_value=Path(".venv-np/bin/python")):
-                    with patch.object(t2c, "run_cmd") as run_cmd_mock:
-                        rc = t2c.main()
-        self.assertEqual(rc, 0)
-        cmd = run_cmd_mock.call_args[0][0]
-        self.assertEqual(cmd, [".venv-np/bin/python", "scripts/numpy/0_computational_primitives.py"])
-
-
 if __name__ == "__main__":
     unittest.main()
+

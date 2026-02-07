@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,66 +8,9 @@ from unittest.mock import patch
 
 import main as t2c
 from tools import runtime
-from tools import setup
 
 
-class RuntimeTests(unittest.TestCase):
-    def test_validate_script_for_framework(self) -> None:
-        self.assertEqual(runtime.validate_script_for_framework("jax"), "scripts/jax/test_setup.py")
-        with self.assertRaises(RuntimeError):
-            runtime.validate_script_for_framework("invalid")
-
-    def test_load_config_missing_raises(self) -> None:
-        with tempfile.TemporaryDirectory() as td:
-            config_path = Path(td) / "config.json"
-            with patch.object(runtime, "CONFIG_FILE", config_path):
-                with self.assertRaises(RuntimeError):
-                    runtime.load_config()
-
-    def test_load_config_reads_json(self) -> None:
-        with tempfile.TemporaryDirectory() as td:
-            config_path = Path(td) / "config.json"
-            config_path.write_text(json.dumps({"framework": "mlx", "venv": ".venv"}), encoding="utf-8")
-            with patch.object(runtime, "CONFIG_FILE", config_path):
-                self.assertEqual(runtime.load_config()["framework"], "mlx")
-
-
-class SetupScriptTests(unittest.TestCase):
-    def test_setup_one_calls_install_and_validate(self) -> None:
-        calls: list[list[str]] = []
-
-        def fake_run_cmd(cmd: list[str], env=None) -> None:
-            calls.append(cmd)
-
-        with patch.object(setup, "run_cmd", side_effect=fake_run_cmd):
-            setup.setup_one("jax", Path(".venv"), skip_validate=False)
-
-        self.assertEqual(calls[0][:4], ["uv", "pip", "install", "--python"])
-        self.assertIn("jax[cpu]", calls[0])
-        self.assertIn("matplotlib", calls[0])
-        self.assertEqual(calls[1][-2:], ["--framework", "jax"])
-
-    def test_setup_one_skip_validate(self) -> None:
-        calls: list[list[str]] = []
-
-        def fake_run_cmd(cmd: list[str], env=None) -> None:
-            calls.append(cmd)
-
-        with patch.object(setup, "run_cmd", side_effect=fake_run_cmd):
-            setup.setup_one("numpy", Path(".venv"), skip_validate=True)
-
-        self.assertEqual(len(calls), 1)
-        self.assertIn("numpy", calls[0])
-
-    def test_setup_main_requires_uv(self) -> None:
-        args = argparse.Namespace(framework="mlx", venv=".venv", skip_validate=False)
-        with patch.object(setup, "parse_args", return_value=args):
-            with patch.object(setup.shutil, "which", return_value=None):
-                rc = setup.main()
-        self.assertEqual(rc, 1)
-
-
-class T2CTests(unittest.TestCase):
+class T2CFlowIntegrationTests(unittest.TestCase):
     def test_ensure_setup_not_needed(self) -> None:
         env: dict[str, str] = {}
         with tempfile.TemporaryDirectory() as td:
@@ -127,6 +69,8 @@ class T2CTests(unittest.TestCase):
             framework="mlx",
             venv=".venv",
             no_setup=True,
+            cli=False,
+            inputs=None,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -143,6 +87,8 @@ class T2CTests(unittest.TestCase):
             framework="mlx",
             venv=".venv",
             no_setup=True,
+            cli=False,
+            inputs=None,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -162,6 +108,8 @@ class T2CTests(unittest.TestCase):
             framework="jax",
             venv=".venv-jax",
             no_setup=True,
+            cli=False,
+            inputs=None,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -181,19 +129,21 @@ class T2CTests(unittest.TestCase):
             venv=None,
             no_setup=False,
             cli=False,
+            inputs=None,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
                 with patch.object(t2c.sys.stdin, "isatty", return_value=True):
                     with patch.object(t2c, "prompt_framework_choice", return_value="jax"):
-                        with patch.object(
-                            t2c,
-                            "ensure_setup_if_needed",
-                            return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
-                        ):
-                            with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
-                                with patch.object(t2c, "run_cmd") as run_cmd_mock:
-                                    rc = t2c.main()
+                        with patch.object(t2c, "prompt_inputs_override", return_value=None):
+                            with patch.object(
+                                t2c,
+                                "ensure_setup_if_needed",
+                                return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
+                            ):
+                                with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
+                                    with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                                        rc = t2c.main()
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
         self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
@@ -207,19 +157,21 @@ class T2CTests(unittest.TestCase):
             venv=None,
             no_setup=False,
             cli=True,
+            inputs=None,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
                 with patch.object(t2c.sys.stdin, "isatty", return_value=True):
                     with patch.object(t2c, "prompt_framework_choice", return_value="jax"):
-                        with patch.object(
-                            t2c,
-                            "ensure_setup_if_needed",
-                            return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
-                        ):
-                            with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
-                                with patch.object(t2c, "run_cmd") as run_cmd_mock:
-                                    rc = t2c.main()
+                        with patch.object(t2c, "prompt_inputs_override", return_value=None):
+                            with patch.object(
+                                t2c,
+                                "ensure_setup_if_needed",
+                                return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
+                            ):
+                                with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
+                                    with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                                        rc = t2c.main()
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
         self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
@@ -231,6 +183,7 @@ class T2CTests(unittest.TestCase):
             framework="jax",
             venv=".venv-jax",
             no_setup=True,
+            cli=False,
             inputs="inputs.example.json",
         )
         with patch.object(t2c, "parse_args", return_value=args):
@@ -243,6 +196,26 @@ class T2CTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         env = run_cmd_mock.call_args.kwargs["env"]
         self.assertEqual(env.get("T2C_INPUTS"), "inputs.example.json")
+
+    def test_t2c_main_executes_module_zero(self) -> None:
+        args = argparse.Namespace(
+            target="0",
+            framework=None,
+            venv=None,
+            no_setup=True,
+            cli=False,
+            inputs=None,
+        )
+        with patch.object(t2c, "parse_args", return_value=args):
+            with patch.object(
+                t2c, "ensure_setup_if_needed", return_value=({"framework": "numpy", "venv": ".venv-np"}, False)
+            ):
+                with patch.object(t2c, "python_in_venv", return_value=Path(".venv-np/bin/python")):
+                    with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                        rc = t2c.main()
+        self.assertEqual(rc, 0)
+        cmd = run_cmd_mock.call_args[0][0]
+        self.assertEqual(cmd, [".venv-np/bin/python", "scripts/numpy/0_computational_primitives.py"])
 
 
 if __name__ == "__main__":
