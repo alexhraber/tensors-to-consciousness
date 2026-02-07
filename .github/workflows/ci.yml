@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "explorer.py"
+      - "app/**"
       - ".python-version"
       - "Cargo.toml"
       - "Cargo.lock"
@@ -72,6 +73,7 @@ jobs:
           filters: |
             test:
               - "explorer.py"
+              - "app/**"
               - ".python-version"
               - "mise.toml"
               - "Cargo.toml"

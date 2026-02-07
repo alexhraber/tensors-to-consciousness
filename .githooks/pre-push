@@ -61,7 +61,7 @@ while IFS= read -r f; do
   [[ -z "$f" ]] && continue
   case "$f" in
     explorer.py|.python-version|mise.toml|Cargo.toml|Cargo.lock|Dockerfile|docker-compose.yml|.dockerignore) needs_gate=1 ;;
-    crates/*|transforms/*|frameworks/*|tools/*|tests/*|.github/ci/*|.github/workflows/*) needs_gate=1 ;;
+    app/*|crates/*|transforms/*|frameworks/*|tools/*|tests/*|.github/ci/*|.github/workflows/*) needs_gate=1 ;;
   esac
   if [[ "$needs_gate" == "1" ]]; then
     break

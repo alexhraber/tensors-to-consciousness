@@ -49,7 +49,19 @@ def resolve_framework_deps(framework: str) -> list[str]:
 
 def run_cmd(cmd: list[str], env: dict[str, str] | None = None) -> None:
     print(f"+ {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, env=env)
+    merged_env = dict(os.environ)
+    if env:
+        merged_env.update(env)
+
+    # `uv` defaults to $XDG_CACHE_HOME (~/.cache), which can be unwritable in
+    # sandboxed/CI environments. Keep it repo-local by default.
+    if "UV_CACHE_DIR" not in merged_env:
+        repo_root = Path(__file__).resolve().parents[1]
+        uv_cache_dir = repo_root / ".uv-cache"
+        uv_cache_dir.mkdir(parents=True, exist_ok=True)
+        merged_env["UV_CACHE_DIR"] = str(uv_cache_dir)
+
+    subprocess.run(cmd, check=True, env=merged_env)
 
 
 def write_active_config(framework: str, venv_dir: Path) -> None:

@@ -552,6 +552,7 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
         paths,
         &[
             "explorer.py",
+            "app/explorer.py",
             ".python-version",
             "mise.toml",
             "Cargo.toml",
@@ -561,7 +562,7 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
         ],
     ) || has_prefix(
         paths,
-        &["transforms/", "frameworks/", "tools/", "tests/", "crates/"],
+        &["app/", "transforms/", "frameworks/", "tools/", "tests/", "crates/"],
     );
 
     let transform_contract_inputs = has_prefix(paths, &["transforms/"])
