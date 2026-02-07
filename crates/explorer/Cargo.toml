@@ -20,3 +20,8 @@ sha2 = "0.10"
 [[bin]]
 name = "explorer"
 path = "src/main.rs"
+
+[[bin]]
+# Cargo subcommand plugin: `cargo explorer ...`
+name = "cargo-explorer"
+path = "src/cargo_main.rs"
