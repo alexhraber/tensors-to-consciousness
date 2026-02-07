@@ -54,7 +54,7 @@ python explorer.py
 ## Contributors
 
 <p align="center">
-  <img src="https://contrib.rocks/image?repo=alexhraber/tensors-to-consciousness" alt="Contributors screenshot" width="10%">
+  <img src="https://contrib.rocks/image?repo=alexhraber/tensors-to-consciousness" alt="Contributors screenshot" width="90%">
 </p>
 
 ## License

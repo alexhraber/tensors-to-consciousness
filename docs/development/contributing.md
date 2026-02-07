@@ -29,6 +29,10 @@ mise run test-all
 - Keep changes scoped and reviewable.
 - Use conventional commit subjects: `type(scope): summary` (enforced by `.githooks/commit-msg`).
 - Branch-first policy: commits and pushes from `main`/`master` are blocked by hooks (override only with `ALLOW_MAIN_COMMIT=1` or `ALLOW_MAIN_PUSH=1`).
+- Branch naming policy is enforced by hooks via `tools/git_policy.py`.
+- Required branch format: `type/scope-short-topic` (lowercase kebab-case).
+- Allowed branch types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`.
+- Valid examples: `fix/ci-act-container-collision`, `docs/readme-minimal-refresh`, `chore/pre-push-policy-hardening`.
 - Regenerate generated references when catalog/framework contracts change.
 - Do not commit runtime state (`.config/`, virtual environments, caches, output scratch files).
 
