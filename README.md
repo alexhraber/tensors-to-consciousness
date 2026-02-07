@@ -58,6 +58,7 @@ Mode behavior:
 
 Detailed controls, direct module/algorithm fetch, and command examples live in:
 
+- `docs/tui.md`
 - `docs/cli.md`
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
