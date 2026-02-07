@@ -36,8 +36,8 @@ Supported environment variables:
 Examples:
 
 ```bash
-python main.py run --framework numpy --transforms default
-DEBUG=1 LOG_LEVEL=DEBUG python main.py run --framework numpy --transforms default
+python explorer.py run --framework numpy --transforms default
+DEBUG=1 LOG_LEVEL=DEBUG python explorer.py run --framework numpy --transforms default
 ```
 
 ## Precedence

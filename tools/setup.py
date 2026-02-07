@@ -118,10 +118,10 @@ def main() -> int:
         write_active_config(args.framework, venv_dir)
         print(f"\nActive framework set to: {args.framework}")
         print("Use these commands:")
-        print("  python main.py validate")
-        print("  python main.py render")
-        print("  python main.py run --transforms default")
-        print("  python main.py --list-transforms")
+        print("  python explorer.py validate")
+        print("  python explorer.py render")
+        print("  python explorer.py run --transforms default")
+        print("  python explorer.py --list-transforms")
 
     print("\nSetup complete.")
     return 0

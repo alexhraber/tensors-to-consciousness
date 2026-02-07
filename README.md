@@ -60,7 +60,7 @@ docker compose --profile apple run --rm explorer-apple
 Local (non-container) launch:
 
 ```bash
-python main.py
+python explorer.py
 ```
 
 On first run, the tool will auto-configure a framework runtime and launch the explorer.
@@ -113,9 +113,9 @@ Top 5 core transforms:
 Core exploration commands:
 
 ```bash
-python main.py --list-transforms
-python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
-python main.py render --framework numpy --transforms default
+python explorer.py --list-transforms
+python explorer.py run --framework jax --transforms chain_rule,gradient_descent,adam
+python explorer.py render --framework numpy --transforms default
 ```
 
 ## Shinkei Visual Samples

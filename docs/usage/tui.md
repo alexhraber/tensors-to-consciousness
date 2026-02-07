@@ -3,10 +3,10 @@
 The primary experience is the interactive explorer:
 
 ```bash
-python main.py
+python explorer.py
 ```
 
-`main.py` auto-detects setup, validates, and launches the TUI.
+`explorer.py` auto-detects setup, validates, and launches the TUI.
 If no framework config exists yet, it defaults to `numpy` (no onboarding prompt).
 
 ## Controls
@@ -32,7 +32,7 @@ Transform chains, parameter edits, and live dynamics are toggles within the same
 ## Start with a Specific Transform Set
 
 ```bash
-python main.py render --transforms gradient_descent,momentum,adam --transform momentum
+python explorer.py render --transforms gradient_descent,momentum,adam --transform momentum
 ```
 
 Top 5 core transforms:

@@ -19,7 +19,7 @@ Notes:
 - `stdin_open: true` + `tty: true` are enabled for interactive TUI operation.
 - The repository is bind-mounted into `/workspace`.
 - `.config/` is persisted via the `t2c_config` volume.
-- `explorer` service defaults to `python main.py`; passing extra commands overrides that default.
+- `explorer` service defaults to `python explorer.py`; passing extra commands overrides that default.
 
 ## 3) Run with GPU passthrough
 
@@ -88,8 +88,8 @@ Telescope note:
 ## 5) One-off command examples
 
 ```bash
-docker compose run --rm explorer python main.py --list-transforms
-docker compose run --rm explorer python main.py run --framework numpy --transforms default
+docker compose run --rm explorer python explorer.py --list-transforms
+docker compose run --rm explorer python explorer.py run --framework numpy --transforms default
 docker compose run --rm explorer python -m tests --suite unit
 ```
 

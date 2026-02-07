@@ -8,7 +8,7 @@ The repo is sandbox/playground based.
 - Framework backends live in `frameworks/<framework>/`
 - Transform registry (ordering/complexity/defaults) lives in `transforms/registry.py`
 - Operational commands are:
-  - `main.py` (single public entrypoint; setup is auto-triggered)
+  - `explorer.py` (single public entrypoint; setup is auto-triggered)
 
 ## Local workflow
 
@@ -16,8 +16,8 @@ The repo is sandbox/playground based.
 python tools/install_githooks.py
 python -m pip install pre-commit
 pre-commit install
-python main.py
-python main.py run --transforms default
+python explorer.py
+python explorer.py run --transforms default
 python -m tests
 ```
 
@@ -50,25 +50,25 @@ Requirements:
 When adding/changing frameworks:
 
 1. Update `tools/setup.py` framework map (`deps`, `validate` script).
-2. Ensure `main.py` can resolve the framework name and transform selection.
+2. Ensure `explorer.py` can resolve the framework name and transform selection.
 3. Add/update transform metadata in `transforms/registry.py`.
 4. Prefer scaffolding new abstract transforms via `python tools/scaffold_algo.py ...`.
 5. Validate setup + run path:
 
 ```bash
-python main.py
-python main.py validate
-python main.py run --transforms default
+python explorer.py
+python explorer.py validate
+python explorer.py run --transforms default
 ```
 
 ## Documentation expectations
 
 - Keep `README.md` aligned with actual setup/run behavior.
-- Keep examples aligned with the operational command (`main.py`).
+- Keep examples aligned with the operational command (`explorer.py`).
 - Regenerate transform/framework docs when catalog or framework contracts change:
   - `python tools/generate_catalog_docs.py`
 - If rendering previews change, regenerate GIF assets with `python tools/generate_render_assets.py`.
-- Keep power-user usage discoverable through `python main.py --help`.
+- Keep power-user usage discoverable through `python explorer.py --help`.
 
 ## Hygiene
 

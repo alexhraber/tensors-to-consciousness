@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "main.py"
+      - "explorer.py"
       - ".python-version"
       - "transforms/**"
       - "frameworks/**"
@@ -17,7 +17,7 @@ on:
   pull_request:
     branches: ["main"]
     paths:
-      - "main.py"
+      - "explorer.py"
       - ".python-version"
       - "transforms/**"
       - "frameworks/**"
@@ -63,7 +63,7 @@ jobs:
         with:
           filters: |
             runtime:
-              - "main.py"
+              - "explorer.py"
               - ".python-version"
               - "transforms/**"
               - "frameworks/**"
@@ -134,7 +134,7 @@ jobs:
 
       - name: CLI smoke checks
         run: |
-          python main.py --help
+          python explorer.py --help
           python -m tools.setup --help
           python -m tools.validate --help
           python -m tools.tui --help

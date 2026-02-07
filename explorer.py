@@ -94,7 +94,7 @@ def ensure_setup_if_needed(
     if framework is None:
         raise RuntimeError(
             "No active framework configured. Run a command with "
-            "`--framework <framework>` once (example: `python main.py validate --framework jax`)."
+            "`--framework <framework>` once (example: `python explorer.py validate --framework jax`)."
         )
 
     configured_framework = config.get("framework")
@@ -118,7 +118,7 @@ def ensure_setup_if_needed(
     if not allow_setup:
         raise RuntimeError(
             f"Setup needed for framework '{framework}'. Re-run with setup enabled or run "
-            f"`python main.py validate --framework {framework}`."
+            f"`python explorer.py validate --framework {framework}`."
         )
 
     run_cmd(

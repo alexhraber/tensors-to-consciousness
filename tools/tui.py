@@ -247,7 +247,7 @@ def _command_console(
             if target == "validate":
                 cmdline = [
                     sys.executable,
-                    "main.py",
+                    "explorer.py",
                     "validate",
                     "--framework",
                     framework,
@@ -257,7 +257,7 @@ def _command_console(
             else:
                 cmdline = [
                     sys.executable,
-                    "main.py",
+                    "explorer.py",
                     "run",
                     "--framework",
                     framework,
@@ -374,7 +374,7 @@ def _platform_env(framework: str, platform: str) -> dict[str, str]:
 def _handoff_framework_switch(framework: str) -> int:
     cmdline = [
         sys.executable,
-        "main.py",
+        "explorer.py",
         "render",
         "--framework",
         framework,

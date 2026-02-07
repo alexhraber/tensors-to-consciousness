@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     image: tensors-to-consciousness:dev
     working_dir: /workspace
-    command: ["python", "main.py"]
+    command: ["python", "explorer.py"]
     stdin_open: true
     tty: true
     environment:
@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile
     image: tensors-to-consciousness:dev
     working_dir: /workspace
-    command: ["python", "main.py"]
+    command: ["python", "explorer.py"]
     stdin_open: true
     tty: true
     gpus: all
@@ -47,7 +47,7 @@ services:
       dockerfile: Dockerfile
     image: tensors-to-consciousness:dev
     working_dir: /workspace
-    command: ["python", "main.py"]
+    command: ["python", "explorer.py"]
     stdin_open: true
     tty: true
     group_add:
@@ -71,7 +71,7 @@ services:
       dockerfile: Dockerfile
     image: tensors-to-consciousness:dev
     working_dir: /workspace
-    command: ["python", "main.py"]
+    command: ["python", "explorer.py"]
     stdin_open: true
     tty: true
     group_add:
@@ -94,7 +94,7 @@ services:
     image: tensors-to-consciousness:dev
     platform: linux/arm64
     working_dir: /workspace
-    command: ["python", "main.py", "--framework", "mlx"]
+    command: ["python", "explorer.py", "--framework", "mlx"]
     stdin_open: true
     tty: true
     environment:
