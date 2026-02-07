@@ -10,6 +10,7 @@ on:
       - "tests/**"
       - "assets/viz/**"
       - ".github/workflows/**"
+      - ".github/ci/**"
   pull_request:
     branches: ["main"]
     paths:
@@ -19,6 +20,7 @@ on:
       - "tests/**"
       - "assets/viz/**"
       - ".github/workflows/**"
+      - ".github/ci/**"
   workflow_dispatch:
 
 concurrency:
@@ -33,8 +35,10 @@ jobs:
     name: Change Detection
     runs-on: ubuntu-latest
     outputs:
-      code: ${{ steps.filter.outputs.code }}
+      runtime: ${{ steps.filter.outputs.runtime }}
+      tests: ${{ steps.filter.outputs.tests }}
       viz: ${{ steps.filter.outputs.viz }}
+      ci: ${{ steps.filter.outputs.ci }}
 
     steps:
       - name: Checkout
@@ -45,21 +49,28 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            code:
+            runtime:
               - "main.py"
               - "scripts/**"
-              - "tools/**"
+              - "tools/runtime.py"
+              - "tools/setup.py"
+              - "tools/validate.py"
+              - "tools/viz_terminal.py"
+              - "tools/common_viz.py"
+            tests:
               - "tests/**"
-              - ".github/workflows/ci.yml"
+              - ".github/ci/requirements-test.txt"
             viz:
               - "tools/generate_viz_assets.py"
               - "assets/viz/**"
+            ci:
               - ".github/workflows/ci.yml"
+              - ".github/ci/**"
 
   test-matrix:
     name: Test (Python ${{ matrix.python-version }})
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.runtime == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -74,19 +85,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          cache: pip
+          cache-dependency-path: .github/ci/requirements-test.txt
 
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy
+          python -m pip install -r .github/ci/requirements-test.txt
 
       - name: Bytecode compilation check
         run: |
@@ -106,7 +111,7 @@ jobs:
   viz-assets:
     name: Visualization Assets Integrity
     needs: changes
-    if: needs.changes.outputs.viz == 'true'
+    if: needs.changes.outputs.viz == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
 
     steps:
