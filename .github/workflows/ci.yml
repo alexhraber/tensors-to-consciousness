@@ -11,7 +11,7 @@ on:
       - "transforms/**"
       - "frameworks/**"
       - "tools/**"
-      - "tests/python/**"
+      - "tests/**"
       - "docs/**"
       - "assets/render/**"
       - "mise.toml"
@@ -78,7 +78,7 @@ jobs:
               - "transforms/**"
               - "frameworks/**"
               - "tools/**"
-              - "tests/python/**"
+              - "tests/**"
               - ".github/ci/requirements-test.txt"
               - ".github/workflows/ci.yml"
             transform_contract:
@@ -186,7 +186,7 @@ jobs:
             cargo test -p explorer && \
             cargo build -p core && \
             python -m coverage erase && \
-            python -m coverage run -m tests.python --suite unit && \
+            python -m coverage run -m tests --suite unit && \
             python -m coverage report --show-missing && \
             python -m coverage xml -o coverage.xml && \
             explorer --help >/dev/null && \
