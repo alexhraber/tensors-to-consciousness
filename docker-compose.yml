@@ -1,0 +1,18 @@
+services:
+  explorer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tensors-to-consciousness:dev
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    environment:
+      TERM: ${TERM:-xterm-256color}
+      COLORTERM: ${COLORTERM:-truecolor}
+    volumes:
+      - ./:/workspace
+      - t2c_config:/workspace/.config
+
+volumes:
+  t2c_config:

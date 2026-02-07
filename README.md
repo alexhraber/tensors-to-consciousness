@@ -57,6 +57,7 @@ Detailed usage lives in:
 - [Docs Index](docs/README.md)
 - [TUI Guide](docs/usage/tui.md)
 - [CLI Guide](docs/usage/cli.md)
+- [Container + SSH Guide](docs/usage/container.md)
 - [Transforms Reference](docs/reference/transforms.md)
 - [Frameworks Reference](docs/reference/frameworks.md)
 

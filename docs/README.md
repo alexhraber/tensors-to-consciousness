@@ -4,6 +4,7 @@
 
 - [TUI Guide](usage/tui.md)
 - [CLI Guide](usage/cli.md)
+- [Container + SSH Guide](usage/container.md)
 
 ## Reference
 
