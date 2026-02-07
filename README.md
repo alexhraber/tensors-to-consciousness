@@ -22,6 +22,16 @@
 
 ---
 
+## Visualization Preview
+
+<p align="center">
+  <img src="assets/viz/optimization_flow.gif" alt="Optimization flow visualization" width="32%">
+  <img src="assets/viz/attention_dynamics.gif" alt="Attention dynamics visualization" width="32%">
+  <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
+</p>
+
+---
+
 ## CLI-First
 
 This is a CLI-native open-source research project with one public entrypoint:
@@ -44,17 +54,9 @@ For manual/advanced control:
 python main.py --help
 ```
 
-## Visualization Preview
+## Frameworks
 
-<p align="center">
-  <img src="assets/viz/optimization_flow.gif" alt="Optimization flow visualization" width="32%">
-  <img src="assets/viz/attention_dynamics.gif" alt="Attention dynamics visualization" width="32%">
-  <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
-</p>
-
-## Research Tracks
-
-Framework tracks are implemented under `scripts/<framework>/`:
+The entire research track is implemented in each of the following frameworks:
 
 - `mlx`
 - `jax`
