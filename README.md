@@ -18,8 +18,6 @@
   <a href="https://deepwiki.com/alexhraber/tensors-to-consciousness"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
 </p>
 
-<p><strong>Mathematical Foundations of AI/ML Across Frameworks</strong></p>
-
 </div>
 
 ---
