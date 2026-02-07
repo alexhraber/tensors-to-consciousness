@@ -59,12 +59,14 @@ jobs:
           filters: |
             runtime:
               - "main.py"
+              - "inputs.example.json"
               - "scripts/**"
               - "tools/runtime.py"
               - "tools/setup.py"
               - "tools/validate.py"
               - "tools/viz_terminal.py"
               - "tools/common_viz.py"
+              - "tools/input_controls.py"
             tests:
               - "tests/**"
               - ".github/ci/requirements-test.txt"
@@ -274,3 +276,73 @@ jobs:
           path: ci-metrics/viz-assets.json
           if-no-files-found: error
           retention-days: 30
+
+  viz-contract:
+    name: Visualization Contract
+    needs: changes
+    if: needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Ensure VIZ_META is declared in all research modules
+        run: |
+          set -euo pipefail
+          missing="$(rg -L '^VIZ_META\\s*=\\s*\\{' scripts/*/[0-6]_*.py || true)"
+          if [ -n "$missing" ]; then
+            echo "Missing VIZ_META declaration in:"
+            echo "$missing"
+            exit 1
+          fi
+
+      - name: Enforce VIZ_META contract order (declare before first viz_stage)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast
+          import pathlib
+          import sys
+
+          bad = []
+          for path in sorted(pathlib.Path("scripts").glob("*/*_*.py")):
+              if path.name.startswith("test_"):
+                  continue
+              src = path.read_text(encoding="utf-8")
+              try:
+                  tree = ast.parse(src, filename=str(path))
+              except SyntaxError as exc:
+                  bad.append(f"{path}: syntax error ({exc})")
+                  continue
+
+              viz_meta_line = None
+              first_viz_stage = None
+              for node in tree.body:
+                  if isinstance(node, ast.Assign):
+                      for target in node.targets:
+                          if isinstance(target, ast.Name) and target.id == "VIZ_META":
+                              viz_meta_line = node.lineno
+                  if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+                      fn = node.value.func
+                      if isinstance(fn, ast.Name) and fn.id == "viz_stage":
+                          first_viz_stage = node.lineno
+                          break
+
+              if first_viz_stage is None:
+                  continue
+              if viz_meta_line is None or viz_meta_line > first_viz_stage:
+                  bad.append(f"{path}: define VIZ_META before first viz_stage call")
+
+          if bad:
+              print("Visualization contract violations:")
+              for item in bad:
+                  print(f" - {item}")
+              sys.exit(1)
+          print("Visualization contract checks passed.")
+          PY
