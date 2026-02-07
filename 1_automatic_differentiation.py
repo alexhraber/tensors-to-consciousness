@@ -1,5 +1,7 @@
 # 1_automatic_differentiation.py
-import mlx.core as mx
+import t2c.frameworks as fw
+
+mx = fw.mx
 
 print("∇ AUTOMATIC DIFFERENTIATION THEORY")
 print("=" * 50)

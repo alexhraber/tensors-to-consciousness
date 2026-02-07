@@ -1,6 +1,8 @@
 # 5_research_frontiers.py
-import mlx.core as mx
-import mlx.nn as nn
+import t2c.frameworks as fw
+
+mx = fw.mx
+nn = fw.nn
 
 print("🚀 RESEARCH FRONTIERS")
 print("=" * 50)

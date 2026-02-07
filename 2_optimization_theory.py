@@ -1,5 +1,7 @@
 # 2_optimization_theory.py
-import mlx.core as mx
+import t2c.frameworks as fw
+
+mx = fw.mx
 
 print("🎯 OPTIMIZATION THEORY")
 print("=" * 50)

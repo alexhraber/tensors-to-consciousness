@@ -1,0 +1,71 @@
+import numpy as np
+import tensorflow as tf
+from keras import ops
+
+DTYPE = "float32"
+RNG = tf.random.Generator.from_seed(0)
+
+
+def normal(shape, dtype=DTYPE):
+    return RNG.normal(shape=shape, dtype=getattr(tf, dtype))
+
+
+def uniform(low, high, shape, dtype=DTYPE):
+    return RNG.uniform(shape=shape, minval=low, maxval=high, dtype=getattr(tf, dtype))
+
+
+def init_linear(in_dim, out_dim, dtype=DTYPE):
+    scale = tf.sqrt(tf.cast(2.0 / in_dim, getattr(tf, dtype)))
+    weight = normal((in_dim, out_dim), dtype=dtype) * scale
+    bias = tf.zeros((out_dim,), dtype=getattr(tf, dtype))
+    return {"weight": weight, "bias": bias}
+
+
+def linear(params, x):
+    return ops.matmul(x, params["weight"]) + params["bias"]
+
+
+def relu(x):
+    return ops.relu(x)
+
+
+def sigmoid(x):
+    return ops.sigmoid(x)
+
+
+def gelu(x):
+    return ops.gelu(x)
+
+
+def softmax(x, axis=-1):
+    return ops.softmax(x, axis=axis)
+
+
+def tree_l2_norm(tree):
+    if isinstance(tree, dict):
+        leaves = tree.values()
+    else:
+        leaves = tree
+    total = tf.constant(0.0, dtype=tf.float32)
+    for leaf in leaves:
+        total = total + ops.sum(leaf * leaf)
+    return ops.sqrt(total)
+
+
+def scalar(x):
+    return float(np.array(ops.convert_to_numpy(x)).item())
+
+
+def finite_diff_grad_scalar(f, x, eps=1e-4):
+    return (f(x + eps) - f(x - eps)) / (2 * eps)
+
+
+def finite_diff_grad_vector(f, x, eps=1e-4):
+    grad = np.zeros_like(x, dtype=np.float32)
+    for i in range(x.size):
+        xp = x.copy()
+        xm = x.copy()
+        xp[i] += eps
+        xm[i] -= eps
+        grad[i] = (f(xp) - f(xm)) / (2 * eps)
+    return grad

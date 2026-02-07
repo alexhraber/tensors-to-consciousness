@@ -1,5 +1,7 @@
 # 0_computational_primitives.py
-import mlx.core as mx
+import t2c.frameworks as fw
+
+mx = fw.mx
 
 print("🧮 COMPUTATIONAL PRIMITIVES")
 print("=" * 50)
