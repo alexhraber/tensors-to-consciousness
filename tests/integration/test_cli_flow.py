@@ -185,7 +185,8 @@ class T2CFlowIntegrationTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
         self.assertEqual(calls[0], [".venv-np/bin/python", "-m", "tools.validate", "--framework", "numpy"])
-        self.assertEqual(len(calls), 4)
+        self.assertEqual(calls[1], [".venv-np/bin/python", "-m", "tools.playground", "--framework", "numpy", "--algos", "default", "--viz"])
+        self.assertEqual(len(calls), 2)
         self.assertEqual(ensure_setup_mock.call_args.kwargs["framework"], t2c.DEFAULT_FRAMEWORK)
 
     def test_t2c_main_passes_inputs_env(self) -> None:
@@ -232,7 +233,10 @@ class T2CFlowIntegrationTests(unittest.TestCase):
                         rc = t2c.main()
         self.assertEqual(rc, 0)
         cmd = run_cmd_mock.call_args[0][0]
-        self.assertEqual(cmd, [".venv-np/bin/python", "-m", "algos.numpy.computational_primitives"])
+        self.assertEqual(
+            cmd,
+            [".venv-np/bin/python", "-m", "tools.playground", "--framework", "numpy", "--algos", "tensor_ops", "--viz"],
+        )
 
 
 if __name__ == "__main__":

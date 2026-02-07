@@ -82,7 +82,7 @@ def _distribution_overrides(framework: str, dist: str, ctx: dict[str, Any]) -> d
     base = _to_dict(cfg)
     fw = _to_dict(_to_dict(cfg.get("frameworks")).get(framework))
     script_name = str(ctx.get("script", ""))
-    # Preferred key for per-module overrides is `modules`.
+    # Preferred key for per-algorithm-file overrides is `modules`.
     # Keep compatibility with legacy `scripts` and transitional `frameworks`.
     base_modules = _to_dict(base.get("modules"))
     if not base_modules:
@@ -199,7 +199,7 @@ def metadata_for_scope(framework: str, scope: dict[str, Any]) -> dict[str, str]:
     explicit = scope.get("VIZ_META")
     if not isinstance(explicit, dict):
         raise ValueError(
-            "shinkei viz contract violation: module must define `VIZ_META = {}` "
+            "shinkei viz contract violation: algorithm scope must define `VIZ_META = {}` "
             "before calling viz_stage()."
         )
     for k, v in explicit.items():

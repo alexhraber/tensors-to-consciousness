@@ -16,6 +16,7 @@ from types import ModuleType
 
 from algos.registry import build_tui_profiles
 from algos.registry import resolve_algorithm_keys
+from frameworks.engine import FrameworkEngine
 from tools import runtime
 from tools import shinkei
 
@@ -578,6 +579,13 @@ def _render_interactive(
     needs_render = True
     tick_refresh = False
     dynamic_lines = 0
+    engine_cache: dict[str, FrameworkEngine] = {}
+
+    def _engine_for(framework_name: str) -> FrameworkEngine:
+        if framework_name not in engine_cache:
+            engine_cache[framework_name] = FrameworkEngine(framework_name)
+        return engine_cache[framework_name]
+
     try:
         while True:
             if needs_render:
@@ -591,8 +599,17 @@ def _render_interactive(
                 transform_label = "steady"
                 if state.view == "ultra" and motion_enabled:
                     render_state, transform_label = _ultra_motion_state(state, motion_tick)
-                arr, stage, caption = shinkei.stage_payload(np, render_state)
-                arr_f = np.asarray(arr, dtype=np.float32)
+                engine = _engine_for(active_framework)
+                pipeline = (str(algo["key"]),)
+                result = engine.run_pipeline(pipeline, size=render_state.grid, steps=1)
+                arr = engine.to_numpy(result.final_tensor)
+                if arr is None:
+                    arr, stage, caption = shinkei.stage_payload(np, render_state)
+                    arr_f = np.asarray(arr, dtype=np.float32)
+                else:
+                    stage = str(algo["key"])
+                    caption = f"{algo['title']} executed on {active_framework} backend."
+                    arr_f = np.asarray(arr, dtype=np.float32)
                 renderer = shinkei.renderer_name(use_plots, use_heatmap)
                 layout = _layout_for_view(state.view)
 

@@ -79,12 +79,13 @@ To scaffold a new abstract algorithm + backend adapters:
 python tools/scaffold_algo.py --complexity 2 --key rk4_solver --title "RK4 Solver" --formula "x_{t+1}=x_t+..." --description "Fourth-order integration"
 ```
 
-Sandbox-style runs use algorithm combinations instead of fixed `0..6` module targets:
+Sandbox-style runs use algorithm combinations instead of fixed `0..6` level targets:
 
 ```bash
 python main.py run --framework jax --algos chain_rule,gradient_descent,adam
 python main.py viz --framework jax --algos all
 python main.py --list-algos
+python -m tools.playground --framework jax --algos chain_rule,adam --viz
 ```
 
 ## Notes

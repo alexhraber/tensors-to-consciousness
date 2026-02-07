@@ -11,6 +11,7 @@ python main.py --help
 python main.py -c
 python main.py validate
 python main.py run --framework jax --algos default
+python -m tools.playground --framework jax --algos chain_rule,adam --viz
 python main.py --list-algos
 ```
 

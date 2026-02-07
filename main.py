@@ -9,7 +9,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from algos.registry import execution_modules_for_framework
 from algos.registry import list_algorithm_keys
 from algos.registry import resolve_algorithm_keys
 from tools.runtime import SUPPORTED_FRAMEWORKS, load_config, python_in_venv
@@ -186,12 +185,9 @@ def main() -> int:
         if setup_ran:
             run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         if force_cli:
-            try:
-                algo_keys = resolve_algorithm_keys(algo_selector)
-            except ValueError as exc:
-                print(str(exc), file=sys.stderr)
-                return 1
-            module_paths = execution_modules_for_framework(framework, algo_keys)
+            cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--algos", algo_selector or "default", "--viz"]
+            run_cmd(cmd, env=env)
+            return 0
         else:
             cmd = [str(py), "-m", "tools.tui", "--framework", framework]
             if algo_selector:
@@ -213,17 +209,16 @@ def main() -> int:
         return 0
     elif args.target == "run":
         try:
-            algo_keys = resolve_algorithm_keys(algo_selector)
+            _ = resolve_algorithm_keys(algo_selector)
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1
-        module_paths = execution_modules_for_framework(framework, algo_keys)
+        cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--algos", algo_selector or "default", "--viz"]
+        run_cmd(cmd, env=env)
+        return 0
     else:
         print("Invalid target. Use: validate, viz, run", file=sys.stderr)
         return 1
-
-    for module in module_paths:
-        run_cmd([str(py), "-m", module], env=env)
     return 0
 
 

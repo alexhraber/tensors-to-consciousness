@@ -86,7 +86,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-validate",
         action="store_true",
-        help="Install dependencies but do not run validation modules.",
+        help="Install dependencies but do not run validation checks.",
     )
     return parser.parse_args()
 

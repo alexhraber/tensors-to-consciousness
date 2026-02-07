@@ -26,7 +26,7 @@ A framework track should include:
 
 - `frameworks/<framework>/utils.py`
 - `frameworks/<framework>/test_setup.py`
-- optional adapter modules under `frameworks/<framework>/algorithms/`
+- optional adapter helpers under `frameworks/<framework>/algorithms/`
 
 Requirements:
 

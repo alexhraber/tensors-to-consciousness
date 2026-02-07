@@ -236,13 +236,3 @@ def build_tui_profiles(keys: tuple[str, ...] | None = None) -> tuple[dict[str, o
         for algo in algos
     )
 
-
-def execution_modules_for_framework(framework: str, keys: tuple[str, ...]) -> tuple[str, ...]:
-    selected = specs_for_keys(keys)
-    # Deduplicate source modules while preserving order implied by algorithm ordering.
-    out: list[str] = []
-    for spec in selected:
-        module = f"algos.{framework}.{spec.source_module}"
-        if module not in out:
-            out.append(module)
-    return tuple(out)
