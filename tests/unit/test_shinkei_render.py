@@ -75,7 +75,7 @@ class ShinkeiRenderTests(unittest.TestCase):
         np = shinkei_render._np_module()
         scope = {"x": np.ones((4, 4), dtype=np.float32)}
 
-        with patch.dict(os.environ, {"T2C_RENDER": "0"}):
+        with patch.dict(os.environ, {"TTC_RENDER": "0"}):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 shinkei_render.render_stage("stage_off", scope, lambda x: x, framework="numpy")
@@ -104,7 +104,7 @@ class ShinkeiRenderTests(unittest.TestCase):
 
         with patch.dict(
             os.environ,
-            {"T2C_RENDER_STYLE": "plots", "T2C_RENDER_TRACE": "1"},
+            {"TTC_RENDER_STYLE": "plots", "TTC_RENDER_TRACE": "1"},
             clear=False,
         ), patch.object(shinkei_render, "_supports_graphical_terminal", return_value=True), patch.object(
             shinkei_render, "_supports_kitty_graphics", return_value=False
@@ -119,7 +119,7 @@ class ShinkeiRenderTests(unittest.TestCase):
         np = shinkei_render._np_module()
         scope = {"x": np.arange(64, dtype=np.float32).reshape(8, 8)}
 
-        with patch.dict(os.environ, {"T2C_RENDER_TRACE": "1"}, clear=False), patch.object(
+        with patch.dict(os.environ, {"TTC_RENDER_TRACE": "1"}, clear=False), patch.object(
             shinkei_render, "_supports_inline_image_graphics", return_value=True
         ), patch.object(shinkei_render, "_supports_kitty_graphics", return_value=True), patch.object(
             shinkei_render, "_supports_graphical_terminal", return_value=True
@@ -140,7 +140,7 @@ class ShinkeiRenderTests(unittest.TestCase):
 
         with patch.dict(
             os.environ,
-            {"T2C_RENDER_FORCE_INLINE": "1"},
+            {"TTC_RENDER_FORCE_INLINE": "1"},
             clear=False,
         ), patch.object(shinkei_render.sys.stdout, "isatty", return_value=True):
             self.assertTrue(shinkei_render._supports_inline_image_graphics())

@@ -8,6 +8,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from tools import runtime
+
 
 _LHS_RE = re.compile(r"^\s*([A-Za-z_]\w*)\s*=")
 _META_REGISTRY: dict[tuple[str, str, str], str] = {}
@@ -19,7 +21,7 @@ def _to_dict(value: Any) -> dict[str, Any]:
 
 @lru_cache(maxsize=1)
 def _load_config() -> dict[str, Any]:
-    raw = os.environ.get("T2C_INPUTS", "").strip()
+    raw = runtime.env_get("TTC_INPUTS", "").strip()
     if not raw:
         return {}
     path = Path(raw)

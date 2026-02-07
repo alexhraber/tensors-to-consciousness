@@ -189,7 +189,7 @@ def _command_console(
     print("\nCommand console (type `help`). `back` returns to explorer, `quit` exits.")
     while True:
         try:
-            raw = input("t2c> ").strip()
+            raw = input("ttc> ").strip()
         except EOFError:
             raw = "back"
         if not raw:
@@ -370,7 +370,7 @@ def _platform_selector(fd: int, current: str) -> str | None:
 
 
 def _platform_env(framework: str, platform: str) -> dict[str, str]:
-    env: dict[str, str] = {"T2C_PLATFORM": platform}
+    env: dict[str, str] = {"TTC_PLATFORM": platform}
     if framework == "jax":
         env["JAX_PLATFORM_NAME"] = platform
     if framework in {"pytorch", "keras", "cupy"} and platform == "cpu":
@@ -386,6 +386,26 @@ def _frame_line(text: str, width: int = 104) -> str:
     return "│" + text.ljust(width - 2) + "│"
 
 
+def _theme_enabled() -> bool:
+    return shinkei._supports_graphical_terminal() and not os.environ.get("NO_COLOR")
+
+
+def _style(text: str, *, fg: tuple[int, int, int] | None = None, bold: bool = False, dim: bool = False) -> str:
+    if not _theme_enabled():
+        return text
+    parts: list[str] = []
+    if bold:
+        parts.append("1")
+    if dim:
+        parts.append("2")
+    if fg is not None:
+        r, g, b = fg
+        parts.append(f"38;2;{r};{g};{b}")
+    if not parts:
+        return text
+    return f"\x1b[{';'.join(parts)}m{text}\x1b[0m"
+
+
 def _render_header(
     framework: str,
     platform: str,
@@ -398,7 +418,7 @@ def _render_header(
     print(top)
     print(
         _frame_line(
-            f" t2c explorer · {framework} · {platform} · view={state.view} · renderer={renderer} ",
+            f" explorer · {framework} · {platform} · view={state.view} · renderer={renderer} ",
             width=width,
         )
     )
@@ -409,6 +429,27 @@ def _render_header(
         )
     )
     print(bot)
+
+
+def _render_landing(framework: str, platform: str, width: int) -> None:
+    top = "┌" + ("─" * (width - 2)) + "┐"
+    bot = "└" + ("─" * (width - 2)) + "┘"
+    print(_style(top, fg=(88, 118, 168)))
+    print(_frame_line(_style(" tensors-to-consciousness ", fg=(225, 236, 255), bold=True), width=width))
+    print(_frame_line(_style(" interactive transform exploration ", fg=(150, 178, 224)), width=width))
+    print(_frame_line("", width=width))
+    framework_text = _style(framework, fg=(126, 214, 255), bold=True)
+    platform_text = _style(platform, fg=(153, 231, 173), bold=True)
+    print(_frame_line(f" framework: {framework_text}    platform: {platform_text} ", width=width))
+    print(_frame_line("", width=width))
+    print(_frame_line(_style(" [enter] begin exploring ", fg=(255, 211, 130), bold=True), width=width))
+    print(
+        _frame_line(
+            _style(" [f] switch framework   [p] switch platform   [q] quit ", fg=(140, 160, 192), dim=True),
+            width=width,
+        )
+    )
+    print(_style(bot, fg=(88, 118, 168)))
 
 
 def _layout_for_view() -> dict[str, int]:
@@ -594,6 +635,7 @@ def _render_interactive(
     tick_refresh = False
     dynamic_lines = 0
     show_details = False
+    on_landing = True
     engine_cache: dict[str, FrameworkEngine] = {}
 
     def _engine_for(framework_name: str) -> FrameworkEngine:
@@ -604,6 +646,20 @@ def _render_interactive(
     try:
         while True:
             if needs_render:
+                if on_landing:
+                    _clear_screen()
+                    layout = _layout_for_view()
+                    _render_landing(
+                        framework=active_framework,
+                        platform=active_platform,
+                        width=layout["header_w"],
+                    )
+                    sys.stdout.flush()
+                    needs_render = False
+                    tick_refresh = False
+                    dynamic_lines = 0
+                    continue
+
                 profile = SCRIPT_PROFILES[script_index]
                 transform = transforms[script_index]
                 render_state = state
@@ -719,6 +775,26 @@ def _render_interactive(
                 continue
             if ch == "q":
                 break
+            if on_landing:
+                if ch in {"\r", "\n"}:
+                    on_landing = False
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "f":
+                    chosen = _framework_selector(fd, active_framework)
+                    if chosen and chosen != active_framework:
+                        active_framework = chosen
+                        _persist_framework(active_framework)
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "p":
+                    chosen_platform = _platform_selector(fd, active_platform)
+                    if chosen_platform and chosen_platform != active_platform:
+                        active_platform = chosen_platform
+                        _persist_platform(active_platform)
+                    needs_render = True
+                    tick_refresh = False
+                continue
             if ch == "n":
                 script_index = _next_script_index(script_index, direction=1)
                 _apply_profile_to_state(state, script_index)

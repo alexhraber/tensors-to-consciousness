@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .runtime import SUPPORTED_FRAMEWORKS, python_in_venv
+from .runtime import CONFIG_FILE, SUPPORTED_FRAMEWORKS, python_in_venv
 
 FRAMEWORK_CONFIG = {
     "mlx": {
@@ -38,17 +38,13 @@ FRAMEWORK_CONFIG = {
     },
 }
 COMMON_DEPS = ["matplotlib"]
-CONFIG_DIR = Path(".t2c")
-CONFIG_FILE = CONFIG_DIR / "config.json"
-
-
 def run_cmd(cmd: list[str], env: dict[str, str] | None = None) -> None:
     print(f"+ {' '.join(cmd)}")
     subprocess.run(cmd, check=True, env=env)
 
 
 def write_active_config(framework: str, venv_dir: Path) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     config = {
         "framework": framework,
         "venv": str(venv_dir),

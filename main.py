@@ -91,7 +91,7 @@ def ensure_setup_if_needed(
 
     if framework is None:
         raise RuntimeError(
-            "No active framework configured. Run a t2c command with "
+            "No active framework configured. Run a command with "
             "`--framework <framework>` once (example: `python main.py validate --framework jax`)."
         )
 
@@ -141,7 +141,7 @@ def main() -> int:
         framework = DEFAULT_FRAMEWORK
 
     if inputs:
-        env["T2C_INPUTS"] = inputs
+        env["TTC_INPUTS"] = inputs
 
     try:
         config, setup_ran = ensure_setup_if_needed(
