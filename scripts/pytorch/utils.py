@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
-from scripts.common_viz import viz_stage as _common_viz_stage
+from tools.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = torch.float32
 GENERATOR = torch.Generator().manual_seed(0)

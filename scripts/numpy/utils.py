@@ -1,7 +1,7 @@
 import math
 
 import numpy as np
-from scripts.common_viz import viz_stage as _common_viz_stage
+from tools.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = np.float32
 RNG = np.random.default_rng(0)

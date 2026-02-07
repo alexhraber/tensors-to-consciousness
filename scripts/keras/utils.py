@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from keras import ops
-from scripts.common_viz import viz_stage as _common_viz_stage
+from tools.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = "float32"
 RNG = tf.random.Generator.from_seed(0)

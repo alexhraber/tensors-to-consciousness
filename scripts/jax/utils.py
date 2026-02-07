@@ -2,7 +2,7 @@ import jax
 import jax.nn as jnn
 import jax.numpy as jnp
 import numpy as np
-from scripts.common_viz import viz_stage as _common_viz_stage
+from tools.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = jnp.float32
 _key = jax.random.PRNGKey(0)

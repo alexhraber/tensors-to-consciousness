@@ -1,6 +1,6 @@
 import numpy as np
 import cupy as cp
-from scripts.common_viz import viz_stage as _common_viz_stage
+from tools.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = cp.float32
 RNG = cp.random.RandomState(0)
