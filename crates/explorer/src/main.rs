@@ -2,10 +2,12 @@ use anyhow::{anyhow, Context, Result};
 use base64::Engine;
 use clap::{Parser, Subcommand};
 use serde_json::json;
+use std::io::Write;
 
 mod ops;
 mod py_rpc;
 mod runtime;
+mod shinkei;
 mod tui;
 
 #[derive(Parser)]
@@ -56,6 +58,26 @@ enum Command {
         /// Optional inputs JSON string (same as Python surface)
         #[arg(long)]
         inputs: Option<String>,
+    },
+
+    /// Render a tensor payload to a PPM (P6) heatmap (viridis).
+    ///
+    /// Intended for deterministic asset generation and headless pipelines.
+    RenderTensor {
+        #[arg(long)]
+        h: usize,
+        #[arg(long)]
+        w: usize,
+        /// Base64 of little-endian f32 bytes (row-major), length must be h*w*4.
+        #[arg(long)]
+        data_b64: String,
+        #[arg(long, default_value_t = 320)]
+        width_px: u32,
+        #[arg(long, default_value_t = 180)]
+        height_px: u32,
+        /// Output path. If omitted or '-', write PPM bytes to stdout.
+        #[arg(long)]
+        out: Option<String>,
     },
 
     /// Validate the selected framework environment (runs Python validation script)
@@ -236,6 +258,36 @@ fn main() -> Result<()> {
             }
             println!("{}", ascii_heatmap(&data, h, w, 96, 28));
             engine.shutdown()?;
+        }
+        Command::RenderTensor {
+            h,
+            w,
+            data_b64,
+            width_px,
+            height_px,
+            out,
+        } => {
+            let raw = base64::engine::general_purpose::STANDARD
+                .decode(&data_b64)
+                .context("base64 decode")?;
+            let data = parse_f32_le_bytes(&raw)?;
+            if data.len() != h * w {
+                return Err(anyhow!(
+                    "tensor payload size mismatch: got {} expected {}",
+                    data.len(),
+                    h * w
+                ));
+            }
+            let ppm = shinkei::render_ppm_viridis(&data, h, w, width_px, height_px)?;
+            match out.as_deref() {
+                None | Some("-") => {
+                    let mut stdout = std::io::stdout().lock();
+                    stdout.write_all(&ppm).context("write ppm to stdout")?;
+                }
+                Some(p) => {
+                    std::fs::write(p, &ppm).with_context(|| format!("write ppm to {p}"))?;
+                }
+            }
         }
         Command::Validate { framework, venv } => {
             let rt = runtime::resolve_runtime(&root, framework.as_deref(), venv.as_deref());
