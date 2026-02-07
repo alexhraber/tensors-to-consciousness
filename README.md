@@ -5,12 +5,12 @@
 <img src="assets/banner.svg" alt="tensors-to-consciousness banner" width="100%">
 
 <p>
-  <a href="https://github.com/ml-explore/mlx"><img alt="MLX" src="https://img.shields.io/badge/MLX-Apple-000000?logo=apple&logoColor=white"></a>
-  <a href="https://github.com/jax-ml/jax"><img alt="JAX" src="https://img.shields.io/badge/JAX-Framework-FE5F00?logo=jax&logoColor=white"></a>
-  <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-Framework-EE4C2C?logo=pytorch&logoColor=white"></a>
-  <a href="https://numpy.org/"><img alt="NumPy" src="https://img.shields.io/badge/NumPy-Framework-013243?logo=numpy&logoColor=white"></a>
-  <a href="https://keras.io/"><img alt="Keras" src="https://img.shields.io/badge/Keras-Framework-D00000?logo=keras&logoColor=white"></a>
-  <a href="https://cupy.dev/"><img alt="CuPy" src="https://img.shields.io/badge/CuPy-Framework-76B900?logo=nvidia&logoColor=white"></a>
+  <a href="https://pypi.org/project/mlx/"><img alt="MLX version" src="https://img.shields.io/pypi/v/mlx?label=MLX&logo=apple&logoColor=white"></a>
+  <a href="https://pypi.org/project/jax/"><img alt="JAX version" src="https://img.shields.io/pypi/v/jax?label=JAX&logo=jax&logoColor=white"></a>
+  <a href="https://pypi.org/project/torch/"><img alt="PyTorch version" src="https://img.shields.io/pypi/v/torch?label=PyTorch&logo=pytorch&logoColor=white"></a>
+  <a href="https://pypi.org/project/numpy/"><img alt="NumPy version" src="https://img.shields.io/pypi/v/numpy?label=NumPy&logo=numpy&logoColor=white"></a>
+  <a href="https://pypi.org/project/keras/"><img alt="Keras version" src="https://img.shields.io/pypi/v/keras?label=Keras&logo=keras&logoColor=white"></a>
+  <a href="https://pypi.org/project/cupy-cuda12x/"><img alt="CuPy version" src="https://img.shields.io/pypi/v/cupy-cuda12x?label=CuPy&logo=nvidia&logoColor=white"></a>
 </p>
 
 <p>
