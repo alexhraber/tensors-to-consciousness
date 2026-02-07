@@ -309,6 +309,18 @@ def _ascii_heatmap(arr: np.ndarray, width: int = 36, height: int = 12) -> str:
     return "\n".join(lines)
 
 
+def _viz_caption(mode: str, arr: np.ndarray) -> str:
+    if mode == "plots":
+        if arr.ndim == 1 or (arr.ndim == 2 and 1 in arr.shape):
+            return "Caption: Line plot of tensor values over index."
+        return "Caption: Heatmap plot showing tensor intensity across dimensions."
+    if mode == "heatmap":
+        return "Caption: Synthesized heatmap approximating tensor magnitude distribution."
+    if mode == "matrix":
+        return "Caption: Coarse matrix view emphasizing relative tensor magnitude."
+    return "Caption: ASCII fallback summarizing tensor structure and intensity."
+
+
 def viz_stage(
     stage: str,
     scope: dict[str, Any],
@@ -393,3 +405,4 @@ def viz_stage(
             print(_full_block_heatmap(arr_f, width=72, height=30))
         else:
             print(_ascii_heatmap(arr_f))
+        print(_viz_caption(chosen, arr_f))
