@@ -465,7 +465,7 @@ def _next_view(view: str, direction: int = 1) -> str:
 
 def _profile_state(index: int, transform_index: int, seed: int = 7) -> shinkei.VizState:
     profile = SCRIPT_PROFILES[index % len(SCRIPT_PROFILES)]
-    transform = profile["transforms"][transform_index % len(profile["transforms"])]
+    transform = profile["transforms"][0]
     preset = transform["preset"]
     return shinkei.VizState(
         seed=seed,
@@ -480,8 +480,8 @@ def _profile_state(index: int, transform_index: int, seed: int = 7) -> shinkei.V
     )
 
 
-def _apply_profile_to_state(state: shinkei.VizState, index: int, transform_index: int) -> None:
-    preset = _profile_state(index, transform_index, seed=state.seed)
+def _apply_profile_to_state(state: shinkei.VizState, index: int) -> None:
+    preset = _profile_state(index, 0, seed=state.seed)
     state.samples = preset.samples
     state.freq = preset.freq
     state.amplitude = preset.amplitude
@@ -494,11 +494,6 @@ def _apply_profile_to_state(state: shinkei.VizState, index: int, transform_index
 
 def _next_script_index(index: int, direction: int = 1) -> int:
     return (index + direction) % len(SCRIPT_PROFILES)
-
-
-def _next_transform_index(script_index: int, transform_index: int, direction: int = 1) -> int:
-    n = len(SCRIPT_PROFILES[script_index]["transforms"])
-    return (transform_index + direction) % n
 
 
 def _resolve_script_index(selector: str | None) -> int:
@@ -516,20 +511,53 @@ def _resolve_script_index(selector: str | None) -> int:
     return 0
 
 
-def _resolve_transform_index(script_index: int, selector: str | None) -> int:
-    if selector is None:
-        return 0
-    raw = selector.strip().lower()
-    if not raw:
-        return 0
-    transforms = SCRIPT_PROFILES[script_index]["transforms"]
-    for i, transform in enumerate(transforms):
-        if raw == transform["key"]:
-            return i
-    for i, transform in enumerate(transforms):
-        if raw in transform["title"].lower():
-            return i
-    return 0
+def _toggle_pipeline_key(pipeline: list[str], key: str) -> None:
+    if key in pipeline:
+        pipeline.remove(key)
+    else:
+        pipeline.append(key)
+
+
+def _move_pipeline_key(pipeline: list[str], key: str, direction: int) -> None:
+    if key not in pipeline:
+        return
+    idx = pipeline.index(key)
+    dst = idx + direction
+    if dst < 0 or dst >= len(pipeline):
+        return
+    pipeline[idx], pipeline[dst] = pipeline[dst], pipeline[idx]
+
+
+def _render_pipeline_selector(
+    transforms: tuple[dict[str, object], ...],
+    pipeline: list[str],
+    cursor_index: int,
+    *,
+    max_lines: int = 8,
+) -> list[str]:
+    total = len(transforms)
+    if total <= max_lines:
+        start = 0
+        end = total
+    else:
+        half = max_lines // 2
+        start = max(0, min(cursor_index - half, total - max_lines))
+        end = start + max_lines
+
+    lines = ["transforms (cursor + checkbox + precedence):"]
+    for i in range(start, end):
+        transform = transforms[i]
+        key = str(transform["key"])
+        title = str(transform["title"])
+        selected = key in pipeline
+        marker = ">" if i == cursor_index else " "
+        check = "[x]" if selected else "[ ]"
+        order = pipeline.index(key) + 1 if selected else 0
+        order_text = f"{order:02d}" if order else "--"
+        lines.append(f" {marker} {check} {order_text} {key} · {title}")
+    if total > max_lines:
+        lines.append(f" showing {start + 1}-{end} of {total}")
+    return lines
 
 
 def _ultra_motion_state(base: shinkei.VizState, tick: int) -> tuple[shinkei.VizState, str]:
@@ -557,6 +585,7 @@ def _render_interactive(
     np: ModuleType,
     state: shinkei.VizState,
     framework: str,
+    initial_pipeline: tuple[str, ...],
     transform_selector: str | None = None,
 ) -> int:
     if not sys.stdin.isatty():
@@ -570,9 +599,13 @@ def _render_interactive(
     motion_enabled = state.view != "ultra"
     motion_tick = 0
     script_index = _resolve_script_index(transform_selector)
-    transform_index = _resolve_transform_index(script_index, transform_selector)
+    transforms = tuple(profile["transforms"][0] for profile in SCRIPT_PROFILES)
+    transform_keys = {str(t["key"]) for t in transforms}
+    pipeline: list[str] = [key for key in initial_pipeline if key in transform_keys]
+    if not pipeline and transforms:
+        pipeline = [str(transforms[script_index]["key"])]
     if state.view in {"advanced", "ultra"}:
-        _apply_profile_to_state(state, script_index, transform_index)
+        _apply_profile_to_state(state, script_index)
     old = termios.tcgetattr(fd)
     _enter_alt()
     tty.setcbreak(fd)
@@ -590,9 +623,9 @@ def _render_interactive(
         while True:
             if needs_render:
                 profile = SCRIPT_PROFILES[script_index]
-                transform = profile["transforms"][transform_index]
+                transform = transforms[script_index]
                 render_state = (
-                    _profile_state(script_index, transform_index, seed=state.seed)
+                    _profile_state(script_index, 0, seed=state.seed)
                     if state.view == "simplified"
                     else state
                 )
@@ -600,15 +633,18 @@ def _render_interactive(
                 if state.view == "ultra" and motion_enabled:
                     render_state, transform_label = _ultra_motion_state(state, motion_tick)
                 engine = _engine_for(active_framework)
-                pipeline = (str(transform["key"]),)
-                result = engine.run_pipeline(pipeline, size=render_state.grid, steps=1)
+                active_pipeline = tuple(pipeline)
+                result = engine.run_pipeline(active_pipeline, size=render_state.grid, steps=1)
                 arr = engine.to_numpy(result.final_tensor)
                 if arr is None:
                     arr, stage, caption = shinkei.stage_payload(np, render_state)
                     arr_f = np.asarray(arr, dtype=np.float32)
                 else:
-                    stage = str(transform["key"])
-                    caption = f"{transform['title']} executed on {active_framework} backend."
+                    stage = "+".join(active_pipeline) if active_pipeline else "field_init"
+                    caption = (
+                        f"{len(active_pipeline)} transform(s) executed on {active_framework} backend: "
+                        f"{' -> '.join(active_pipeline) if active_pipeline else '(none)'}."
+                    )
                     arr_f = np.asarray(arr, dtype=np.float32)
                 renderer = shinkei.renderer_name(use_plots, use_heatmap)
                 layout = _layout_for_view(state.view)
@@ -647,8 +683,9 @@ def _render_interactive(
                     )
                 caption_line = shinkei._format_caption(caption)
                 controls_line = (
-                    "Controls: [m] mode cycle  [n]/[b] transform next/back  [a]/[A] alias next/back  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
+                    "Controls: [m] mode cycle  [n]/[b] cursor next/back  [x] toggle transform  ['[']/[']'] precedence up/down  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
                 )
+                selector_lines = _render_pipeline_selector(transforms, pipeline, script_index)
 
                 partial_viz_only = (
                     tick_refresh and state.view == "ultra" and motion_enabled and dynamic_lines > 0
@@ -676,6 +713,13 @@ def _render_interactive(
                         live = "live" if motion_enabled else "paused"
                         print(f"ultra-motion: {live} · transform={transform_label}")
                         print()
+                    for line in selector_lines:
+                        print(line)
+                    print(
+                        "pipeline precedence: "
+                        + (" -> ".join(pipeline) if pipeline else "(none)")
+                    )
+                    print()
 
                 print(viz)
                 if use_plots:
@@ -715,28 +759,29 @@ def _render_interactive(
                 tick_refresh = False
             elif ch == "n":
                 script_index = _next_script_index(script_index, direction=1)
-                transform_index = 0
                 if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, transform_index)
+                    _apply_profile_to_state(state, script_index)
                 needs_render = True
                 tick_refresh = False
             elif ch == "b":
                 script_index = _next_script_index(script_index, direction=-1)
-                transform_index = 0
                 if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, transform_index)
+                    _apply_profile_to_state(state, script_index)
                 needs_render = True
                 tick_refresh = False
-            elif ch == "a":
-                transform_index = _next_transform_index(script_index, transform_index, direction=1)
-                if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, transform_index)
+            elif ch == "x":
+                key = str(transforms[script_index]["key"])
+                _toggle_pipeline_key(pipeline, key)
                 needs_render = True
                 tick_refresh = False
-            elif ch == "A":
-                transform_index = _next_transform_index(script_index, transform_index, direction=-1)
-                if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, transform_index)
+            elif ch == "[":
+                key = str(transforms[script_index]["key"])
+                _move_pipeline_key(pipeline, key, direction=-1)
+                needs_render = True
+                tick_refresh = False
+            elif ch == "]":
+                key = str(transforms[script_index]["key"])
+                _move_pipeline_key(pipeline, key, direction=1)
                 needs_render = True
                 tick_refresh = False
             elif ch == "r":
@@ -814,9 +859,8 @@ def main() -> int:
     SCRIPT_PROFILES = build_tui_profiles(transform_keys)
 
     script_index = _resolve_script_index(transform_selector)
-    transform_index = _resolve_transform_index(script_index, transform_selector)
     if state.view in {"advanced", "ultra"}:
-        _apply_profile_to_state(state, script_index, transform_index)
+        _apply_profile_to_state(state, script_index)
     framework = getattr(args, "framework", "unknown")
     width = getattr(args, "width", 96)
     height = getattr(args, "height", 28)
@@ -854,6 +898,7 @@ def main() -> int:
         np=np,
         state=state,
         framework=framework,
+        initial_pipeline=transform_keys,
         transform_selector=transform_selector,
     )
 
