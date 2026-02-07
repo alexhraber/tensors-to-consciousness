@@ -17,6 +17,163 @@ from types import ModuleType
 from tools import runtime
 from tools import shinkei
 
+ULTRA_TRANSFORMS = (
+    "signal warp",
+    "field coupling",
+    "spectral lift",
+    "phase sweep",
+)
+VIEW_ORDER = ("simplified", "advanced", "ultra")
+SCRIPT_PROFILES = (
+    {
+        "id": "0",
+        "title": "Computational Primitives",
+        "algorithms": (
+            {
+                "key": "tensor_ops",
+                "title": "Tensor Operations",
+                "description": "Elementwise and matrix operations over structured tensors.",
+                "formula": "C = A ⊙ B,  M = A @ B",
+                "preset": {"samples": 900, "freq": 1.4, "amplitude": 0.9, "damping": 0.05, "noise": 0.06, "phase": 0.2, "grid": 72},
+            },
+            {
+                "key": "norms",
+                "title": "Norm Geometry",
+                "description": "Magnitude and stability readout across tensor trajectories.",
+                "formula": "||x||₂ = sqrt(sum_i x_i²)",
+                "preset": {"samples": 980, "freq": 1.6, "amplitude": 1.0, "damping": 0.06, "noise": 0.05, "phase": 0.3, "grid": 76},
+            },
+        ),
+    },
+    {
+        "id": "1",
+        "title": "Automatic Differentiation",
+        "algorithms": (
+            {
+                "key": "chain_rule",
+                "title": "Chain Rule Field",
+                "description": "Derivative amplification through nested nonlinearities.",
+                "formula": "d/dx sin(x²) = 2x cos(x²)",
+                "preset": {"samples": 1100, "freq": 1.9, "amplitude": 1.1, "damping": 0.08, "noise": 0.04, "phase": 0.55, "grid": 88},
+            },
+            {
+                "key": "jacobian",
+                "title": "Jacobian Sensitivity",
+                "description": "Multivariate gradient coupling across dimensions.",
+                "formula": "J_ij = ∂f_i/∂x_j",
+                "preset": {"samples": 1180, "freq": 2.05, "amplitude": 1.05, "damping": 0.09, "noise": 0.05, "phase": 0.7, "grid": 90},
+            },
+        ),
+    },
+    {
+        "id": "2",
+        "title": "Optimization Theory",
+        "algorithms": (
+            {
+                "key": "gradient_descent",
+                "title": "Gradient Descent",
+                "description": "Iterative descent dynamics over a curved objective.",
+                "formula": "xₜ₊₁ = xₜ - η∇f(xₜ)",
+                "preset": {"samples": 1200, "freq": 2.2, "amplitude": 1.0, "damping": 0.13, "noise": 0.10, "phase": 0.9, "grid": 96},
+            },
+            {
+                "key": "momentum",
+                "title": "Momentum Descent",
+                "description": "Velocity-augmented traversal with inertia memory.",
+                "formula": "vₜ₊₁ = βvₜ + ∇f(xₜ),  xₜ₊₁ = xₜ - ηvₜ₊₁",
+                "preset": {"samples": 1280, "freq": 2.35, "amplitude": 1.1, "damping": 0.11, "noise": 0.12, "phase": 1.05, "grid": 98},
+            },
+            {
+                "key": "adam",
+                "title": "Adam Dynamics",
+                "description": "Adaptive first/second moment optimization geometry.",
+                "formula": "xₜ₊₁ = xₜ - η m̂ₜ / (sqrt(v̂ₜ)+ε)",
+                "preset": {"samples": 1320, "freq": 2.5, "amplitude": 1.05, "damping": 0.12, "noise": 0.13, "phase": 1.15, "grid": 102},
+            },
+        ),
+    },
+    {
+        "id": "3",
+        "title": "Neural Theory",
+        "algorithms": (
+            {
+                "key": "forward_pass",
+                "title": "Forward Composition",
+                "description": "Layered nonlinear transformation and feature shaping.",
+                "formula": "y = σ(W₂ σ(W₁x + b₁) + b₂)",
+                "preset": {"samples": 1300, "freq": 2.5, "amplitude": 1.2, "damping": 0.09, "noise": 0.12, "phase": 1.2, "grid": 104},
+            },
+            {
+                "key": "activation_flow",
+                "title": "Activation Flow",
+                "description": "Activation distribution drift across depth.",
+                "formula": "a_l = φ(W_l a_{l-1} + b_l)",
+                "preset": {"samples": 1360, "freq": 2.7, "amplitude": 1.18, "damping": 0.10, "noise": 0.13, "phase": 1.35, "grid": 108},
+            },
+        ),
+    },
+    {
+        "id": "4",
+        "title": "Advanced Computational Theory",
+        "algorithms": (
+            {
+                "key": "manifold_field",
+                "title": "Manifold Field",
+                "description": "Curved latent field with coupled oscillatory terms.",
+                "formula": "z = exp(-λ||x||²) · sin(ωx) · cos(ωy)",
+                "preset": {"samples": 1450, "freq": 2.9, "amplitude": 1.25, "damping": 0.11, "noise": 0.14, "phase": 1.55, "grid": 116},
+            },
+            {
+                "key": "attention_surface",
+                "title": "Attention Surface",
+                "description": "Softmax geometry over query-key interactions.",
+                "formula": "Attn(Q,K,V) = softmax(QK^T/√d)V",
+                "preset": {"samples": 1500, "freq": 3.05, "amplitude": 1.2, "damping": 0.12, "noise": 0.15, "phase": 1.7, "grid": 120},
+            },
+        ),
+    },
+    {
+        "id": "5",
+        "title": "Research Frontiers",
+        "algorithms": (
+            {
+                "key": "scaling_laws",
+                "title": "Scaling Laws",
+                "description": "Performance trends across model/data scale.",
+                "formula": "L(N,D) ≈ A N^-α + B D^-β + C",
+                "preset": {"samples": 1550, "freq": 3.2, "amplitude": 1.3, "damping": 0.15, "noise": 0.18, "phase": 1.9, "grid": 124},
+            },
+            {
+                "key": "grokking",
+                "title": "Grokking Transition",
+                "description": "Delayed generalization phase shift dynamics.",
+                "formula": "gen_gap(t) = L_test(t) - L_train(t)",
+                "preset": {"samples": 1620, "freq": 3.35, "amplitude": 1.28, "damping": 0.16, "noise": 0.20, "phase": 2.05, "grid": 128},
+            },
+        ),
+    },
+    {
+        "id": "6",
+        "title": "Theoretical Limits",
+        "algorithms": (
+            {
+                "key": "information_bound",
+                "title": "Information Bound",
+                "description": "Information transfer upper bounds under entropy constraints.",
+                "formula": "I(X;Y) ≤ min(H(X), H(Y))",
+                "preset": {"samples": 1700, "freq": 3.6, "amplitude": 1.35, "damping": 0.17, "noise": 0.20, "phase": 2.2, "grid": 132},
+            },
+            {
+                "key": "thermo_learning",
+                "title": "Thermodynamics of Learning",
+                "description": "Energy/work dynamics across optimization states.",
+                "formula": "ΔE = W - Q",
+                "preset": {"samples": 1760, "freq": 3.75, "amplitude": 1.32, "damping": 0.18, "noise": 0.22, "phase": 2.35, "grid": 136},
+            },
+        ),
+    },
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -53,6 +210,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--inputs",
         help="JSON file path or inline JSON to seed the parameter state.",
+    )
+    parser.add_argument(
+        "--module",
+        help="Initial module/profile selector (0..6 or partial module title).",
+    )
+    parser.add_argument(
+        "--algorithm",
+        help="Initial algorithm selector key/title for the selected module.",
     )
     return parser.parse_args()
 
@@ -409,7 +574,111 @@ def _layout_for_view(view: str) -> dict[str, int]:
     }
 
 
-def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str) -> int:
+def _next_view(view: str, direction: int = 1) -> str:
+    try:
+        idx = VIEW_ORDER.index(view)
+    except ValueError:
+        idx = 0
+    return VIEW_ORDER[(idx + direction) % len(VIEW_ORDER)]
+
+
+def _profile_state(index: int, algo_index: int, seed: int = 7) -> shinkei.VizState:
+    profile = SCRIPT_PROFILES[index % len(SCRIPT_PROFILES)]
+    algo = profile["algorithms"][algo_index % len(profile["algorithms"])]
+    preset = algo["preset"]
+    return shinkei.VizState(
+        seed=seed,
+        samples=int(preset["samples"]),
+        freq=float(preset["freq"]),
+        amplitude=float(preset["amplitude"]),
+        damping=float(preset["damping"]),
+        noise=float(preset["noise"]),
+        phase=float(preset["phase"]),
+        grid=int(preset["grid"]),
+        view="simplified",
+    )
+
+
+def _apply_profile_to_state(state: shinkei.VizState, index: int, algo_index: int) -> None:
+    preset = _profile_state(index, algo_index, seed=state.seed)
+    state.samples = preset.samples
+    state.freq = preset.freq
+    state.amplitude = preset.amplitude
+    state.damping = preset.damping
+    state.noise = preset.noise
+    state.phase = preset.phase
+    state.grid = preset.grid
+    shinkei.normalize_state(state)
+
+
+def _next_script_index(index: int, direction: int = 1) -> int:
+    return (index + direction) % len(SCRIPT_PROFILES)
+
+
+def _next_algo_index(script_index: int, algo_index: int, direction: int = 1) -> int:
+    n = len(SCRIPT_PROFILES[script_index]["algorithms"])
+    return (algo_index + direction) % n
+
+
+def _resolve_script_index(selector: str | None) -> int:
+    if selector is None:
+        return 0
+    raw = selector.strip().lower()
+    if not raw:
+        return 0
+    for i, profile in enumerate(SCRIPT_PROFILES):
+        if raw == profile["id"]:
+            return i
+    for i, profile in enumerate(SCRIPT_PROFILES):
+        if raw in profile["title"].lower():
+            return i
+    return 0
+
+
+def _resolve_algo_index(script_index: int, selector: str | None) -> int:
+    if selector is None:
+        return 0
+    raw = selector.strip().lower()
+    if not raw:
+        return 0
+    algos = SCRIPT_PROFILES[script_index]["algorithms"]
+    for i, algo in enumerate(algos):
+        if raw == algo["key"]:
+            return i
+    for i, algo in enumerate(algos):
+        if raw in algo["title"].lower():
+            return i
+    return 0
+
+
+def _ultra_motion_state(base: shinkei.VizState, tick: int) -> tuple[shinkei.VizState, str]:
+    phase_idx = (tick // 5) % len(ULTRA_TRANSFORMS)
+    wave = (tick % 40) / 40.0
+    if wave > 0.5:
+        wave = 1.0 - wave
+    wave = wave * 2.0
+
+    state = shinkei.VizState(
+        seed=base.seed + tick,
+        samples=max(256, int(base.samples * (0.85 + 0.30 * wave))),
+        freq=base.freq * (0.9 + 0.35 * wave),
+        amplitude=base.amplitude * (0.8 + 0.4 * wave),
+        damping=max(0.0, base.damping * (0.7 + 0.7 * wave)),
+        noise=base.noise * (0.6 + 0.9 * (1.0 - wave)),
+        phase=base.phase + (tick * 0.18),
+        grid=max(32, int(base.grid * (0.85 + 0.35 * wave))),
+        view=base.view,
+    )
+    return state, ULTRA_TRANSFORMS[phase_idx]
+
+
+def _render_interactive(
+    np: ModuleType,
+    state: shinkei.VizState,
+    framework: str,
+    module_selector: str | None = None,
+    algo_selector: str | None = None,
+) -> int:
     common_viz = shinkei.load_common_viz()
     if not sys.stdin.isatty():
         return shinkei.render_static(np=np, state=state, framework=framework, width=96, height=28)
@@ -419,6 +688,12 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
     fd = sys.stdin.fileno()
     active_framework = framework
     active_platform = _load_platform()
+    motion_enabled = True
+    motion_tick = 0
+    script_index = _resolve_script_index(module_selector)
+    algo_index = _resolve_algo_index(script_index, algo_selector)
+    if state.view in {"advanced", "ultra"}:
+        _apply_profile_to_state(state, script_index, algo_index)
     old = termios.tcgetattr(fd)
     _enter_alt()
     tty.setcbreak(fd)
@@ -427,7 +702,17 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
         while True:
             if needs_render:
                 _clear_screen()
-                arr, stage, caption = shinkei.stage_payload(np, state)
+                profile = SCRIPT_PROFILES[script_index]
+                algo = profile["algorithms"][algo_index]
+                render_state = (
+                    _profile_state(script_index, algo_index, seed=state.seed)
+                    if state.view == "simplified"
+                    else state
+                )
+                transform_label = "steady"
+                if state.view == "ultra" and motion_enabled:
+                    render_state, transform_label = _ultra_motion_state(state, motion_tick)
+                arr, stage, caption = shinkei.stage_payload(np, render_state)
                 arr_f = np.asarray(arr, dtype=np.float32)
                 renderer = shinkei.renderer_name(use_plots, use_heatmap)
                 layout = _layout_for_view(state.view)
@@ -439,6 +724,14 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
                     width=layout["header_w"],
                 )
                 print()
+                print(f"module [{profile['id']}] {profile['title']} · algorithm [{algo['key']}] {algo['title']}")
+                print(f"formula: {algo['formula']}")
+                print(f"description: {algo['description']}")
+                print()
+                if state.view == "ultra":
+                    live = "live" if motion_enabled else "paused"
+                    print(f"ultra-motion: {live} · transform={transform_label}")
+                    print()
 
                 if use_plots:
                     png = common_viz._matplotlib_plot_png(arr_f, stage=stage, tensor_name=active_framework)
@@ -486,30 +779,57 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
                 print()
                 print(common_viz._format_caption(caption))
                 print(
-                    "Controls: [1] simple  [2] advanced  [3] ultra  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [:] command mode  [r] reseed  [q] quit"
+                    "Controls: [m] mode cycle  [n]/[b] module next/back  [a]/[A] algorithm next/back  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
                 )
                 sys.stdout.flush()
                 needs_render = False
 
-            ch = _read_char(fd)
+            timeout = 0.22 if state.view == "ultra" and motion_enabled else 5.0
+            ch = _read_char(fd, timeout_s=timeout)
             if not ch:
+                if state.view == "ultra" and motion_enabled:
+                    motion_tick += 1
+                    needs_render = True
                 continue
             if ch == "q":
                 break
-            if ch == "1":
-                state.view = "simplified"
+            if ch == "m":
+                state.view = _next_view(state.view, direction=1)
                 needs_render = True
-            elif ch == "2":
-                state.view = "advanced"
+            elif ch == "M":
+                state.view = _next_view(state.view, direction=-1)
                 needs_render = True
-            elif ch == "3":
-                state.view = "ultra"
+            elif ch == "n":
+                script_index = _next_script_index(script_index, direction=1)
+                algo_index = 0
+                if state.view in {"advanced", "ultra"}:
+                    _apply_profile_to_state(state, script_index, algo_index)
+                needs_render = True
+            elif ch == "b":
+                script_index = _next_script_index(script_index, direction=-1)
+                algo_index = 0
+                if state.view in {"advanced", "ultra"}:
+                    _apply_profile_to_state(state, script_index, algo_index)
+                needs_render = True
+            elif ch == "a":
+                algo_index = _next_algo_index(script_index, algo_index, direction=1)
+                if state.view in {"advanced", "ultra"}:
+                    _apply_profile_to_state(state, script_index, algo_index)
+                needs_render = True
+            elif ch == "A":
+                algo_index = _next_algo_index(script_index, algo_index, direction=-1)
+                if state.view in {"advanced", "ultra"}:
+                    _apply_profile_to_state(state, script_index, algo_index)
                 needs_render = True
             elif ch == "r":
                 state.seed = (state.seed + 1) % 2_000_000_000
                 needs_render = True
+            elif ch == " ":
+                motion_enabled = not motion_enabled
+                needs_render = True
             elif ch == "i":
-                _guided_edit_state(fd, state, old)
+                if state.view != "simplified":
+                    _guided_edit_state(fd, state, old)
                 needs_render = True
             elif ch == "f":
                 chosen = _framework_selector(fd, active_framework)
@@ -524,7 +844,8 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
                     _persist_platform(active_platform)
                 needs_render = True
             elif ch == "e":
-                _quick_edit_state(fd, state, old)
+                if state.view != "simplified":
+                    _quick_edit_state(fd, state, old)
                 needs_render = True
             elif ch == ":":
                 if not _command_console(fd, old, state, active_framework, active_platform):
@@ -556,6 +877,12 @@ def main() -> int:
         view=getattr(args, "view", "advanced"),
         inputs=getattr(args, "inputs", None),
     )
+    module_selector = getattr(args, "module", None)
+    algo_selector = getattr(args, "algorithm", None)
+    script_index = _resolve_script_index(module_selector)
+    algo_index = _resolve_algo_index(script_index, algo_selector)
+    if state.view in {"advanced", "ultra"}:
+        _apply_profile_to_state(state, script_index, algo_index)
     framework = getattr(args, "framework", "unknown")
     width = getattr(args, "width", 96)
     height = getattr(args, "height", 28)
@@ -589,7 +916,13 @@ def main() -> int:
             height=height,
         )
 
-    return _render_interactive(np=np, state=state, framework=framework)
+    return _render_interactive(
+        np=np,
+        state=state,
+        framework=framework,
+        module_selector=module_selector,
+        algo_selector=algo_selector,
+    )
 
 
 if __name__ == "__main__":

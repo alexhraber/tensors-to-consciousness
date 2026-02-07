@@ -55,6 +55,14 @@ def parse_args() -> argparse.Namespace:
         help="Path to input-override JSON (or raw JSON string) used by all scripts.",
     )
     parser.add_argument(
+        "--module",
+        help="Module/profile selector for TUI visualizations (0..6 or title fragment).",
+    )
+    parser.add_argument(
+        "--algorithm",
+        help="Algorithm selector for the selected module (key or title fragment).",
+    )
+    parser.add_argument(
         "-c",
         "--cli",
         action="store_true",
@@ -134,6 +142,8 @@ def main() -> int:
     os.chdir(repo_root)
     env = os.environ.copy()
     inputs = getattr(args, "inputs", None)
+    module_selector = getattr(args, "module", None)
+    algorithm_selector = getattr(args, "algorithm", None)
 
     existing_framework = None
     try:
@@ -187,13 +197,23 @@ def main() -> int:
         if force_cli:
             scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]
         else:
-            run_cmd([str(py), "-m", "tools.tui", "--framework", framework], env=env)
+            cmd = [str(py), "-m", "tools.tui", "--framework", framework]
+            if module_selector:
+                cmd.extend(["--module", module_selector])
+            if algorithm_selector:
+                cmd.extend(["--algorithm", algorithm_selector])
+            run_cmd(cmd, env=env)
             return 0
     elif args.target == "validate":
         run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         return 0
     elif args.target == "viz":
-        run_cmd([str(py), "-m", "tools.tui", "--framework", framework], env=env)
+        cmd = [str(py), "-m", "tools.tui", "--framework", framework]
+        if module_selector:
+            cmd.extend(["--module", module_selector])
+        if algorithm_selector:
+            cmd.extend(["--algorithm", algorithm_selector])
+        run_cmd(cmd, env=env)
         return 0
     elif args.target == "all":
         scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]

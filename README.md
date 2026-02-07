@@ -35,7 +35,7 @@
 ## TUI-First Research Studio
 
 `tensors-to-consciousness` is built around an interactive terminal studio for mathematical AI/ML exploration.
-The primary experience is:
+Primary entrypoint:
 
 ```bash
 python main.py
@@ -50,16 +50,15 @@ On first run it will:
 5. Validate the framework track
 6. Launch the interactive visualization studio
 
-Inside the studio:
+Mode behavior:
 
-- `1/2/3`: switch `simple` / `advanced` / `ultra` views
-- `f`: open framework switch modal and cycle framework tracks
-- `p`: switch compute platform (`cpu` / `gpu`)
-- `i`: guided parameter input (complexity-aware by view)
-- `e`: quick `key=value` edit
-- `r`: reseed
-- `:`: command mode (`run`, `set`, `view`, `show`, `help`)
-- `q`: quit
+- `simple`: browse default/preset visualizations for each script profile with formula + description.
+- `advanced`: same profile context, but with tunable algorithm parameters.
+- `ultra`: advanced controls plus live transformation motion.
+
+Detailed controls, direct module/algorithm fetch, and command examples live in:
+
+- `docs/cli.md`
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
 
@@ -81,17 +80,6 @@ Config keys:
 - `frameworks.<name>.scripts.<script>.calls.<label|line>`: per-call overrides
 
 See `inputs.example.json` for a working template.
-
-### CLI Operations (Advanced)
-
-Direct CLI operation is still available when needed:
-
-```bash
-python main.py --help
-python main.py -c
-python main.py validate
-python main.py all --framework jax --inputs inputs.example.json
-```
 
 ## Frameworks
 
