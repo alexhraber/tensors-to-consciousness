@@ -172,15 +172,15 @@ class AppFlowIntegrationTests(unittest.TestCase):
                 with patch.object(
                     app,
                     "ensure_setup_if_needed",
-                    return_value=({"framework": "numpy", "venv": ".venv-np"}, True),
+                    return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
                 ) as ensure_setup_mock:
-                    with patch.object(app, "python_in_venv", return_value=Path(".venv-np/bin/python")):
+                    with patch.object(app, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
                         with patch.object(app, "run_cmd") as run_cmd_mock:
                             rc = app.main()
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
-        self.assertEqual(calls[0], [".venv-np/bin/python", "-m", "tools.validate", "--framework", "numpy"])
-        self.assertEqual(calls[1], [".venv-np/bin/python", "-m", "tools.tui", "--framework", "numpy"])
+        self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
+        self.assertEqual(calls[1], [".venv-jax/bin/python", "-m", "tools.tui", "--framework", "jax"])
         self.assertEqual(len(calls), 2)
         self.assertEqual(ensure_setup_mock.call_args.kwargs["framework"], app.DEFAULT_FRAMEWORK)
 
@@ -201,15 +201,15 @@ class AppFlowIntegrationTests(unittest.TestCase):
                 with patch.object(
                     app,
                     "ensure_setup_if_needed",
-                    return_value=({"framework": "numpy", "venv": ".venv-np"}, True),
+                    return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
                 ) as ensure_setup_mock:
-                    with patch.object(app, "python_in_venv", return_value=Path(".venv-np/bin/python")):
+                    with patch.object(app, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
                         with patch.object(app, "run_cmd") as run_cmd_mock:
                             rc = app.main()
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
-        self.assertEqual(calls[0], [".venv-np/bin/python", "-m", "tools.validate", "--framework", "numpy"])
-        self.assertEqual(calls[1], [".venv-np/bin/python", "-m", "tools.playground", "--framework", "numpy", "--transforms", "default", "--render"])
+        self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
+        self.assertEqual(calls[1], [".venv-jax/bin/python", "-m", "tools.playground", "--framework", "jax", "--transforms", "default", "--render"])
         self.assertEqual(len(calls), 2)
         self.assertEqual(ensure_setup_mock.call_args.kwargs["framework"], app.DEFAULT_FRAMEWORK)
 

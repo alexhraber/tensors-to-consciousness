@@ -268,6 +268,7 @@ def _matplotlib_plot_png(
     tensor_name: str,
     width_px: int = 1080,
     height_px: int = 620,
+    show_title: bool = True,
 ) -> bytes | None:
     np = _np_module()
     try:
@@ -289,8 +290,9 @@ def _matplotlib_plot_png(
     fig = plt.figure(figsize=(fig_w, fig_h), dpi=dpi)
     fig.patch.set_facecolor("#080b15")
 
-    title = f"{tensor_name} · {stage} · {arr.shape}"
-    fig.suptitle(title, color="#dbe6ff", fontsize=12, y=0.98)
+    if show_title:
+        title = f"{tensor_name} · {stage} · {arr.shape}"
+        fig.suptitle(title, color="#dbe6ff", fontsize=12, y=0.98)
 
     grid_color = "#1e2840"
     tick_color = "#92a3c6"

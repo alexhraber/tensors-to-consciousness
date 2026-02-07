@@ -24,7 +24,7 @@ Default diagnostics profile:
 Framework default by platform:
 
 - macOS: `mlx`
-- other platforms: `numpy`
+- other platforms: `jax`
 
 ## Environment Overrides
 
@@ -34,8 +34,8 @@ Framework default by platform:
 Examples:
 
 ```bash
-python explorer.py run --framework numpy --transforms default
-DEBUG=1 LOG_LEVEL=DEBUG python explorer.py run --framework numpy --transforms default
+python explorer.py run --framework jax --transforms default
+DEBUG=1 LOG_LEVEL=DEBUG python explorer.py run --framework jax --transforms default
 ```
 
 ## Precedence
