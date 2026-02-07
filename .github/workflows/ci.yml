@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test-matrix:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy
+
+      - name: Bytecode compilation check
+        run: |
+          python -m py_compile $(git ls-files '*.py')
+
+      - name: Unit and integration tests
+        run: |
+          python -m tests
+
+      - name: CLI smoke checks
+        run: |
+          python main.py --help
+          python -m tools.setup --help
+          python -m tools.validate --help
+          python -m tools.viz_terminal --help
+
+  viz-assets:
+    name: Visualization Assets Integrity
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Regenerate visualization assets
+        run: |
+          python tools/generate_viz_assets.py
+
+      - name: Ensure generated assets are committed
+        run: |
+          git diff --exit-code -- assets/viz
