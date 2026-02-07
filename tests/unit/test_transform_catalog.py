@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import unittest
 
-from algos.catalog import catalog_default_keys
-from algos.catalog import catalog_framework_interface
-from algos.catalog import catalog_transforms
-from algos.definitions import TRANSFORM_IMPLS
+from transforms.catalog import catalog_default_keys
+from transforms.catalog import catalog_framework_interface
+from transforms.catalog import catalog_transforms
+from transforms.definitions import TRANSFORM_IMPLS
 
 
 class TransformCatalogTests(unittest.TestCase):

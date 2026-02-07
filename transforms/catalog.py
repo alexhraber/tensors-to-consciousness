@@ -14,14 +14,9 @@ def load_catalog() -> dict[str, Any]:
     data = json.loads(CATALOG_FILE.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("Transform catalog must be a JSON object.")
-    # Backward-compatible key support: prefer `transforms`, accept `algorithms`.
-    if "transforms" in data:
-        items = data["transforms"]
-    else:
-        items = data.get("algorithms")
+    items = data.get("transforms")
     if not isinstance(items, list):
         raise ValueError("Transform catalog must define a 'transforms' array.")
-    data["transforms"] = items
     default = data.get("default", [])
     if not isinstance(default, list):
         raise ValueError("Transform catalog 'default' must be a list.")
@@ -48,8 +43,3 @@ def catalog_framework_interface() -> dict[str, tuple[str, ...]]:
         "utils_entrypoints": tuple(str(v) for v in utils),
         "ops_adapter": tuple(str(v) for v in ops),
     }
-
-
-# Backward compatibility alias.
-def catalog_algorithms() -> tuple[dict[str, Any], ...]:
-    return catalog_transforms()

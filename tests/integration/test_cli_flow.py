@@ -71,9 +71,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs=None,
-            algos=None,
-            algorithm=None,
-            list_algos=False,
+            transforms=None,
+            transform=None,
+            list_transforms=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -92,9 +92,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs=None,
-            algos=None,
-            algorithm=None,
-            list_algos=False,
+            transforms=None,
+            transform=None,
+            list_transforms=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -116,9 +116,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs=None,
-            algos=None,
-            algorithm=None,
-            list_algos=False,
+            transforms=None,
+            transform=None,
+            list_transforms=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -139,9 +139,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=False,
             cli=False,
             inputs=None,
-            algos=None,
-            algorithm=None,
-            list_algos=False,
+            transforms=None,
+            transform=None,
+            list_transforms=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
@@ -168,9 +168,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=False,
             cli=True,
             inputs=None,
-            algos=None,
-            algorithm=None,
-            list_algos=False,
+            transforms=None,
+            transform=None,
+            list_transforms=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
@@ -197,9 +197,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs="examples/inputs.example.json",
-            algos="gradient_descent",
-            algorithm=None,
-            list_algos=False,
+            transforms="gradient_descent",
+            transform=None,
+            list_transforms=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -220,9 +220,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs=None,
-            algos="tensor_ops",
-            algorithm=None,
-            list_algos=False,
+            transforms="tensor_ops",
+            transform=None,
+            list_transforms=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(

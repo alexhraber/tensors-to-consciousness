@@ -14,8 +14,8 @@ import termios
 import tty
 from types import ModuleType
 
-from algos.registry import build_tui_profiles
-from algos.registry import resolve_algorithm_keys
+from transforms.registry import build_tui_profiles
+from transforms.registry import resolve_transform_keys
 from frameworks.engine import FrameworkEngine
 from tools import runtime
 from tools import shinkei
@@ -28,7 +28,7 @@ ULTRA_TRANSFORMS = (
 )
 ULTRA_REFRESH_SECONDS = 0.45
 VIEW_ORDER = ("simplified", "advanced", "ultra")
-SCRIPT_PROFILES = build_tui_profiles(resolve_algorithm_keys("all"))
+SCRIPT_PROFILES = build_tui_profiles(resolve_transform_keys("all"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,12 +72,8 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated transform keys, or 'default'/'all' (preferred).",
     )
     parser.add_argument(
-        "--algos",
-        help="Deprecated alias for --transforms.",
-    )
-    parser.add_argument(
-        "--algorithm",
-        help="Initial algorithm selector key/title within the active algo set.",
+        "--transform",
+        help="Initial transform selector key/title within the active transform set.",
     )
     return parser.parse_args()
 
@@ -467,10 +463,10 @@ def _next_view(view: str, direction: int = 1) -> str:
     return VIEW_ORDER[(idx + direction) % len(VIEW_ORDER)]
 
 
-def _profile_state(index: int, algo_index: int, seed: int = 7) -> shinkei.VizState:
+def _profile_state(index: int, transform_index: int, seed: int = 7) -> shinkei.VizState:
     profile = SCRIPT_PROFILES[index % len(SCRIPT_PROFILES)]
-    algo = profile["algorithms"][algo_index % len(profile["algorithms"])]
-    preset = algo["preset"]
+    transform = profile["transforms"][transform_index % len(profile["transforms"])]
+    preset = transform["preset"]
     return shinkei.VizState(
         seed=seed,
         samples=int(preset["samples"]),
@@ -484,8 +480,8 @@ def _profile_state(index: int, algo_index: int, seed: int = 7) -> shinkei.VizSta
     )
 
 
-def _apply_profile_to_state(state: shinkei.VizState, index: int, algo_index: int) -> None:
-    preset = _profile_state(index, algo_index, seed=state.seed)
+def _apply_profile_to_state(state: shinkei.VizState, index: int, transform_index: int) -> None:
+    preset = _profile_state(index, transform_index, seed=state.seed)
     state.samples = preset.samples
     state.freq = preset.freq
     state.amplitude = preset.amplitude
@@ -500,9 +496,9 @@ def _next_script_index(index: int, direction: int = 1) -> int:
     return (index + direction) % len(SCRIPT_PROFILES)
 
 
-def _next_algo_index(script_index: int, algo_index: int, direction: int = 1) -> int:
-    n = len(SCRIPT_PROFILES[script_index]["algorithms"])
-    return (algo_index + direction) % n
+def _next_transform_index(script_index: int, transform_index: int, direction: int = 1) -> int:
+    n = len(SCRIPT_PROFILES[script_index]["transforms"])
+    return (transform_index + direction) % n
 
 
 def _resolve_script_index(selector: str | None) -> int:
@@ -520,18 +516,18 @@ def _resolve_script_index(selector: str | None) -> int:
     return 0
 
 
-def _resolve_algo_index(script_index: int, selector: str | None) -> int:
+def _resolve_transform_index(script_index: int, selector: str | None) -> int:
     if selector is None:
         return 0
     raw = selector.strip().lower()
     if not raw:
         return 0
-    algos = SCRIPT_PROFILES[script_index]["algorithms"]
-    for i, algo in enumerate(algos):
-        if raw == algo["key"]:
+    transforms = SCRIPT_PROFILES[script_index]["transforms"]
+    for i, transform in enumerate(transforms):
+        if raw == transform["key"]:
             return i
-    for i, algo in enumerate(algos):
-        if raw in algo["title"].lower():
+    for i, transform in enumerate(transforms):
+        if raw in transform["title"].lower():
             return i
     return 0
 
@@ -561,7 +557,7 @@ def _render_interactive(
     np: ModuleType,
     state: shinkei.VizState,
     framework: str,
-    algo_selector: str | None = None,
+    transform_selector: str | None = None,
 ) -> int:
     if not sys.stdin.isatty():
         return shinkei.render_static(np=np, state=state, framework=framework, width=96, height=28)
@@ -573,10 +569,10 @@ def _render_interactive(
     active_platform = _load_platform()
     motion_enabled = state.view != "ultra"
     motion_tick = 0
-    script_index = _resolve_script_index(algo_selector)
-    algo_index = _resolve_algo_index(script_index, algo_selector)
+    script_index = _resolve_script_index(transform_selector)
+    transform_index = _resolve_transform_index(script_index, transform_selector)
     if state.view in {"advanced", "ultra"}:
-        _apply_profile_to_state(state, script_index, algo_index)
+        _apply_profile_to_state(state, script_index, transform_index)
     old = termios.tcgetattr(fd)
     _enter_alt()
     tty.setcbreak(fd)
@@ -594,9 +590,9 @@ def _render_interactive(
         while True:
             if needs_render:
                 profile = SCRIPT_PROFILES[script_index]
-                algo = profile["algorithms"][algo_index]
+                transform = profile["transforms"][transform_index]
                 render_state = (
-                    _profile_state(script_index, algo_index, seed=state.seed)
+                    _profile_state(script_index, transform_index, seed=state.seed)
                     if state.view == "simplified"
                     else state
                 )
@@ -604,15 +600,15 @@ def _render_interactive(
                 if state.view == "ultra" and motion_enabled:
                     render_state, transform_label = _ultra_motion_state(state, motion_tick)
                 engine = _engine_for(active_framework)
-                pipeline = (str(algo["key"]),)
+                pipeline = (str(transform["key"]),)
                 result = engine.run_pipeline(pipeline, size=render_state.grid, steps=1)
                 arr = engine.to_numpy(result.final_tensor)
                 if arr is None:
                     arr, stage, caption = shinkei.stage_payload(np, render_state)
                     arr_f = np.asarray(arr, dtype=np.float32)
                 else:
-                    stage = str(algo["key"])
-                    caption = f"{algo['title']} executed on {active_framework} backend."
+                    stage = str(transform["key"])
+                    caption = f"{transform['title']} executed on {active_framework} backend."
                     arr_f = np.asarray(arr, dtype=np.float32)
                 renderer = shinkei.renderer_name(use_plots, use_heatmap)
                 layout = _layout_for_view(state.view)
@@ -651,7 +647,7 @@ def _render_interactive(
                     )
                 caption_line = shinkei._format_caption(caption)
                 controls_line = (
-                    "Controls: [m] mode cycle  [n]/[b] algo next/back  [a]/[A] alias next/back  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
+                    "Controls: [m] mode cycle  [n]/[b] transform next/back  [a]/[A] alias next/back  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
                 )
 
                 partial_viz_only = (
@@ -671,10 +667,10 @@ def _render_interactive(
                     )
                     print()
                     print(
-                        f"algo [{algo['key']}] {algo['title']} · complexity={profile.get('complexity', '?')}"
+                        f"transform [{transform['key']}] {transform['title']} · complexity={profile.get('complexity', '?')}"
                     )
-                    print(f"formula: {algo['formula']}")
-                    print(f"description: {algo['description']}")
+                    print(f"formula: {transform['formula']}")
+                    print(f"description: {transform['description']}")
                     print()
                     if state.view == "ultra":
                         live = "live" if motion_enabled else "paused"
@@ -719,28 +715,28 @@ def _render_interactive(
                 tick_refresh = False
             elif ch == "n":
                 script_index = _next_script_index(script_index, direction=1)
-                algo_index = 0
+                transform_index = 0
                 if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, algo_index)
+                    _apply_profile_to_state(state, script_index, transform_index)
                 needs_render = True
                 tick_refresh = False
             elif ch == "b":
                 script_index = _next_script_index(script_index, direction=-1)
-                algo_index = 0
+                transform_index = 0
                 if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, algo_index)
+                    _apply_profile_to_state(state, script_index, transform_index)
                 needs_render = True
                 tick_refresh = False
             elif ch == "a":
-                algo_index = _next_algo_index(script_index, algo_index, direction=1)
+                transform_index = _next_transform_index(script_index, transform_index, direction=1)
                 if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, algo_index)
+                    _apply_profile_to_state(state, script_index, transform_index)
                 needs_render = True
                 tick_refresh = False
             elif ch == "A":
-                algo_index = _next_algo_index(script_index, algo_index, direction=-1)
+                transform_index = _next_transform_index(script_index, transform_index, direction=-1)
                 if state.view in {"advanced", "ultra"}:
-                    _apply_profile_to_state(state, script_index, algo_index)
+                    _apply_profile_to_state(state, script_index, transform_index)
                 needs_render = True
                 tick_refresh = False
             elif ch == "r":
@@ -806,21 +802,21 @@ def main() -> int:
         view=getattr(args, "view", "advanced"),
         inputs=getattr(args, "inputs", None),
     )
-    algos_selector = getattr(args, "transforms", None) or getattr(args, "algos", None)
-    algo_selector = getattr(args, "algorithm", None)
+    transforms_selector = getattr(args, "transforms", None)
+    transform_selector = getattr(args, "transform", None)
     try:
-        algo_keys = resolve_algorithm_keys("all" if algos_selector is None else algos_selector)
+        transform_keys = resolve_transform_keys("all" if transforms_selector is None else transforms_selector)
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
     global SCRIPT_PROFILES
-    SCRIPT_PROFILES = build_tui_profiles(algo_keys)
+    SCRIPT_PROFILES = build_tui_profiles(transform_keys)
 
-    script_index = _resolve_script_index(algo_selector)
-    algo_index = _resolve_algo_index(script_index, algo_selector)
+    script_index = _resolve_script_index(transform_selector)
+    transform_index = _resolve_transform_index(script_index, transform_selector)
     if state.view in {"advanced", "ultra"}:
-        _apply_profile_to_state(state, script_index, algo_index)
+        _apply_profile_to_state(state, script_index, transform_index)
     framework = getattr(args, "framework", "unknown")
     width = getattr(args, "width", 96)
     height = getattr(args, "height", 28)
@@ -858,7 +854,7 @@ def main() -> int:
         np=np,
         state=state,
         framework=framework,
-        algo_selector=algo_selector,
+        transform_selector=transform_selector,
     )
 
 

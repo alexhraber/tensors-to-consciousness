@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Primary execution entrypoint for configured framework algorithm playground."""
+"""Primary execution entrypoint for configured framework transform playground."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from algos.registry import list_transform_keys
-from algos.registry import resolve_transform_keys
+from transforms.registry import list_transform_keys
+from transforms.registry import resolve_transform_keys
 from tools.runtime import SUPPORTED_FRAMEWORKS, load_config, python_in_venv
 
 DEFAULT_FRAMEWORK = "numpy"
@@ -50,25 +50,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--transforms",
-        help="Comma-separated transform keys, or 'default'/'all' (preferred).",
+        help="Comma-separated transform keys, or 'default'/'all' (default: default).",
     )
     parser.add_argument(
-        "--algos",
-        help="Deprecated alias for --transforms.",
-    )
-    parser.add_argument(
-        "--algorithm",
-        help="Initial algorithm selector for TUI (key or title fragment).",
+        "--transform",
+        help="Initial focused transform selector for TUI (key or title fragment).",
     )
     parser.add_argument(
         "--list-transforms",
         action="store_true",
         help="Print available transform keys and exit.",
-    )
-    parser.add_argument(
-        "--list-algos",
-        action="store_true",
-        help="Deprecated alias for --list-transforms.",
     )
     parser.add_argument(
         "-c",
@@ -77,27 +68,6 @@ def parse_args() -> argparse.Namespace:
         help="Force CLI execution flow (skip interactive studio on default run).",
     )
     return parser.parse_args()
-
-
-def prompt_framework_choice() -> str:
-    print("Select framework:")
-    for idx, framework in enumerate(SUPPORTED_FRAMEWORKS, start=1):
-        print(f"  {idx}. {framework}")
-    while True:
-        raw = input("Framework number or name: ").strip().lower()
-        if raw in SUPPORTED_FRAMEWORKS:
-            return raw
-        if raw.isdigit():
-            pos = int(raw)
-            if 1 <= pos <= len(SUPPORTED_FRAMEWORKS):
-                return SUPPORTED_FRAMEWORKS[pos - 1]
-        print(f"Invalid selection: {raw}")
-
-
-def prompt_inputs_override() -> str | None:
-    print("Input overrides (optional): provide JSON file path or inline JSON.")
-    raw = input("Inputs (Enter for random defaults): ").strip()
-    return raw or None
 
 
 def ensure_setup_if_needed(
@@ -146,7 +116,7 @@ def ensure_setup_if_needed(
 
 def main() -> int:
     args = parse_args()
-    if getattr(args, "list_transforms", False) or getattr(args, "list_algos", False):
+    if getattr(args, "list_transforms", False):
         print("Available transforms:")
         for key in list_transform_keys():
             print(f"- {key}")
@@ -156,8 +126,8 @@ def main() -> int:
     os.chdir(repo_root)
     env = os.environ.copy()
     inputs = getattr(args, "inputs", None)
-    algorithm_selector = getattr(args, "algorithm", None)
-    algo_selector = getattr(args, "transforms", None) or getattr(args, "algos", None)
+    transform_focus = getattr(args, "transform", None)
+    transform_selector = getattr(args, "transforms", None)
 
     existing_framework = None
     try:
@@ -194,41 +164,60 @@ def main() -> int:
         if setup_ran:
             run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         if force_cli:
-            cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--transforms", algo_selector or "default", "--viz"]
+            cmd = [
+                str(py),
+                "-m",
+                "tools.playground",
+                "--framework",
+                framework,
+                "--transforms",
+                transform_selector or "default",
+                "--viz",
+            ]
             run_cmd(cmd, env=env)
             return 0
-        else:
-            cmd = [str(py), "-m", "tools.tui", "--framework", framework]
-            if algo_selector:
-                cmd.extend(["--transforms", algo_selector])
-            if algorithm_selector:
-                cmd.extend(["--algorithm", algorithm_selector])
-            run_cmd(cmd, env=env)
-            return 0
-    elif args.target == "validate":
-        run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
-        return 0
-    elif args.target == "viz":
         cmd = [str(py), "-m", "tools.tui", "--framework", framework]
-        if algo_selector:
-            cmd.extend(["--transforms", algo_selector])
-        if algorithm_selector:
-            cmd.extend(["--algorithm", algorithm_selector])
+        if transform_selector:
+            cmd.extend(["--transforms", transform_selector])
+        if transform_focus:
+            cmd.extend(["--transform", transform_focus])
         run_cmd(cmd, env=env)
         return 0
-    elif args.target == "run":
+
+    if args.target == "validate":
+        run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
+        return 0
+
+    if args.target == "viz":
+        cmd = [str(py), "-m", "tools.tui", "--framework", framework]
+        if transform_selector:
+            cmd.extend(["--transforms", transform_selector])
+        if transform_focus:
+            cmd.extend(["--transform", transform_focus])
+        run_cmd(cmd, env=env)
+        return 0
+
+    if args.target == "run":
         try:
-            _ = resolve_transform_keys(algo_selector)
+            _ = resolve_transform_keys(transform_selector)
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1
-        cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--transforms", algo_selector or "default", "--viz"]
+        cmd = [
+            str(py),
+            "-m",
+            "tools.playground",
+            "--framework",
+            framework,
+            "--transforms",
+            transform_selector or "default",
+            "--viz",
+        ]
         run_cmd(cmd, env=env)
         return 0
-    else:
-        print("Invalid target. Use: validate, viz, run", file=sys.stderr)
-        return 1
-    return 0
+
+    print("Invalid target. Use: validate, viz, run", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":

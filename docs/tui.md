@@ -12,7 +12,7 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 ## Controls
 
 - `m` / `M`: cycle mode forward/reverse (`simple`, `advanced`, `ultra`)
-- `n` / `b`: algorithm next/back within selected algo set
+- `n` / `b`: transform next/back within selected transform set
 - `a` / `A`: alias next/back for rapid cycling
 - `f`: framework selector modal
 - `p`: compute platform selector (`cpu` / `gpu`)
@@ -26,13 +26,13 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 ## Modes
 
 - `simple`: preset/default visualization browsing with formula + description.
-- `advanced`: tunable algorithm parameters with formula + description.
+- `advanced`: tunable transform parameters with formula + description.
 - `ultra`: advanced controls + live transformation motion.
 
-## Start with a Specific Algo Set
+## Start with a Specific Transform Set
 
 ```bash
-python main.py viz --transforms gradient_descent,momentum,adam --algorithm momentum
+python main.py viz --transforms gradient_descent,momentum,adam --transform momentum
 ```
 
 Top 5 core transforms:
@@ -43,6 +43,6 @@ Top 5 core transforms:
 - `adam`
 
 - `--transforms`: comma-separated transform keys, or `default`/`all`
-- `--algorithm`: key/title to focus initially
+- `--transform`: key/title to focus initially
 
 For non-interactive command usage, see `docs/cli.md`.

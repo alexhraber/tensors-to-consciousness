@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from algos.catalog import catalog_default_keys
-from algos.catalog import catalog_transforms
+from transforms.catalog import catalog_default_keys
+from transforms.catalog import catalog_transforms
 
 
 @dataclass(frozen=True)
@@ -56,20 +56,8 @@ TRANSFORM_MAP = {spec.key: spec for spec in TRANSFORM_SPECS}
 DEFAULT_TRANSFORM_KEYS: tuple[str, ...] = catalog_default_keys() or ("tensor_ops", "chain_rule", "gradient_descent")
 
 
-# Backward-compatible aliases for the existing "algo" API surface.
-AlgorithmPreset = TransformPreset
-AlgorithmSpec = TransformSpec
-ALGORITHM_SPECS = TRANSFORM_SPECS
-ALGO_MAP = TRANSFORM_MAP
-DEFAULT_ALGO_KEYS = DEFAULT_TRANSFORM_KEYS
-
-
 def list_transform_keys() -> tuple[str, ...]:
     return tuple(spec.key for spec in TRANSFORM_SPECS)
-
-
-def list_algorithm_keys() -> tuple[str, ...]:
-    return list_transform_keys()
 
 
 def resolve_transform_keys(raw: str | None) -> tuple[str, ...]:
@@ -96,15 +84,11 @@ def resolve_transform_keys(raw: str | None) -> tuple[str, ...]:
     return tuple(out)
 
 
-def resolve_algorithm_keys(raw: str | None) -> tuple[str, ...]:
-    return resolve_transform_keys(raw)
-
-
 def specs_for_keys(keys: tuple[str, ...]) -> tuple[TransformSpec, ...]:
     return tuple(TRANSFORM_MAP[k] for k in keys)
 
 
-def build_tui_algorithms(keys: tuple[str, ...] | None = None) -> tuple[dict[str, object], ...]:
+def build_tui_transforms(keys: tuple[str, ...] | None = None) -> tuple[dict[str, object], ...]:
     selected = specs_for_keys(keys if keys is not None else DEFAULT_TRANSFORM_KEYS)
     return tuple(
         {
@@ -129,13 +113,13 @@ def build_tui_algorithms(keys: tuple[str, ...] | None = None) -> tuple[dict[str,
 
 
 def build_tui_profiles(keys: tuple[str, ...] | None = None) -> tuple[dict[str, object], ...]:
-    algos = build_tui_algorithms(keys)
+    transforms = build_tui_transforms(keys)
     return tuple(
         {
-            "id": algo["key"],
-            "title": algo["title"],
-            "complexity": algo["complexity"],
-            "algorithms": (algo,),
+            "id": t["key"],
+            "title": t["title"],
+            "complexity": t["complexity"],
+            "transforms": (t,),
         }
-        for algo in algos
+        for t in transforms
     )

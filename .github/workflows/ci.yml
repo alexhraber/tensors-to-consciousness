@@ -6,10 +6,11 @@ on:
     paths:
       - "main.py"
       - ".python-version"
-      - "algos/**"
+      - "transforms/**"
       - "frameworks/**"
       - "tools/**"
       - "tests/**"
+      - "docs/**"
       - "assets/viz/**"
       - ".github/workflows/**"
       - ".github/ci/**"
@@ -18,10 +19,11 @@ on:
     paths:
       - "main.py"
       - ".python-version"
-      - "algos/**"
+      - "transforms/**"
       - "frameworks/**"
       - "tools/**"
       - "tests/**"
+      - "docs/**"
       - "assets/viz/**"
       - ".github/workflows/**"
       - ".github/ci/**"
@@ -50,6 +52,7 @@ jobs:
       viz: ${{ steps.filter.outputs.viz }}
       viz_generator: ${{ steps.filter.outputs.viz_generator }}
       viz_assets: ${{ steps.filter.outputs.viz_assets }}
+      docs: ${{ steps.filter.outputs.docs }}
       ci: ${{ steps.filter.outputs.ci }}
 
     steps:
@@ -65,7 +68,7 @@ jobs:
               - "main.py"
               - ".python-version"
               - "examples/inputs.example.json"
-              - "algos/**"
+              - "transforms/**"
               - "frameworks/**"
               - "tools/runtime.py"
               - "tools/setup.py"
@@ -76,6 +79,11 @@ jobs:
             tests:
               - "tests/**"
               - ".github/ci/requirements-test.txt"
+            docs:
+              - "docs/**"
+              - "transforms/transforms.json"
+              - "tools/generate_catalog_docs.py"
+              - "tools/runtime.py"
             viz:
               - "tools/generate_viz_assets.py"
               - "assets/viz/**"
@@ -295,6 +303,31 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  docs-sync:
+    name: Docs Sync
+    needs: changes
+    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Generate catalog docs
+        run: |
+          set -euo pipefail
+          python tools/generate_catalog_docs.py
+
+      - name: Verify generated docs are committed
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- docs/transforms.md docs/frameworks.md
+
   transform-contract:
     name: Transform Contract
     needs: changes
@@ -314,9 +347,9 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          from algos.catalog import catalog_framework_interface
-          from algos.definitions import TRANSFORM_DEFINITIONS
-          from algos.registry import TRANSFORM_MAP
+          from transforms.catalog import catalog_framework_interface
+          from transforms.definitions import TRANSFORM_DEFINITIONS
+          from transforms.registry import TRANSFORM_MAP
           import sys
 
           registry_keys = set(TRANSFORM_MAP.keys())
@@ -391,9 +424,9 @@ jobs:
                   print(f" - {root / name}")
               sys.exit(1)
 
-          algo_backend = root / "algorithms"
-          if not algo_backend.exists():
-              print(f"{fw}: missing algorithms adapter directory: {algo_backend}")
+          transforms_backend = root / "transforms"
+          if not transforms_backend.exists():
+              print(f"{fw}: missing transforms adapter directory: {transforms_backend}")
               sys.exit(1)
 
           print(f"{fw}: framework track contract passed.")

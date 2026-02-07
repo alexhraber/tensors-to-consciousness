@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any
 
-from algos.catalog import catalog_framework_interface
-from algos.contracts import TensorField
-from algos.definitions import get_transform_definition
-from algos.registry import TRANSFORM_MAP
+from transforms.catalog import catalog_framework_interface
+from transforms.contracts import TensorField
+from transforms.definitions import get_transform_definition
+from transforms.registry import TRANSFORM_MAP
 
 
 @dataclass
@@ -17,11 +17,6 @@ class PipelineResult:
     transform_keys: tuple[str, ...]
     final_tensor: Any
     trace: list[dict[str, object]]
-
-    @property
-    def algo_keys(self) -> tuple[str, ...]:
-        # Compatibility alias for older call sites.
-        return self.transform_keys
 
 
 def _to_numpy_fallback(value: Any) -> Any | None:
@@ -116,7 +111,7 @@ class FrameworkEngine:
             "gamma": float(p.noise) * 0.08,
         }
 
-    def run_pipeline(self, algo_keys: tuple[str, ...], *, size: int = 96, steps: int = 1) -> PipelineResult:
+    def run_pipeline(self, transform_keys: tuple[str, ...], *, size: int = 96, steps: int = 1) -> PipelineResult:
         n = max(24, min(320, int(size)))
         field = TensorField(tensor=self._normal((n, n)))
         ops = self._Ops(self)
@@ -124,7 +119,7 @@ class FrameworkEngine:
         trace: list[dict[str, object]] = []
 
         for _ in range(max(1, int(steps))):
-            for key in algo_keys:
+            for key in transform_keys:
                 definition = get_transform_definition(key)
                 params = {**definition.defaults, **self._params_for(key)}
                 field = definition.transform(field, ops, params)
@@ -133,7 +128,6 @@ class FrameworkEngine:
                     trace.append(
                         {
                             "transform": key,
-                            "algo": key,
                             "shape": tuple(arr.shape),
                             "mean": float(arr.mean()),
                             "std": float(arr.std()),
@@ -143,7 +137,6 @@ class FrameworkEngine:
                     trace.append(
                         {
                             "transform": key,
-                            "algo": key,
                             "shape": tuple(getattr(field.tensor, "shape", ())),
                             "mean": 0.0,
                             "std": 0.0,
@@ -152,7 +145,7 @@ class FrameworkEngine:
 
         return PipelineResult(
             framework=self.framework,
-            transform_keys=algo_keys,
+            transform_keys=transform_keys,
             final_tensor=field.tensor,
             trace=trace,
         )

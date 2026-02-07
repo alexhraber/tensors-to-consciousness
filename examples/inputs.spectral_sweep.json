@@ -1,0 +1,20 @@
+{
+  "seed": 101,
+  "normal": { "mean": 0.0, "std": 0.45 },
+  "uniform": { "low": -0.35, "high": 0.35 },
+  "frameworks": {
+    "numpy": {
+      "normal": { "std": 0.4 },
+      "modules": {
+        "utils.py": {
+          "normal": { "std": 0.35 },
+          "uniform": { "low": -0.25, "high": 0.25 }
+        }
+      }
+    },
+    "cupy": {
+      "seed": 141,
+      "normal": { "std": 0.5 }
+    }
+  }
+}

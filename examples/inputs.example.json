@@ -1,18 +1,16 @@
 {
-  "seed": 0,
+  "seed": 11,
+  "normal": { "mean": 0.0, "std": 0.9 },
+  "uniform": { "low": -1.0, "high": 1.0 },
   "frameworks": {
+    "numpy": {
+      "seed": 21,
+      "normal": { "std": 0.75 }
+    },
     "jax": {
-      "seed": 7,
-      "normal": { "mean": 0.0, "std": 0.5 },
-      "uniform": { "low": -0.5, "high": 0.5 },
-      "modules": {
-        "0_computational_primitives.py": {
-          "calls": {
-            "tensor_3d": { "shape": [4, 4, 4], "std": 0.25 },
-            "data": { "shape": [256] }
-          }
-        }
-      }
+      "seed": 31,
+      "normal": { "std": 0.65 },
+      "uniform": { "low": -0.7, "high": 0.7 }
     }
   }
 }

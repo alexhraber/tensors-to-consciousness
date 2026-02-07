@@ -1,0 +1,12 @@
+{
+  "seed": 404,
+  "normal": { "mean": 0.0, "std": 0.8 },
+  "frameworks": {
+    "numpy": { "seed": 410, "normal": { "std": 0.7 } },
+    "jax": { "seed": 420, "normal": { "std": 0.65 } },
+    "pytorch": { "seed": 430, "normal": { "std": 0.75 } },
+    "keras": { "seed": 440, "normal": { "std": 0.72 } },
+    "cupy": { "seed": 450, "normal": { "std": 0.78 } },
+    "mlx": { "seed": 460, "normal": { "std": 0.74 } }
+  }
+}

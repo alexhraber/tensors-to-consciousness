@@ -25,21 +25,26 @@ Top 5 core transforms:
 ## Direct Visualization Fetch
 
 ```bash
-python main.py viz --transforms gradient_descent,momentum --algorithm momentum
+python main.py viz --transforms gradient_descent,momentum --transform momentum
 ```
 
 - `--transforms`: comma-separated transform keys, or `default`/`all`
-- `--algorithm`: initial focused algorithm key/title for the TUI
+- `--transform`: initial focused transform key/title for the TUI
 
 ## Input Overrides
 
 ```bash
 python main.py run --framework jax --transforms chain_rule,adam --inputs examples/inputs.example.json
+python main.py run --framework numpy --transforms spectral_filter,wave_propagation --inputs examples/inputs.spectral_sweep.json
+python main.py run --framework pytorch --transforms constraint_projection,entropy_flow --inputs examples/inputs.stability_focus.json
+python main.py run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
 ```
 
 `--inputs` supports:
 - a JSON file path
 - an inline JSON string
+
+See `examples/README.md` for all curated presets.
 
 ## Tests
 

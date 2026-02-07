@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 
 class EngineContractTests(unittest.TestCase):
-    def test_engine_executes_ordered_discovered_algorithms(self) -> None:
+    def test_engine_executes_ordered_discovered_transforms(self) -> None:
         from frameworks import engine as eng
 
         class _FakeTensor:
@@ -46,8 +46,8 @@ class EngineContractTests(unittest.TestCase):
             result = runtime.run_pipeline(("momentum", "adam", "chain_rule"), size=4, steps=1)
 
         self.assertEqual(result.framework, "numpy")
-        self.assertEqual(result.algo_keys, ("momentum", "adam", "chain_rule"))
-        self.assertEqual([step["algo"] for step in result.trace], ["momentum", "adam", "chain_rule"])
+        self.assertEqual(result.transform_keys, ("momentum", "adam", "chain_rule"))
+        self.assertEqual([step["transform"] for step in result.trace], ["momentum", "adam", "chain_rule"])
         self.assertTrue(hasattr(result.final_tensor, "shape"))
 
 

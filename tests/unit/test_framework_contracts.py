@@ -19,8 +19,8 @@ class FrameworkContractsTests(unittest.TestCase):
                 self.assertTrue((root / "utils.py").is_file(), f"Missing utils.py for {framework}")
                 self.assertTrue((root / "test_setup.py").is_file(), f"Missing test_setup.py for {framework}")
                 self.assertTrue(
-                    (root / "algorithms" / "__init__.py").is_file(),
-                    f"Missing algorithms package init for {framework}",
+                    (root / "transforms" / "__init__.py").is_file(),
+                    f"Missing transforms package init for {framework}",
                 )
 
     def test_utils_exports_required_surface(self) -> None:

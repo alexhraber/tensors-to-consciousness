@@ -1,0 +1,18 @@
+{
+  "seed": 303,
+  "normal": { "mean": 0.0, "std": 1.8 },
+  "uniform": { "low": -1.5, "high": 1.5 },
+  "frameworks": {
+    "numpy": {
+      "normal": { "std": 2.0 }
+    },
+    "keras": {
+      "seed": 333,
+      "normal": { "std": 1.6 }
+    },
+    "mlx": {
+      "seed": 363,
+      "normal": { "std": 1.7 }
+    }
+  }
+}

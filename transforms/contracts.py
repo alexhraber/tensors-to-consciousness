@@ -15,7 +15,7 @@ TransformFn = Callable[[TensorField, Any, dict[str, float]], TensorField]
 
 
 @dataclass(frozen=True)
-class AlgorithmDefinition:
+class TransformDefinition:
     key: str
     defaults: dict[str, float]
     transform: TransformFn

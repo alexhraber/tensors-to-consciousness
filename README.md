@@ -51,6 +51,8 @@ Detailed usage lives in:
 
 - [TUI Guide](docs/tui.md)
 - [CLI Guide](docs/cli.md)
+- [Transforms Reference](docs/transforms.md)
+- [Frameworks Reference](docs/frameworks.md)
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
 
@@ -67,7 +69,7 @@ The project currently supports the following frameworks:
 
 ## Transforms
 
-Transform definitions are framework-agnostic and live in `algos/transforms.json`.
+Transform definitions are framework-agnostic and live in `transforms/transforms.json`.
 Framework backends (`frameworks/<framework>/utils.py`) implement the execution contract consumed by the engine.
 
 Top 5 core transforms:
@@ -81,10 +83,17 @@ Top 5 core transforms:
 Use `python main.py --list-transforms` for the full transform catalog.
 
 References:
-- [Transform Catalog (`algos/transforms.json`)](algos/transforms.json)
+- [Transform Catalog](transforms/transforms.json)
+- [Examples Catalog](examples/README.md)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Tests Guide](tests/README.md)
 - [CI Workflow](.github/workflows/ci.yml)
+
+Docs generation:
+
+```bash
+python tools/generate_catalog_docs.py
+```
 
 To scaffold a new transform + backend adapters:
 
@@ -99,6 +108,16 @@ python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
 python main.py viz --framework jax --transforms all
 python main.py --list-transforms
 python -m tools.playground --framework jax --transforms chain_rule,adam --viz
+```
+
+Nuanced input presets:
+
+```bash
+python main.py run --framework jax --transforms chain_rule,momentum,adam --inputs examples/inputs.example.json
+python main.py run --framework numpy --transforms spectral_filter,wave_propagation --inputs examples/inputs.spectral_sweep.json
+python main.py run --framework pytorch --transforms constraint_projection,entropy_flow --inputs examples/inputs.stability_focus.json
+python main.py run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
+python main.py run --framework mlx --transforms tensor_ops,chain_rule,gradient_descent --inputs examples/inputs.framework_matrix.json
 ```
 
 ## Notes

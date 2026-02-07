@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold an abstract math algorithm and optional framework adapter stubs."""
+"""Scaffold an abstract math transform and optional framework adapter stubs."""
 
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ FRAMEWORKS = ("numpy", "jax", "pytorch", "keras", "cupy", "mlx")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Create algorithm scaffold files.")
+    parser = argparse.ArgumentParser(description="Create transform scaffold files.")
     parser.add_argument("--complexity", type=int, choices=range(0, 10), required=True, help="Complexity ordering level.")
-    parser.add_argument("--key", required=True, help="Stable algorithm key (example: rk4_solver).")
+    parser.add_argument("--key", required=True, help="Stable transform key (example: rk4_solver).")
     parser.add_argument("--title", required=True, help="Human title shown in registry/TUI.")
     parser.add_argument("--formula", required=True, help="Core equation/formula string.")
     parser.add_argument("--description", required=True, help="One-line conceptual description.")
@@ -44,9 +44,9 @@ def main() -> int:
     slug = to_slug(args.key)
     mod_prefix = f"c{args.complexity}_{slug}"
 
-    ensure_package(root / "algos" / "abstract")
+    ensure_package(root / "transforms" / "abstract")
 
-    abstract_path = root / "algos" / "abstract" / f"{mod_prefix}.py"
+    abstract_path = root / "transforms" / "abstract" / f"{mod_prefix}.py"
     abstract_content = f'''from __future__ import annotations
 
 """
@@ -54,7 +54,7 @@ Abstract math core for "{args.title}".
 Formula: {args.formula}
 """
 
-ALGO_KEY = "{args.key}"
+TRANSFORM_KEY = "{args.key}"
 TITLE = "{args.title}"
 FORMULA = "{args.formula}"
 DESCRIPTION = "{args.description}"
@@ -72,11 +72,11 @@ def math_core(ops, *, params: dict[str, object]) -> object:
     write_once(abstract_path, abstract_content)
 
     for fw in FRAMEWORKS:
-        ensure_package(root / "frameworks" / fw / "algorithms")
-        adapter_path = root / "frameworks" / fw / "algorithms" / f"{mod_prefix}.py"
+        ensure_package(root / "frameworks" / fw / "transforms")
+        adapter_path = root / "frameworks" / fw / "transforms" / f"{mod_prefix}.py"
         adapter_content = f'''from __future__ import annotations
 
-from algos.abstract.{mod_prefix} import math_core
+from transforms.abstract.{mod_prefix} import math_core
 
 
 def run(*, params: dict[str, object]) -> object:
@@ -91,14 +91,16 @@ def run(*, params: dict[str, object]) -> object:
     print("Scaffold created:")
     print(f"- {abstract_path.relative_to(root)}")
     for fw in FRAMEWORKS:
-        print(f"- frameworks/{fw}/algorithms/{mod_prefix}.py")
+        print(f"- frameworks/{fw}/transforms/{mod_prefix}.py")
 
-    print("\nTransform catalog snippet (append into algos/transforms.json -> transforms):")
+    print("\nTransform catalog snippet (append into transforms/transforms.json -> transforms):")
     print(
-        "AlgorithmSpec("
-        f'"{args.key}", "{args.title}", "{args.description}", "{args.formula}", {args.complexity}, "{mod_prefix}", '
-        "AlgorithmPreset(1200, 2.0, 1.0, 0.1, 0.1, 0.0, 96)"
-        "),"
+        "{"
+        f'"key": "{args.key}", "title": "{args.title}", "description": "{args.description}", '
+        f'"formula": "{args.formula}", "complexity": {args.complexity}, '
+        '"source_module": "custom", "transform": "custom_impl", '
+        '"preset": {"samples": 1200, "freq": 2.0, "amplitude": 1.0, "damping": 0.1, "noise": 0.1, "phase": 0.0, "grid": 96}'
+        "},"
     )
     return 0
 

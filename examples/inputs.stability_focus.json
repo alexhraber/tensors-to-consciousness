@@ -1,0 +1,20 @@
+{
+  "seed": 202,
+  "normal": { "mean": 0.0, "std": 0.2 },
+  "uniform": { "low": -0.15, "high": 0.15 },
+  "frameworks": {
+    "jax": {
+      "seed": 222,
+      "normal": { "std": 0.18 },
+      "modules": {
+        "utils.py": {
+          "normal": { "std": 0.16 }
+        }
+      }
+    },
+    "pytorch": {
+      "seed": 242,
+      "normal": { "std": 0.22 }
+    }
+  }
+}

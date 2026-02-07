@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from algos.catalog import catalog_transforms
-from algos.contracts import AlgorithmDefinition
-from algos.contracts import TensorField
+from transforms.catalog import catalog_transforms
+from transforms.contracts import TransformDefinition
+from transforms.contracts import TensorField
 
 
 def _base(field: TensorField, ops, params: dict[str, float], *, sign: float = 1.0) -> TensorField:
@@ -239,28 +239,22 @@ TRANSFORM_IMPLS = {
 }
 
 
-def _definition_for_entry(entry: dict[str, object]) -> AlgorithmDefinition:
+def _definition_for_entry(entry: dict[str, object]) -> TransformDefinition:
     key = str(entry["key"])
     transform_name = str(entry.get("transform", ""))
     transform = TRANSFORM_IMPLS.get(transform_name)
     if transform is None:
         raise KeyError(f"Unknown transform implementation '{transform_name}' for key '{key}'")
-    return AlgorithmDefinition(key, COMMON, transform)
+    return TransformDefinition(key, COMMON, transform)
 
 
-TRANSFORM_DEFINITIONS: dict[str, AlgorithmDefinition] = {
+TRANSFORM_DEFINITIONS: dict[str, TransformDefinition] = {
     str(entry["key"]): _definition_for_entry(entry) for entry in catalog_transforms()
 }
 
-# Backward-compatible alias.
-ALGORITHM_DEFINITIONS = TRANSFORM_DEFINITIONS
 
-
-def get_transform_definition(key: str) -> AlgorithmDefinition:
+def get_transform_definition(key: str) -> TransformDefinition:
     if key not in TRANSFORM_DEFINITIONS:
         raise KeyError(f"Transform definition not found: {key}")
     return TRANSFORM_DEFINITIONS[key]
 
-
-def get_algorithm_definition(key: str) -> AlgorithmDefinition:
-    return get_transform_definition(key)

@@ -58,7 +58,7 @@ class FrameworkEngineMatrixTests(unittest.TestCase):
                         steps=2,
                     )
                     self.assertEqual(result.framework, framework)
-                    self.assertEqual(result.algo_keys, ("laplacian_diffusion", "momentum", "constraint_projection"))
+                    self.assertEqual(result.transform_keys, ("laplacian_diffusion", "momentum", "constraint_projection"))
                     self.assertEqual(len(result.trace), 6)
                     self.assertTrue(hasattr(result.final_tensor, "shape"))
 
