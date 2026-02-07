@@ -23,7 +23,6 @@ from tools.headless_capture import (
     HeadlessCaptureError,
     capture_tui_session_gif,
 )
-from tools import shinkei
 from frameworks.engine import FrameworkEngine
 from transforms.contracts import TensorField
 from transforms.definitions import get_transform_definition
@@ -43,7 +42,7 @@ def write_ppm(path: Path, width: int, height: int, rgb: bytearray) -> None:
         f.write(rgb)
 
 
-def _render_pipeline_png(
+def _render_pipeline_ppm(
     engine: FrameworkEngine,
     tensor: Any,
     *,
@@ -53,6 +52,7 @@ def _render_pipeline_png(
     height_px: int,
 ) -> bytes:
     import numpy as np
+    import base64
 
     arr = engine.to_numpy(tensor)
     if arr is None:
@@ -61,38 +61,37 @@ def _render_pipeline_png(
     arr = np.nan_to_num(arr, nan=0.0, posinf=1e4, neginf=-1e4)
     arr = np.clip(arr, -1e4, 1e4)
 
-    # Tone-map and smooth to keep previews calm and readable.
     arr2 = arr if arr.ndim == 2 else arr.reshape(arr.shape[0], -1)
-    scale = float(np.percentile(np.abs(arr2), 92))
-    if not np.isfinite(scale) or scale <= 1e-6:
-        scale = 1.0
-    arr2 = np.tanh(arr2 / scale) * 2.0
+    h, w = arr2.shape
+    data_b64 = base64.b64encode(arr2.astype(np.float32).tobytes(order="C")).decode("ascii")
 
-    padded = np.pad(arr2, ((1, 1), (1, 1)), mode="edge")
-    smooth = (
-        padded[:-2, :-2]
-        + padded[:-2, 1:-1]
-        + padded[:-2, 2:]
-        + padded[1:-1, :-2]
-        + (2.0 * padded[1:-1, 1:-1])
-        + padded[1:-1, 2:]
-        + padded[2:, :-2]
-        + padded[2:, 1:-1]
-        + padded[2:, 2:]
-    ) / 10.0
-    arr = smooth.astype(np.float32)
+    # Render via Rust (Shinkei) so the README assets always represent the actual product path.
+    explorer_bin = os.environ.get("EXPLORER_BIN", "").strip() or shutil.which("explorer")
+    if not explorer_bin:
+        # Local dev fallback (repo checkout)
+        candidate = ROOT / "target" / "debug" / "explorer"
+        explorer_bin = str(candidate) if candidate.exists() else None
+    if not explorer_bin:
+        raise RuntimeError("explorer binary not found (set EXPLORER_BIN or build ./target/debug/explorer)")
 
-    png = shinkei._matplotlib_plot_png(
-        arr,
-        stage=stage,
-        tensor_name=f"{engine.framework}:{'+'.join(pipeline)}",
-        width_px=width_px,
-        height_px=height_px,
-        show_title=False,
-    )
-    if png is None:
-        raise RuntimeError("shinkei matplotlib renderer unavailable")
-    return png
+    cmd = [
+        explorer_bin,
+        "render-tensor",
+        "--h",
+        str(int(h)),
+        "--w",
+        str(int(w)),
+        "--data-b64",
+        data_b64,
+        "--width-px",
+        str(int(width_px)),
+        "--height-px",
+        str(int(height_px)),
+        "--out",
+        "-",
+    ]
+    proc = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return proc.stdout
 
 
 def _advance_tensor_field(
@@ -430,7 +429,7 @@ def main() -> int:
                     index=op_index,
                     ops_per_frame=ops_per_frame,
                 )
-                png = _render_pipeline_png(
+                ppm = _render_pipeline_ppm(
                     engine,
                     field.tensor,
                     pipeline=pipeline,
@@ -438,9 +437,9 @@ def main() -> int:
                     width_px=width_px,
                     height_px=height_px,
                 )
-                (frames_dir / f"{i:03d}.png").write_bytes(png)
+                (frames_dir / f"{i:03d}.ppm").write_bytes(ppm)
 
-            encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.png", width_px=gif_width)
+            encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.ppm", width_px=gif_width)
             print(f"wrote {out_dir / f'{name}.gif'}")
 
     return 0

@@ -102,9 +102,9 @@ jobs:
             render_assets:
               - "transforms/**"
               - "frameworks/**"
-              - "tools/shinkei.py"
               - "tools/generate_render_assets.py"
               - "tools/input_controls.py"
+              - "crates/explorer/src/shinkei.rs"
               - "examples/inputs.framework_matrix.json"
               - "examples/inputs.spectral_sweep.json"
               - ".github/workflows/assets-readme-sync.yml"

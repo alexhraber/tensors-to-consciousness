@@ -43,4 +43,4 @@ PY
 
 - Rust crate location: `crates/core/`
 - Python bridge: `tools/core.py`
-- Runtime integration points: `tools/shinkei.py`
+- Runtime integration points: `crates/explorer/src/shinkei.rs`

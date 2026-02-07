@@ -83,9 +83,9 @@ fn contract_assets_sync_workflow_triggers_only_on_asset_inputs() {
     for fragment in [
         "transforms/**",
         "frameworks/**",
-        "tools/shinkei.py",
         "tools/input_controls.py",
         "tools/generate_render_assets.py",
+        "crates/explorer/src/shinkei.rs",
         "examples/inputs.framework_matrix.json",
         "examples/inputs.spectral_sweep.json",
         ".python-version",
@@ -215,7 +215,7 @@ fn contract_framework_layout_surface_exists() {
 
         // Lightweight export contract: function definitions must be present.
         let utils = read_text(&dir.join("utils.py"));
-        for func in ["def normal", "def render_stage", "def _to_numpy"] {
+        for func in ["def normal", "def _to_numpy"] {
             assert!(
                 utils.contains(func),
                 "{fw} utils.py missing required function: {func}"
@@ -232,4 +232,3 @@ fn contract_framework_layout_surface_exists() {
         );
     }
 }
-
