@@ -26,35 +26,59 @@ def write_ppm(path: Path, width: int, height: int, rgb: bytearray) -> None:
 
 
 def render_optimization_flow(frame: int, width: int, height: int) -> bytearray:
-    t = frame * 0.13
+    t = frame * 0.075
     buf = bytearray(width * height * 3)
+
+    # Premium dark base with moving contour-like energy bands.
     idx = 0
     for y in range(height):
         ny = (y / height) * 2.0 - 1.0
         for x in range(width):
             nx = (x / width) * 2.0 - 1.0
-            v = math.sin(5.5 * nx + t) * math.cos(6.2 * ny - 0.7 * t)
-            g = math.exp(-2.2 * (nx * nx + ny * ny))
-            s = 0.5 + 0.5 * v
-            r = clamp(25 + 180 * s + 50 * g)
-            gc = clamp(18 + 110 * (1 - s) + 110 * g)
-            b = clamp(40 + 180 * (0.5 + 0.5 * math.sin(3 * nx - 2 * ny + t)))
+            radial = math.sqrt(nx * nx + ny * ny)
+            swirl = math.sin(7.5 * radial - 2.2 * t + 2.8 * math.atan2(ny, nx))
+            waves = 0.45 * math.sin(4.6 * nx + 1.1 * t) + 0.55 * math.cos(5.0 * ny - 1.4 * t)
+            field = 0.5 + 0.5 * (0.62 * swirl + 0.38 * waves)
+            glow = math.exp(-3.2 * radial * radial)
+
+            r = clamp(10 + 30 * glow + 130 * (field**1.7))
+            gc = clamp(12 + 95 * glow + 160 * ((1.0 - abs(0.5 - field) * 2.0) ** 1.4))
+            b = clamp(22 + 145 * glow + 165 * ((1.0 - field) ** 1.1))
             buf[idx : idx + 3] = bytes((r, gc, b))
             idx += 3
 
-    px, py = -0.9, 0.85
-    for _ in range(120):
-        gx = 5.5 * math.cos(5.5 * px + t) * math.cos(6.2 * py - 0.7 * t)
-        gy = -6.2 * math.sin(5.5 * px + t) * math.sin(6.2 * py - 0.7 * t)
-        px -= 0.012 * gx
-        py -= 0.012 * gy
-        xx = int((px + 1.0) * 0.5 * (width - 1))
-        yy = int((py + 1.0) * 0.5 * (height - 1))
-        if 1 <= xx < width - 1 and 1 <= yy < height - 1:
-            for oy in (-1, 0, 1):
-                for ox in (-1, 0, 1):
-                    j = ((yy + oy) * width + (xx + ox)) * 3
-                    buf[j : j + 3] = bytes((255, 245, 180))
+    # Multi-start optimizer trajectories flowing into the center basin.
+    seeds = [(-0.92, 0.86), (-0.85, -0.78), (0.88, 0.74), (0.74, -0.88), (0.02, 0.92)]
+    for sidx, (sx, sy) in enumerate(seeds):
+        px, py = sx, sy
+        for step in range(170):
+            gx = (
+                1.15 * px
+                + 0.75 * math.cos(4.6 * px + 1.1 * t)
+                - 0.48 * math.sin(2.8 * py - 1.0 * t)
+            )
+            gy = (
+                1.05 * py
+                - 0.72 * math.sin(5.0 * py - 1.4 * t)
+                + 0.43 * math.cos(3.1 * px + 0.7 * t)
+            )
+            lr = 0.010 + 0.0015 * sidx
+            px -= lr * gx
+            py -= lr * gy
+            xx = int((px + 1.0) * 0.5 * (width - 1))
+            yy = int((py + 1.0) * 0.5 * (height - 1))
+            if 1 <= xx < width - 1 and 1 <= yy < height - 1:
+                j = (yy * width + xx) * 3
+                age = step / 169.0
+                trail = (
+                    clamp(120 + 120 * (1.0 - age)),
+                    clamp(205 + 40 * (1.0 - age)),
+                    clamp(255),
+                )
+                buf[j] = max(buf[j], trail[0])
+                buf[j + 1] = max(buf[j + 1], trail[1])
+                buf[j + 2] = max(buf[j + 2], trail[2])
+
     return buf
 
 
@@ -163,6 +187,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fps", type=int, default=18, help="GIF fps.")
     parser.add_argument("--width", type=int, default=480, help="Frame width.")
     parser.add_argument("--height", type=int, default=270, help="Frame height.")
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        choices=["optimization_flow", "attention_dynamics", "phase_portraits"],
+        help="Generate only selected assets.",
+    )
     return parser.parse_args()
 
 
@@ -179,6 +209,8 @@ def main() -> int:
         "attention_dynamics": render_attention_dynamics,
         "phase_portraits": render_phase_portraits,
     }
+    if args.only:
+        renderers = {name: renderers[name] for name in args.only}
 
     with tempfile.TemporaryDirectory(prefix="t2c_viz_") as td:
         tmp = Path(td)
