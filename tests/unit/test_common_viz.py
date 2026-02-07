@@ -119,7 +119,9 @@ class CommonVizTests(unittest.TestCase):
 
         with patch.dict(os.environ, {"T2C_VIZ_TRACE": "1"}, clear=False), patch.object(
             common_viz, "_supports_inline_image_graphics", return_value=True
-        ), patch.object(common_viz, "_supports_graphical_terminal", return_value=True):
+        ), patch.object(common_viz, "_supports_kitty_graphics", return_value=True), patch.object(
+            common_viz, "_supports_graphical_terminal", return_value=True
+        ):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 common_viz.viz_stage("stage_fluid", scope, lambda x: x, framework="numpy")
@@ -144,4 +146,3 @@ class CommonVizTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

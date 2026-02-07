@@ -362,3 +362,96 @@ jobs:
               sys.exit(1)
           print("Visualization contract checks passed.")
           PY
+
+  framework-contract:
+    name: Framework Contract (${{ matrix.framework }})
+    needs: changes
+    if: needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: ["mlx", "jax", "pytorch", "numpy", "keras", "cupy"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Verify framework track file contract
+        env:
+          FRAMEWORK: ${{ matrix.framework }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import pathlib
+          import sys
+
+          fw = os.environ["FRAMEWORK"]
+          root = pathlib.Path("scripts") / fw
+          if not root.exists():
+              print(f"Missing framework directory: {root}")
+              sys.exit(1)
+
+          required = [f"{i}_{name}.py" for i, name in enumerate([
+              "computational_primitives",
+              "automatic_differentiation",
+              "optimization_theory",
+              "neural_theory",
+              "advanced_theory",
+              "research_frontiers",
+              "theoretical_limits",
+          ])]
+          required += ["utils.py", "test_setup.py"]
+
+          missing = [name for name in required if not (root / name).exists()]
+          if missing:
+              print(f"{fw}: missing required files:")
+              for name in missing:
+                  print(f" - {root / name}")
+              sys.exit(1)
+
+          py_files = sorted(p.name for p in root.glob("*.py"))
+          if len(py_files) < len(required):
+              print(f"{fw}: expected at least {len(required)} python files, found {len(py_files)}")
+              sys.exit(1)
+
+          print(f"{fw}: framework track contract passed.")
+          PY
+
+      - name: Verify module name parity against numpy baseline
+        env:
+          FRAMEWORK: ${{ matrix.framework }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import pathlib
+          import sys
+
+          fw = os.environ["FRAMEWORK"]
+          base = pathlib.Path("scripts/numpy")
+          tgt = pathlib.Path("scripts") / fw
+
+          base_modules = sorted(
+              p.name for p in base.glob("[0-6]_*.py")
+              if not p.name.startswith("test_")
+          )
+          tgt_modules = sorted(
+              p.name for p in tgt.glob("[0-6]_*.py")
+              if not p.name.startswith("test_")
+          )
+
+          if base_modules != tgt_modules:
+              print(f"{fw}: module parity mismatch")
+              print(f"numpy: {base_modules}")
+              print(f"{fw}: {tgt_modules}")
+              sys.exit(1)
+
+          print(f"{fw}: module parity matches numpy baseline.")
+          PY
