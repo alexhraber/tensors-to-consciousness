@@ -20,7 +20,7 @@ At runtime, the system evaluates a selected transform chain in order:
 
 This model intentionally avoids hardcoding module permutations. Framework engines discover and execute transform sequences dynamically.
 
-Rust is the public product surface. Python is a compute layer for transforms and framework execution.
+Rust is the public product surface (CLI + TUI). Python is the compute layer for transforms and framework execution.
 
 ## Transform Contract
 
