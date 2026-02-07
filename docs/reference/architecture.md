@@ -58,7 +58,7 @@ Required ops adapter behavior:
 Default framework selection is platform-aware:
 
 - macOS: `mlx`
-- other platforms: `numpy`
+- other platforms: `jax`
 
 Diagnostics defaults:
 

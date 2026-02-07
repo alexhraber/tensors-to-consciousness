@@ -12,7 +12,7 @@ from tools import runtime
 class RuntimeTests(unittest.TestCase):
     def test_default_framework_for_platform(self) -> None:
         self.assertEqual(runtime.default_framework_for_platform("darwin"), "mlx")
-        self.assertEqual(runtime.default_framework_for_platform("linux"), "numpy")
+        self.assertEqual(runtime.default_framework_for_platform("linux"), "jax")
 
     def test_validate_script_for_framework(self) -> None:
         self.assertEqual(runtime.validate_script_for_framework("jax"), "frameworks/jax/test_setup.py")

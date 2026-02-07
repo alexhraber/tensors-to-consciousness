@@ -16,7 +16,7 @@ CACHE_FILE = ROOT / ".git" / "t2c-cache" / "act-gate.json"
 
 
 def _git_output(*args: str) -> str:
-    return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
+    return subprocess.check_output(["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
 
 
 def _best_base_ref() -> str:
@@ -109,8 +109,6 @@ def _resolve_jobs(jobs_arg: str | None, tasks: list[str]) -> int:
     task_count = len(tasks)
     if task_count <= 1:
         return 1
-    if any(task.startswith("act-ci-") for task in tasks) and os.environ.get("CI_GATE_ACT_PARALLEL") != "1":
-        return 1
     parsed_jobs_arg = _parse_jobs_value(jobs_arg)
     if parsed_jobs_arg is not None:
         return max(1, min(parsed_jobs_arg, task_count))
@@ -118,7 +116,7 @@ def _resolve_jobs(jobs_arg: str | None, tasks: list[str]) -> int:
     if parsed_jobs_env is not None:
         return max(1, min(parsed_jobs_env, task_count))
     cpu = os.cpu_count() or 2
-    return max(1, min(2, cpu, task_count))
+    return max(1, min(cpu, task_count))
 
 
 def _load_cache() -> dict[str, dict[str, float]]:
@@ -172,7 +170,7 @@ def parse_args() -> argparse.Namespace:
         "--jobs",
         type=str,
         default=None,
-        help="Parallel local gate jobs (int or 'nproc'; act-ci tasks are serialized unless CI_GATE_ACT_PARALLEL=1).",
+        help="Parallel local gate jobs (int or 'nproc').",
     )
     return parser.parse_args()
 
@@ -231,6 +229,27 @@ def main() -> int:
                     cache_dirty = True
             except subprocess.CalledProcessError as exc:
                 failures.append((task, exc.returncode or 1))
+
+    # `act` can collide on shared dependency container names when multiple jobs from
+    # the same workflow are launched concurrently. If that happens, retry act tasks
+    # once in serial mode to preserve a fast path while keeping pushes reliable.
+    if failures and workers > 1:
+        failed_task_names = {task for task, _ in failures}
+        failed_non_act = [task for task, _ in failures if not task.startswith("act-ci-")]
+        if not failed_non_act:
+            print(f"[{prefix}] Retrying failed act jobs sequentially (act container-name collision fallback).")
+            failures = []
+            for task, cache_key in runnable_tasks:
+                if task not in failed_task_names:
+                    continue
+                print(f"[{prefix}] Retrying {task}")
+                try:
+                    _run_task(task)
+                    if not cache_disabled:
+                        cache_entries[cache_key] = {"ts": time.time()}
+                        cache_dirty = True
+                except subprocess.CalledProcessError as exc:
+                    failures.append((task, exc.returncode or 1))
 
     if failures:
         for task, code in failures:

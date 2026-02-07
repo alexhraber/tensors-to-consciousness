@@ -1,20 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "explorer.py"
-      - ".python-version"
-      - "transforms/**"
-      - "frameworks/**"
-      - "tools/**"
-      - "tests/**"
-      - "docs/**"
-      - "assets/render/**"
-      - "mise.toml"
-      - ".github/ci/**"
-      - ".github/workflows/**"
   pull_request:
     branches: ["main"]
     paths:

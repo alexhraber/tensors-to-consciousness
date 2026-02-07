@@ -236,7 +236,7 @@ run = "act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync
 
 [tasks.pre-push]
 description = "Pre-push quality gate with path-based job selection (hook -> act -> workflow -> mise)."
-run = "python tools/pre_push_gate.py"
+run = "python tools/pre_push_gate.py --jobs nproc"
 
 [tasks.submit-pr]
 description = "Push current feature branch and open a PR with GitHub CLI."

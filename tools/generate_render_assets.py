@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate README GIF assets using reproducible headless captures."""
+"""Generate README GIF assets from Shinkei render output and headless TUI capture."""
 
 from __future__ import annotations
 
@@ -8,8 +8,10 @@ import math
 import shutil
 import subprocess
 import tempfile
+import warnings
 from pathlib import Path
 import sys
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -17,10 +19,12 @@ if str(ROOT) not in sys.path:
 
 from tools.headless_capture import (
     HeadlessCaptureError,
-    capture_transform_progression_gif,
     capture_tui_session_gif,
 )
 from tools import shinkei
+from frameworks.engine import FrameworkEngine
+from transforms.contracts import TensorField
+from transforms.definitions import get_transform_definition
 
 
 def clamp(v: float) -> int:
@@ -39,18 +43,16 @@ def write_ppm(path: Path, width: int, height: int, rgb: bytearray) -> None:
 
 def _render_pipeline_png(
     engine: FrameworkEngine,
+    tensor: Any,
     *,
     pipeline: tuple[str, ...],
-    size: int,
-    steps: int,
     stage: str,
     width_px: int,
     height_px: int,
 ) -> bytes:
     import numpy as np
 
-    result = engine.run_pipeline(pipeline, size=size, steps=steps)
-    arr = engine.to_numpy(result.final_tensor)
+    arr = engine.to_numpy(tensor)
     if arr is None:
         raise RuntimeError("framework engine did not provide numpy-convertible tensor")
     arr = np.asarray(arr, dtype=np.float32)
@@ -84,10 +86,39 @@ def _render_pipeline_png(
         tensor_name=f"{engine.framework}:{'+'.join(pipeline)}",
         width_px=width_px,
         height_px=height_px,
+        show_title=False,
     )
     if png is None:
         raise RuntimeError("shinkei matplotlib renderer unavailable")
     return png
+
+
+def _advance_tensor_field(
+    engine: FrameworkEngine,
+    *,
+    field: TensorField,
+    pipeline: tuple[str, ...],
+    index: int,
+    ops_per_frame: int,
+) -> tuple[TensorField, int]:
+    ops = engine._Ops(engine)
+    engine._validate_ops_adapter(ops)
+    for _ in range(max(1, int(ops_per_frame))):
+        key = pipeline[index % len(pipeline)]
+        definition = get_transform_definition(key)
+        params = {**definition.defaults, **engine._params_for(key)}
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*overflow encountered.*")
+            warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*invalid value encountered.*")
+            field = definition.transform(field, ops, params)
+        if engine.framework == "numpy":
+            import numpy as np
+
+            arr = np.asarray(field.tensor, dtype=np.float32)
+            arr = np.nan_to_num(arr, nan=0.0, posinf=1e4, neginf=-1e4)
+            field.tensor = np.clip(arr, -1e4, 1e4)
+        index += 1
+    return field, index
 
 
 def _fill_rect(
@@ -253,11 +284,11 @@ def encode_gif(frames_dir: Path, output_gif: Path, fps: int, pattern: str) -> No
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate GIF previews in assets/render.")
     parser.add_argument("--output-dir", default="assets/render", help="Output directory.")
-    parser.add_argument("--frames", type=int, default=64, help="Frames per GIF.")
-    parser.add_argument("--fps", type=int, default=18, help="GIF fps.")
+    parser.add_argument("--frames", type=int, default=84, help="Frames per GIF.")
+    parser.add_argument("--fps", type=int, default=12, help="GIF fps.")
     parser.add_argument("--width", type=int, default=480, help="Frame width.")
     parser.add_argument("--height", type=int, default=270, help="Frame height.")
-    parser.add_argument("--framework", default="numpy", help="Framework backend used for pipeline renders.")
+    parser.add_argument("--framework", default="jax", help="Framework backend used for pipeline renders.")
     parser.add_argument(
         "--tui-capture",
         choices=["headless", "synthetic"],
@@ -330,21 +361,47 @@ def main() -> int:
                 continue
 
             spec = progression_specs[name]
-            try:
-                capture_transform_progression_gif(
-                    output_gif=out_dir / f"{name}.gif",
-                    python_exe=sys.executable,
-                    framework=args.framework,
-                    transforms=str(spec["transforms"]),
-                    inputs=spec["inputs"],
-                    width=max(1280, args.width * 2),
-                    height=max(720, args.height * 2),
-                    fps=args.fps,
-                    duration_s=max(6.0, min(14.0, args.frames / max(1, args.fps))),
-                    title=f"ttc-{name}",
+            pipeline = tuple(str(spec["transforms"]).split(","))
+            frames_dir = tmp / name
+            frames_dir.mkdir(parents=True, exist_ok=True)
+
+            engine = FrameworkEngine(args.framework)
+            n = max(48, min(192, int(max(args.width, args.height) * 0.24)))
+            field = TensorField(tensor=engine._normal((n, n)))
+            op_index = 0
+            warmup = max(2, len(pipeline) // 2)
+            for _ in range(warmup):
+                field, op_index = _advance_tensor_field(
+                    engine,
+                    field=field,
+                    pipeline=pipeline,
+                    index=op_index,
+                    ops_per_frame=1,
                 )
-            except HeadlessCaptureError as exc:
-                raise RuntimeError(str(exc)) from exc
+
+            # Keep progression motion smooth and deterministic for GIF capture.
+            ops_per_frame = 1
+            width_px = max(640, args.width * 2)
+            height_px = max(360, args.height * 2)
+            for i in range(args.frames):
+                field, op_index = _advance_tensor_field(
+                    engine,
+                    field=field,
+                    pipeline=pipeline,
+                    index=op_index,
+                    ops_per_frame=ops_per_frame,
+                )
+                png = _render_pipeline_png(
+                    engine,
+                    field.tensor,
+                    pipeline=pipeline,
+                    stage="asset",
+                    width_px=width_px,
+                    height_px=height_px,
+                )
+                (frames_dir / f"{i:03d}.png").write_bytes(png)
+
+            encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.png")
             print(f"wrote {out_dir / f'{name}.gif'}")
 
     return 0

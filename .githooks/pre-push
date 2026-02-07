@@ -15,4 +15,7 @@ if [[ "${SKIP_ACT:-0}" == "1" ]]; then
   exit 0
 fi
 
+# Default to saturating local cores unless explicitly overridden.
+export CI_GATE_JOBS="${CI_GATE_JOBS:-nproc}"
+
 mise run pre-push
