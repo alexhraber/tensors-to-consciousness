@@ -41,7 +41,7 @@ python main.py
 First run pipeline:
 
 1. Detect framework config
-2. Prompt for framework if missing
+2. Prompt user for framework if missing
 3. Auto-setup environment + dependencies
 4. Validate the framework track
 5. Run all research modules
