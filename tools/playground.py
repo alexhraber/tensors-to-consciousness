@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--transforms", default="default", help="Comma-separated transform keys, or 'default'/'all'.")
     parser.add_argument("--size", type=int, default=96, help="Square tensor size for sandbox execution.")
     parser.add_argument("--steps", type=int, default=1, help="Pipeline passes to apply.")
-    parser.add_argument("--viz", action="store_true", help="Render visualization for final tensor.")
+    parser.add_argument("--render", action="store_true", help="Render output for final tensor.")
     return parser.parse_args()
 
 
@@ -33,19 +33,19 @@ def main() -> int:
         last = result.trace[-1]
         print(f"final shape={last['shape']} mean={last['mean']:.4f} std={last['std']:.4f}")
 
-    if args.viz:
+    if args.render:
         scope = {
             "pipeline_output": result.final_tensor,
-            "VIZ_META": {
+            "RENDER_META": {
                 "pipeline_output": f"Ordered pipeline on {args.framework}: {', '.join(keys)}",
             },
         }
-        shinkei.viz_stage(
+        shinkei.render_stage(
             stage="playground_final",
             scope=scope,
             to_numpy=engine.to_numpy,
             framework=args.framework,
-            metadata=scope["VIZ_META"],
+            metadata=scope["RENDER_META"],
             limit=1,
         )
     return 0

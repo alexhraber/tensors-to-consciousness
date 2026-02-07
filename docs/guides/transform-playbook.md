@@ -24,9 +24,9 @@ python tools/scaffold_algo.py --complexity 2 --key rk4_solver --title "RK4 Solve
 
 ```bash
 python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
-python main.py viz --framework jax --transforms all
+python main.py render --framework jax --transforms all
 python main.py --list-transforms
-python -m tools.playground --framework jax --transforms chain_rule,adam --viz
+python -m tools.playground --framework jax --transforms chain_rule,adam --render
 ```
 
 ## Nuanced Preset Examples

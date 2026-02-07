@@ -18,11 +18,11 @@ class InputControlsTests(unittest.TestCase):
         self.input_controls._META_REGISTRY.clear()
         self.input_controls._load_config.cache_clear()
 
-    def test_contract_requires_viz_meta_dict(self) -> None:
+    def test_contract_requires_render_meta_dict(self) -> None:
         with self.assertRaises(ValueError):
             self.input_controls.metadata_for_scope("jax", {"x": object()})
 
-    def test_generated_metadata_and_viz_meta_override(self) -> None:
+    def test_generated_metadata_and_render_meta_override(self) -> None:
         with patch.dict(os.environ, {"T2C_INPUTS": "{}"}, clear=False):
             _ = self.input_controls.tune_normal("jax", (2, 2))
         generated = None
@@ -33,13 +33,13 @@ class InputControlsTests(unittest.TestCase):
 
         _make()
         self.assertIsNotNone(generated)
-        meta = self.input_controls.metadata_for_scope("jax", {"generated": 1, "VIZ_META": {}})
+        meta = self.input_controls.metadata_for_scope("jax", {"generated": 1, "RENDER_META": {}})
         self.assertIn("generated", meta)
         self.assertIn("Generated via normal(", meta["generated"])
 
         meta2 = self.input_controls.metadata_for_scope(
             "jax",
-            {"generated": 1, "VIZ_META": {"generated": "Manual transform annotation."}},
+            {"generated": 1, "RENDER_META": {"generated": "Manual transform annotation."}},
         )
         self.assertEqual(meta2["generated"], "Manual transform annotation.")
 

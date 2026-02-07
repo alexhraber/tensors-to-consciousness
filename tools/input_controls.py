@@ -196,11 +196,11 @@ def metadata_for_scope(framework: str, scope: dict[str, Any]) -> dict[str, str]:
     for name in scope:
         if (framework, script, name) in _META_REGISTRY:
             out[name] = _META_REGISTRY[(framework, script, name)]
-    explicit = scope.get("VIZ_META")
+    explicit = scope.get("RENDER_META")
     if not isinstance(explicit, dict):
         raise ValueError(
-            "shinkei viz contract violation: transform scope must define `VIZ_META = {}` "
-            "before calling viz_stage()."
+            "shinkei render contract violation: transform scope must define `RENDER_META = {}` "
+            "before calling render_stage()."
         )
     for k, v in explicit.items():
         if isinstance(k, str) and isinstance(v, str):

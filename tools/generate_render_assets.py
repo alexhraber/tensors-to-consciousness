@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate README visualization GIF assets via framework engine + shinkei rendering."""
+"""Generate README rendering GIF assets via framework engine + shinkei rendering."""
 
 from __future__ import annotations
 
@@ -125,7 +125,7 @@ def _draw_frame(buf: bytearray, width: int, height: int, x0: int, y0: int, x1: i
     _draw_vline(buf, width, height, x1 - 1, y0, y1, color)
 
 
-def render_tui_studio(frame: int, width: int, height: int) -> bytearray:
+def render_tui_explorer(frame: int, width: int, height: int) -> bytearray:
     t = frame * 0.09
     buf = bytearray(width * height * 3)
 
@@ -247,8 +247,8 @@ def encode_gif(frames_dir: Path, output_gif: Path, fps: int, pattern: str) -> No
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate GIF previews in assets/viz.")
-    parser.add_argument("--output-dir", default="assets/viz", help="Output directory.")
+    parser = argparse.ArgumentParser(description="Generate GIF previews in assets/render.")
+    parser.add_argument("--output-dir", default="assets/render", help="Output directory.")
     parser.add_argument("--frames", type=int, default=64, help="Frames per GIF.")
     parser.add_argument("--fps", type=int, default=18, help="GIF fps.")
     parser.add_argument("--width", type=int, default=480, help="Frame width.")
@@ -257,7 +257,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--only",
         nargs="+",
-        choices=["optimization_flow", "attention_dynamics", "phase_portraits", "tui_studio"],
+        choices=["optimization_flow", "attention_dynamics", "phase_portraits", "tui_explorer"],
         help="Generate only selected assets.",
     )
     return parser.parse_args()
@@ -285,10 +285,10 @@ def main() -> int:
         "phase_portraits": (("wave_propagation", "spectral_filter"), 82, 1),
     }
 
-    all_assets = ["optimization_flow", "attention_dynamics", "phase_portraits", "tui_studio"]
+    all_assets = ["optimization_flow", "attention_dynamics", "phase_portraits", "tui_explorer"]
     selected = args.only if args.only else all_assets
 
-    with tempfile.TemporaryDirectory(prefix="t2c_viz_") as td:
+    with tempfile.TemporaryDirectory(prefix="t2c_render_") as td:
         tmp = Path(td)
         engine: FrameworkEngine | None = None
 
@@ -296,9 +296,9 @@ def main() -> int:
             frames_dir = tmp / name
             frames_dir.mkdir(parents=True, exist_ok=True)
 
-            if name == "tui_studio":
+            if name == "tui_explorer":
                 for i in range(args.frames):
-                    rgb = render_tui_studio(i, args.width, args.height)
+                    rgb = render_tui_explorer(i, args.width, args.height)
                     write_ppm(frames_dir / f"{i:03d}.ppm", args.width, args.height, rgb)
                 encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.ppm")
                 print(f"wrote {out_dir / f'{name}.gif'}")

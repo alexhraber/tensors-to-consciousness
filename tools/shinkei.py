@@ -21,7 +21,7 @@ def _np_module() -> ModuleType:
 
 
 @dataclass
-class VizState:
+class RenderState:
     seed: int = 7
     samples: int = 1200
     freq: float = 1.9
@@ -72,9 +72,9 @@ def _supports_kitty_graphics() -> bool:
 
 
 def _supports_inline_image_graphics() -> bool:
-    if os.environ.get("T2C_VIZ_DISABLE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
+    if os.environ.get("T2C_RENDER_DISABLE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return False
-    if os.environ.get("T2C_VIZ_FORCE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
+    if os.environ.get("T2C_RENDER_FORCE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return True
     if not sys.stdout.isatty():
         return False
@@ -88,7 +88,7 @@ def _supports_inline_image_graphics() -> bool:
     if term_program == "kitty":
         return True
     if term_program == "ghostty" or "ghostty" in term:
-        return os.environ.get("T2C_VIZ_GHOSTTY_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}
+        return os.environ.get("T2C_RENDER_GHOSTTY_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}
 
     return False
 
@@ -407,7 +407,7 @@ def _ascii_heatmap(arr: object, width: int = 36, height: int = 12) -> str:
     return "\n".join(lines)
 
 
-def _viz_caption(mode: str, arr: object) -> str:
+def _render_caption(mode: str, arr: object) -> str:
     np = _np_module()
     arr_f = np.asarray(arr, dtype=np.float32)
     vals = arr_f.reshape(-1)
@@ -508,13 +508,13 @@ def _coerce_float(data: dict[str, object], key: str, default: float, lo: float, 
     return max(lo, min(hi, out))
 
 
-def build_state(view: str | None = None, inputs: str | None = None) -> VizState:
+def build_state(view: str | None = None, inputs: str | None = None) -> RenderState:
     normalized_view = normalize_view(view)
     merged = _load_inputs_blob(inputs)
     env_blob = os.environ.get("T2C_INPUTS", "").strip()
     if env_blob:
         merged = {**merged, **_load_inputs_blob(env_blob)}
-    return VizState(
+    return RenderState(
         seed=_coerce_int(merged, "seed", 7, 0, 2_000_000_000),
         samples=_coerce_int(merged, "samples", 1200, 64, 12000),
         freq=_coerce_float(merged, "freq", 1.9, 0.1, 20.0),
@@ -527,7 +527,7 @@ def build_state(view: str | None = None, inputs: str | None = None) -> VizState:
     )
 
 
-def normalize_state(state: VizState) -> None:
+def normalize_state(state: RenderState) -> None:
     clamped = build_state(view=state.view, inputs=json.dumps(state.__dict__))
     state.seed = clamped.seed
     state.samples = clamped.samples
@@ -539,7 +539,7 @@ def normalize_state(state: VizState) -> None:
     state.grid = clamped.grid
 
 
-def state_json(state: VizState) -> str:
+def state_json(state: RenderState) -> str:
     payload = {
         "seed": state.seed,
         "samples": state.samples,
@@ -553,7 +553,7 @@ def state_json(state: VizState) -> str:
     return json.dumps(payload)
 
 
-def stage_payload(np: ModuleType, state: VizState) -> tuple[object, str, str]:
+def stage_payload(np: ModuleType, state: RenderState) -> tuple[object, str, str]:
     _ = normalize_view(state.view)
     rng = np.random.default_rng(state.seed)
     x = np.linspace(0.0, 4.0 * np.pi, state.samples, dtype=np.float32)
@@ -591,7 +591,7 @@ def renderer_name(use_plots: bool, use_heatmap: bool) -> str:
 def render_static(
     *,
     np: ModuleType,
-    state: VizState,
+    state: RenderState,
     framework: str,
     width: int,
     height: int,
@@ -600,8 +600,8 @@ def render_static(
     arr_f = np.asarray(arr, dtype=np.float32)
     use_plots = _supports_kitty_graphics()
     use_heatmap = _supports_graphical_terminal()
-    print(f"[VIS renderer={renderer_name(use_plots, use_heatmap)}]")
-    print(f"[VIS:{framework}] {stage}")
+    print(f"[RENDER renderer={renderer_name(use_plots, use_heatmap)}]")
+    print(f"[RENDER:{framework}] {stage}")
 
     if use_plots:
         png = _matplotlib_plot_png(arr_f, stage=stage, tensor_name="interactive")
@@ -623,7 +623,7 @@ def render_non_tty_ascii(
     *,
     mpimg: ModuleType,
     np: ModuleType,
-    state: VizState,
+    state: RenderState,
     width: int,
     height: int,
 ) -> tuple[str, str]:
@@ -641,7 +641,7 @@ def render_non_tty_ascii(
     return to_ascii(rgba, width=width, height=height), caption
 
 
-def viz_stage(
+def render_stage(
     stage: str,
     scope: dict[str, Any],
     to_numpy: Callable[[Any], object | None],
@@ -650,7 +650,7 @@ def viz_stage(
     limit: int = 3,
 ) -> None:
     np = _np_module()
-    if os.environ.get("T2C_VIZ", "1").strip().lower() in {"0", "false", "off", "no"}:
+    if os.environ.get("T2C_RENDER", "1").strip().lower() in {"0", "false", "off", "no"}:
         return
 
     candidates: list[tuple[str, object]] = []
@@ -671,7 +671,7 @@ def viz_stage(
         return
 
     candidates.sort(key=lambda item: item[1].size, reverse=True)
-    style = os.environ.get("T2C_VIZ_STYLE", "plots").strip().lower()
+    style = os.environ.get("T2C_RENDER_STYLE", "plots").strip().lower()
     use_graphics = style != "ascii" and _supports_graphical_terminal()
     kitty_ok = _supports_kitty_graphics()
     inline_image_ok = _supports_inline_image_graphics()
@@ -702,12 +702,12 @@ def viz_stage(
     else:
         chosen = "plots" if inline_image_ok and kitty_ok else ("heatmap" if use_graphics else "ascii")
 
-    if os.environ.get("T2C_VIZ_TRACE", "1").strip().lower() in {"1", "true", "yes", "on"}:
-        print(f"[VIS renderer={chosen}]")
+    if os.environ.get("T2C_RENDER_TRACE", "1").strip().lower() in {"1", "true", "yes", "on"}:
+        print(f"[RENDER renderer={chosen}]")
         if chosen != "plots":
-            print("[VIS hint] Plot rendering unavailable; using synthesized fallback.")
+            print("[RENDER hint] Plot rendering unavailable; using synthesized fallback.")
 
-    print(f"\n[VIS:{framework}] {stage}")
+    print(f"\n[RENDER:{framework}] {stage}")
     for name, arr in candidates[:limit]:
         arr_f = np.asarray(arr, dtype=np.float32)
         print(
@@ -739,11 +739,11 @@ def viz_stage(
         else:
             print(_ascii_heatmap(arr_f))
 
-        print(_format_caption(_viz_caption(chosen, arr_f)))
+        print(_format_caption(_render_caption(chosen, arr_f)))
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Render shinkei sample visualization state.")
+    parser = argparse.ArgumentParser(description="Render shinkei sample state.")
     parser.add_argument(
         "--view",
         type=parse_view_arg,

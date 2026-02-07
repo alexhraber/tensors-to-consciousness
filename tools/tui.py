@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interactive terminal UI for tensors-to-consciousness visualization."""
+"""Interactive terminal UI for tensors-to-consciousness rendering."""
 
 from __future__ import annotations
 
@@ -32,12 +32,12 @@ SCRIPT_PROFILES = build_tui_profiles(resolve_transform_keys("all"))
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Interactive full-screen visualization explorer."
+        description="Interactive full-screen rendering explorer."
     )
     parser.add_argument(
         "--framework",
         default="unknown",
-        help="Framework label shown in the visualization header.",
+        help="Framework label shown in the rendering header.",
     )
     parser.add_argument(
         "--width",
@@ -129,7 +129,7 @@ def _field_specs() -> list[tuple[str, str, object]]:
     ]
 
 
-def _guided_edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
+def _guided_edit_state(fd: int, state: shinkei.RenderState, old: list[int]) -> None:
     termios.tcsetattr(fd, termios.TCSADRAIN, old)
     try:
         print("\nParameter Input")
@@ -148,7 +148,7 @@ def _guided_edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None
     shinkei.normalize_state(state)
 
 
-def _quick_edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
+def _quick_edit_state(fd: int, state: shinkei.RenderState, old: list[int]) -> None:
     termios.tcsetattr(fd, termios.TCSADRAIN, old)
     try:
         line = input("Quick edit key=value (blank to cancel): ").strip()
@@ -180,7 +180,7 @@ def _quick_edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
 def _command_console(
     fd: int,
     old: list[int],
-    state: shinkei.VizState,
+    state: shinkei.RenderState,
     framework: str,
     platform: str,
 ) -> bool:
@@ -389,7 +389,7 @@ def _frame_line(text: str, width: int = 104) -> str:
 def _render_header(
     framework: str,
     platform: str,
-    state: shinkei.VizState,
+    state: shinkei.RenderState,
     renderer: str,
     width: int = 104,
 ) -> None:
@@ -429,11 +429,11 @@ def _layout_for_view() -> dict[str, int]:
     }
 
 
-def _profile_state(index: int, transform_index: int, seed: int = 7) -> shinkei.VizState:
+def _profile_state(index: int, transform_index: int, seed: int = 7) -> shinkei.RenderState:
     profile = SCRIPT_PROFILES[index % len(SCRIPT_PROFILES)]
     transform = profile["transforms"][0]
     preset = transform["preset"]
-    return shinkei.VizState(
+    return shinkei.RenderState(
         seed=seed,
         samples=int(preset["samples"]),
         freq=float(preset["freq"]),
@@ -446,7 +446,7 @@ def _profile_state(index: int, transform_index: int, seed: int = 7) -> shinkei.V
     )
 
 
-def _apply_profile_to_state(state: shinkei.VizState, index: int) -> None:
+def _apply_profile_to_state(state: shinkei.RenderState, index: int) -> None:
     preset = _profile_state(index, 0, seed=state.seed)
     state.samples = preset.samples
     state.freq = preset.freq
@@ -526,14 +526,14 @@ def _render_pipeline_selector(
     return lines
 
 
-def _live_motion_state(base: shinkei.VizState, tick: int) -> tuple[shinkei.VizState, str]:
+def _live_motion_state(base: shinkei.RenderState, tick: int) -> tuple[shinkei.RenderState, str]:
     phase_idx = (tick // 5) % len(LIVE_TRANSFORMS)
     wave = (tick % 40) / 40.0
     if wave > 0.5:
         wave = 1.0 - wave
     wave = wave * 2.0
 
-    state = shinkei.VizState(
+    state = shinkei.RenderState(
         seed=base.seed + tick,
         samples=max(256, int(base.samples * (0.85 + 0.30 * wave))),
         freq=base.freq * (0.9 + 0.35 * wave),
@@ -564,7 +564,7 @@ def _detailed_controls_line() -> str:
 
 def _render_interactive(
     np: ModuleType,
-    state: shinkei.VizState,
+    state: shinkei.RenderState,
     framework: str,
     initial_pipeline: tuple[str, ...],
     transform_selector: str | None = None,
@@ -630,31 +630,31 @@ def _render_interactive(
                 if use_plots:
                     png = shinkei._matplotlib_plot_png(arr_f, stage=stage, tensor_name=active_framework)
                     if png:
-                        viz = shinkei._kitty_from_png_bytes(
+                        render = shinkei._kitty_from_png_bytes(
                             png,
                             cells_w=layout["plot_w"],
                             cells_h=layout["plot_h"],
                         )
                     elif use_heatmap:
-                        viz = shinkei._pixel_heatmap(
+                        render = shinkei._pixel_heatmap(
                             arr_f,
                             width=layout["plot_w"],
                             height=layout["plot_h"],
                         )
                     else:
-                        viz = shinkei._ascii_heatmap(
+                        render = shinkei._ascii_heatmap(
                             arr_f,
                             width=layout["ascii_w"],
                             height=layout["ascii_h"],
                         )
                 elif use_heatmap:
-                    viz = shinkei._pixel_heatmap(
+                    render = shinkei._pixel_heatmap(
                         arr_f,
                         width=layout["plot_w"],
                         height=layout["plot_h"],
                     )
                 else:
-                    viz = shinkei._ascii_heatmap(
+                    render = shinkei._ascii_heatmap(
                         arr_f,
                         width=layout["ascii_w"],
                         height=layout["ascii_h"],
@@ -663,8 +663,8 @@ def _render_interactive(
                 controls_line = _detailed_controls_line() if show_details else _compact_controls_line()
                 selector_lines = _render_pipeline_selector(transforms, pipeline, script_index)
 
-                partial_viz_only = tick_refresh and motion_enabled and dynamic_lines > 0
-                if partial_viz_only:
+                partial_render_only = tick_refresh and motion_enabled and dynamic_lines > 0
+                if partial_render_only:
                     _cursor_up(dynamic_lines)
                     _clear_to_end()
                 else:
@@ -695,7 +695,7 @@ def _render_interactive(
                         print("hint: press [h] for transform details and full controls")
                     print()
 
-                print(viz)
+                print(render)
                 if use_plots:
                     # Keep cursor below kitty image payload before footer text.
                     sys.stdout.write("\n")
@@ -703,7 +703,7 @@ def _render_interactive(
                 print(caption_line)
                 print(controls_line)
                 sys.stdout.flush()
-                dynamic_lines = _line_count(viz) + 1 + _line_count(caption_line) + 1
+                dynamic_lines = _line_count(render) + 1 + _line_count(caption_line) + 1
                 if use_plots:
                     dynamic_lines += 1
                 needs_render = False

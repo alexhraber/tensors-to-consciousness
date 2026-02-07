@@ -114,7 +114,7 @@ def main() -> int:
         print(f"\nActive framework set to: {args.framework}")
         print("Use these commands:")
         print("  python main.py validate")
-        print("  python main.py viz")
+        print("  python main.py render")
         print("  python main.py run --transforms default")
         print("  python main.py --list-transforms")
 

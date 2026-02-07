@@ -63,7 +63,7 @@ python main.py run --transforms default
 - Keep examples aligned with the operational command (`main.py`).
 - Regenerate transform/framework docs when catalog or framework contracts change:
   - `python tools/generate_catalog_docs.py`
-- If visualization previews change, regenerate GIF assets with `python tools/generate_viz_assets.py`.
+- If rendering previews change, regenerate GIF assets with `python tools/generate_render_assets.py`.
 - Keep power-user usage discoverable through `python main.py --help`.
 
 ## Hygiene

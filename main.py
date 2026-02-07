@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "target",
         nargs="?",
-        help="One of: validate, viz, run (default: interactive explorer).",
+        help="One of: validate, render, run (default: interactive explorer).",
     )
     parser.add_argument(
         "--framework",
@@ -172,7 +172,7 @@ def main() -> int:
                 framework,
                 "--transforms",
                 transform_selector or "default",
-                "--viz",
+                "--render",
             ]
             run_cmd(cmd, env=env)
             return 0
@@ -188,7 +188,7 @@ def main() -> int:
         run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         return 0
 
-    if args.target == "viz":
+    if args.target == "render":
         cmd = [str(py), "-m", "tools.tui", "--framework", framework]
         if transform_selector:
             cmd.extend(["--transforms", transform_selector])
@@ -211,12 +211,12 @@ def main() -> int:
             framework,
             "--transforms",
             transform_selector or "default",
-            "--viz",
+            "--render",
         ]
         run_cmd(cmd, env=env)
         return 0
 
-    print("Invalid target. Use: validate, viz, run", file=sys.stderr)
+    print("Invalid target. Use: validate, render, run", file=sys.stderr)
     return 1
 
 

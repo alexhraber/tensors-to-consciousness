@@ -22,17 +22,17 @@
 
 ---
 
-## Visualization Preview
+## Rendering Preview
 
 <p align="center">
-  <img src="assets/viz/optimization_flow.gif" alt="Optimization flow visualization" width="32%">
-  <img src="assets/viz/attention_dynamics.gif" alt="Attention dynamics visualization" width="32%">
-  <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
+  <img src="assets/render/optimization_flow.gif" alt="Optimization flow rendering" width="32%">
+  <img src="assets/render/attention_dynamics.gif" alt="Attention dynamics rendering" width="32%">
+  <img src="assets/render/phase_portraits.gif" alt="Phase portrait rendering" width="32%">
 </p>
 
 ## Research-Grade Terminal Explorer
 
-`tensors-to-consciousness` centers on an interactive terminal environment for rigorous mathematical visualization, comparative framework analysis, and exploratory AI/ML experimentation.
+`tensors-to-consciousness` centers on an interactive terminal environment for rigorous mathematical rendering, comparative framework analysis, and exploratory AI/ML experimentation.
 
 Primary entrypoint:
 
@@ -41,7 +41,7 @@ python main.py
 ```
 
 <p align="center">
-  <img src="assets/viz/tui_studio.gif" alt="TUI explorer preview" width="86%">
+  <img src="assets/render/tui_explorer.gif" alt="TUI explorer preview" width="86%">
 </p>
 
 On first run it will:
@@ -50,7 +50,7 @@ On first run it will:
 2. Use default framework `numpy` if missing
 3. Auto-setup environment + latest available dependencies
 4. Validate the framework track
-5. Launch the interactive visualization explorer
+5. Launch the interactive rendering explorer
 
 Detailed usage lives in:
 
@@ -90,7 +90,7 @@ Top 5 core transforms:
 
 - [Transforms Reference](docs/reference/transforms.md)
 - [Transform Playbook](docs/guides/transform-playbook.md)
-- [Contributing Guide](docs/development/contributing.md)
+- [Contributing Guide](CONTRIBUTING.md)
 - [Tests Guide](tests/README.md)
 - [CI Workflow](.github/workflows/ci.yml)
 
@@ -99,24 +99,24 @@ Core exploration commands:
 ```bash
 python main.py --list-transforms
 python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
-python main.py viz --framework numpy --transforms default
+python main.py render --framework numpy --transforms default
 ```
 
 ## Shinkei Visual Samples
 
 <p align="center"><strong>Sample A</strong></p>
 <p align="center">
-  <img src="assets/viz/optimization_flow.gif" alt="Shinkei sample A - optimization flow" width="72%">
+  <img src="assets/render/optimization_flow.gif" alt="Shinkei sample A - optimization flow" width="72%">
 </p>
 
 <p align="center"><strong>Sample B</strong></p>
 <p align="center">
-  <img src="assets/viz/attention_dynamics.gif" alt="Shinkei sample B - attention dynamics" width="72%">
+  <img src="assets/render/attention_dynamics.gif" alt="Shinkei sample B - attention dynamics" width="72%">
 </p>
 
 <p align="center"><strong>Sample C</strong></p>
 <p align="center">
-  <img src="assets/viz/phase_portraits.gif" alt="Shinkei sample C - phase portraits" width="72%">
+  <img src="assets/render/phase_portraits.gif" alt="Shinkei sample C - phase portraits" width="72%">
 </p>
 
 ## Notes
@@ -127,4 +127,4 @@ python main.py viz --framework numpy --transforms default
 
 ## Contributing
 
-See [Contributing Guide](docs/development/contributing.md).
+See [Contributing Guide](CONTRIBUTING.md).

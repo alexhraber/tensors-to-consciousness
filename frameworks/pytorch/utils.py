@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from tools.shinkei import viz_stage as _shinkei_viz_stage
+from tools.shinkei import render_stage as _shinkei_render_stage
 from tools.input_controls import annotate, metadata_for_scope, resolve_seed, tune_normal, tune_uniform
 
 
@@ -87,8 +87,8 @@ def _to_numpy(value):
         return None
 
 
-def viz_stage(stage, scope):
-    _shinkei_viz_stage(
+def render_stage(stage, scope):
+    _shinkei_render_stage(
         stage,
         scope,
         _to_numpy,

@@ -16,4 +16,4 @@
 
 ## Development
 
-- [Contributing](development/contributing.md)
+- [Contributing](../CONTRIBUTING.md)

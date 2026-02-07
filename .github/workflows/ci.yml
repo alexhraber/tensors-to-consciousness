@@ -11,7 +11,7 @@ on:
       - "tools/**"
       - "tests/**"
       - "docs/**"
-      - "assets/viz/**"
+      - "assets/render/**"
       - ".github/ci/**"
       - ".github/workflows/**"
   pull_request:
@@ -24,7 +24,7 @@ on:
       - "tools/**"
       - "tests/**"
       - "docs/**"
-      - "assets/viz/**"
+      - "assets/render/**"
       - ".github/ci/**"
       - ".github/workflows/**"
   workflow_dispatch:
@@ -39,8 +39,8 @@ permissions:
 env:
   CI_BUDGET_TEST_WARN_SEC: 120
   CI_BUDGET_TEST_FAIL_SEC: 240
-  CI_BUDGET_VIZ_WARN_SEC: 60
-  CI_BUDGET_VIZ_FAIL_SEC: 120
+  CI_BUDGET_RENDER_WARN_SEC: 60
+  CI_BUDGET_RENDER_FAIL_SEC: 120
 
 jobs:
   changes:
@@ -50,7 +50,7 @@ jobs:
       runtime: ${{ steps.filter.outputs.runtime }}
       tests: ${{ steps.filter.outputs.tests }}
       docs: ${{ steps.filter.outputs.docs }}
-      viz: ${{ steps.filter.outputs.viz }}
+      render: ${{ steps.filter.outputs.render }}
       ci: ${{ steps.filter.outputs.ci }}
 
     steps:
@@ -76,9 +76,9 @@ jobs:
               - "transforms/transforms.json"
               - "tools/generate_catalog_docs.py"
               - "tools/runtime.py"
-            viz:
-              - "tools/generate_viz_assets.py"
-              - "assets/viz/**"
+            render:
+              - "tools/generate_render_assets.py"
+              - "assets/render/**"
             ci:
               - ".github/ci/**"
               - ".github/workflows/**"
@@ -312,10 +312,10 @@ jobs:
           print(f"{fw}: framework contract passed.")
           PY
 
-  viz-assets:
-    name: Visualization Assets Integrity
+  render-assets:
+    name: Render Assets Integrity
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.viz == 'true' || needs.changes.outputs.ci == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.render == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -330,7 +330,7 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install visualization dependencies
+      - name: Install rendering dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install numpy matplotlib
@@ -364,19 +364,19 @@ jobs:
 
       - name: Validate committed GIF assets
         run: |
-          for f in assets/viz/*.gif; do
+          for f in assets/render/*.gif; do
             ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$f"
           done
 
       - name: Fast deterministic generator check
         run: |
           set -euo pipefail
-          rm -rf /tmp/viz-a /tmp/viz-b
-          python tools/generate_viz_assets.py --output-dir /tmp/viz-a --frames 20 --fps 12 --width 320 --height 180
-          python tools/generate_viz_assets.py --output-dir /tmp/viz-b --frames 20 --fps 12 --width 320 --height 180
-          sha256sum /tmp/viz-a/*.gif | sort | awk '{print $1}' > /tmp/viz_hashes_1.txt
-          sha256sum /tmp/viz-b/*.gif | sort | awk '{print $1}' > /tmp/viz_hashes_2.txt
-          diff -u /tmp/viz_hashes_1.txt /tmp/viz_hashes_2.txt
+          rm -rf /tmp/render-a /tmp/render-b
+          python tools/generate_render_assets.py --output-dir /tmp/render-a --frames 20 --fps 12 --width 320 --height 180
+          python tools/generate_render_assets.py --output-dir /tmp/render-b --frames 20 --fps 12 --width 320 --height 180
+          sha256sum /tmp/render-a/*.gif | sort | awk '{print $1}' > /tmp/render_hashes_1.txt
+          sha256sum /tmp/render-b/*.gif | sort | awk '{print $1}' > /tmp/render_hashes_2.txt
+          diff -u /tmp/render_hashes_1.txt /tmp/render_hashes_2.txt
 
       - name: Record timing metrics
         if: always()
@@ -385,9 +385,9 @@ jobs:
           DURATION=$((END_TS - JOB_START_TS))
           echo "JOB_DURATION_SEC=${DURATION}" >> "$GITHUB_ENV"
           mkdir -p ci-metrics
-          cat > "ci-metrics/viz-assets.json" <<EOF
+          cat > "ci-metrics/render-assets.json" <<EOF
           {
-            "job": "viz-assets",
+            "job": "render-assets",
             "duration_seconds": ${DURATION},
             "run_id": "${{ github.run_id }}",
             "run_attempt": "${{ github.run_attempt }}",
@@ -395,29 +395,29 @@ jobs:
           }
           EOF
           {
-            echo "### CI Timing: viz-assets"
+            echo "### CI Timing: render-assets"
             echo "- Duration: ${DURATION}s"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Enforce viz job budget
+      - name: Enforce render job budget
         if: always()
         run: |
           DUR="${JOB_DURATION_SEC}"
-          WARN="${CI_BUDGET_VIZ_WARN_SEC}"
-          FAIL="${CI_BUDGET_VIZ_FAIL_SEC}"
+          WARN="${CI_BUDGET_RENDER_WARN_SEC}"
+          FAIL="${CI_BUDGET_RENDER_FAIL_SEC}"
           if [ "$DUR" -gt "$FAIL" ]; then
-            echo "viz-assets job exceeded hard budget: ${DUR}s > ${FAIL}s" >&2
+            echo "render-assets job exceeded hard budget: ${DUR}s > ${FAIL}s" >&2
             exit 1
           fi
           if [ "$DUR" -gt "$WARN" ]; then
-            echo "::warning::viz-assets job exceeded warning budget: ${DUR}s > ${WARN}s"
+            echo "::warning::render-assets job exceeded warning budget: ${DUR}s > ${WARN}s"
           fi
 
       - name: Upload timing metrics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-timing-viz-assets
-          path: ci-metrics/viz-assets.json
+          name: ci-timing-render-assets
+          path: ci-metrics/render-assets.json
           if-no-files-found: error
           retention-days: 30

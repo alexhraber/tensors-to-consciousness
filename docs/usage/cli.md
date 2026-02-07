@@ -11,7 +11,7 @@ python main.py --help
 python main.py -c
 python main.py validate
 python main.py run --framework jax --transforms default
-python -m tools.playground --framework jax --transforms chain_rule,adam --viz
+python -m tools.playground --framework jax --transforms chain_rule,adam --render
 python main.py --list-transforms
 ```
 
@@ -25,7 +25,7 @@ Top 5 core transforms:
 ## Direct Visualization Fetch
 
 ```bash
-python main.py viz --transforms gradient_descent,momentum --transform momentum
+python main.py render --transforms gradient_descent,momentum --transform momentum
 ```
 
 - `--transforms`: comma-separated transform keys, or `default`/`all`

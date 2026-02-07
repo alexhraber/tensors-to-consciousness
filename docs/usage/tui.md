@@ -32,7 +32,7 @@ Transform chains, parameter edits, and live dynamics are toggles within the same
 ## Start with a Specific Transform Set
 
 ```bash
-python main.py viz --transforms gradient_descent,momentum,adam --transform momentum
+python main.py render --transforms gradient_descent,momentum,adam --transform momentum
 ```
 
 Top 5 core transforms:

@@ -24,7 +24,7 @@ class FrameworkContractsTests(unittest.TestCase):
                 )
 
     def test_utils_exports_required_surface(self) -> None:
-        required_functions = {"normal", "viz_stage", "_to_numpy"}
+        required_functions = {"normal", "render_stage", "_to_numpy"}
         for framework in SUPPORTED_FRAMEWORKS:
             with self.subTest(framework=framework):
                 path = ROOT / "frameworks" / framework / "utils.py"

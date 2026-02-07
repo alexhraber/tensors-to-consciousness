@@ -97,7 +97,7 @@ class TuiEntrypointTests(unittest.TestCase):
         except ModuleNotFoundError:
             self.skipTest("numpy not installed in test interpreter")
 
-        state = shinkei.VizState(samples=512, grid=64, view="explore")
+        state = shinkei.RenderState(samples=512, grid=64, view="explore")
         arr_simple, stage_simple, _ = shinkei.stage_payload(np, state)
         self.assertEqual(stage_simple, "explore")
         self.assertEqual(arr_simple.ndim, 2)
