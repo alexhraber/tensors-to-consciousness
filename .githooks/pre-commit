@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-branch="$(git rev-parse --abbrev-ref HEAD)"
-if [[ "${ALLOW_MAIN_COMMIT:-0}" != "1" ]] && [[ "$branch" == "main" || "$branch" == "master" ]]; then
-  echo "Direct commits to '$branch' are blocked by repository policy." >&2
-  echo "Create a feature branch first, e.g.:" >&2
-  echo "  git switch -c chore/<topic>" >&2
-  echo "Set ALLOW_MAIN_COMMIT=1 only for exceptional maintenance commits." >&2
-  exit 1
-fi
+python tools/git_policy.py --hook pre-commit
 
 python tools/setup_contributor.py --quiet
