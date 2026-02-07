@@ -54,6 +54,13 @@ class PrePushGateTests(unittest.TestCase):
         tasks = select_act_tasks(["docs/usage/tui.md"])
         self.assertEqual(tasks, [])
 
+    def test_readme_only_change_selects_nothing(self) -> None:
+        self.assertEqual(select_act_tasks(["README.md"]), [])
+
+    def test_markdown_docs_and_contributing_selects_nothing(self) -> None:
+        tasks = select_act_tasks(["docs/reference/architecture.md", "CONTRIBUTING.md"])
+        self.assertEqual(tasks, [])
+
     def test_catalog_source_change_selects_docs_job(self) -> None:
         tasks = select_act_tasks(["transforms/transforms.json"])
         self.assertIn("act-ci-docs-sync", tasks)

@@ -59,6 +59,13 @@ def _has_exact(paths: list[str], *names: str) -> bool:
 
 
 def select_act_tasks(paths: list[str]) -> list[str]:
+    # Keep local pre-push behavior aligned with workflow path filters:
+    # README/docs markdown edits should not trigger heavyweight act jobs.
+    docs_only_prefixes = ("docs/",)
+    docs_only_exact = {"README.md", "CONTRIBUTING.md"}
+    if paths and all(path in docs_only_exact or path.startswith(docs_only_prefixes) for path in paths):
+        return []
+
     runtime = _has_prefix(paths, "transforms/", "frameworks/") or _has_exact(
         paths,
         "explorer.py",
