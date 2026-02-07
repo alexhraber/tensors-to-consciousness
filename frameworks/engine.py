@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import importlib
 from dataclasses import dataclass
+from time import perf_counter
 from types import ModuleType
 from typing import Any
 
+from tools import diagnostics
 from transforms.catalog import catalog_framework_interface
 from transforms.contracts import TensorField
 from transforms.definitions import get_transform_definition
@@ -36,10 +38,13 @@ def _to_numpy_fallback(value: Any) -> Any | None:
 
 class FrameworkEngine:
     def __init__(self, framework: str) -> None:
+        diagnostics.configure_logging()
+        self.logger = diagnostics.get_logger(f"frameworks.engine.{framework}")
         self.framework = framework
         self.utils: ModuleType = importlib.import_module(f"frameworks.{framework}.utils")
         self._interface = catalog_framework_interface()
         self._validate_framework_interface()
+        diagnostics.kernel_event(self.logger, "engine.init", framework=framework)
 
     def _validate_framework_interface(self) -> None:
         for name in self._interface["utils_entrypoints"]:
@@ -112,6 +117,7 @@ class FrameworkEngine:
         }
 
     def run_pipeline(self, transform_keys: tuple[str, ...], *, size: int = 96, steps: int = 1) -> PipelineResult:
+        started = perf_counter()
         n = max(24, min(320, int(size)))
         field = TensorField(tensor=self._normal((n, n)))
         ops = self._Ops(self)
@@ -122,9 +128,24 @@ class FrameworkEngine:
             for key in transform_keys:
                 definition = get_transform_definition(key)
                 params = {**definition.defaults, **self._params_for(key)}
+                diagnostics.kernel_event(
+                    self.logger,
+                    "transform.execute",
+                    transform=key,
+                    framework=self.framework,
+                    params=params,
+                )
                 field = definition.transform(field, ops, params)
                 arr = self.to_numpy(field.tensor)
                 if arr is not None:
+                    diagnostics.kernel_event(
+                        self.logger,
+                        "transform.tensor_stats",
+                        transform=key,
+                        shape=tuple(arr.shape),
+                        mean=float(arr.mean()),
+                        std=float(arr.std()),
+                    )
                     trace.append(
                         {
                             "transform": key,
@@ -143,6 +164,15 @@ class FrameworkEngine:
                         }
                     )
 
+        diagnostics.finish_timed_event(
+            self.logger,
+            "pipeline.run",
+            started=started,
+            framework=self.framework,
+            transforms=transform_keys,
+            steps=max(1, int(steps)),
+            size=n,
+        )
         return PipelineResult(
             framework=self.framework,
             transform_keys=transform_keys,

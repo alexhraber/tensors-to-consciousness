@@ -102,6 +102,17 @@ python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
 python main.py render --framework numpy --transforms default
 ```
 
+Diagnostics and introspection:
+
+- Default logging level is `INFO`.
+- Debug tracing is disabled by default.
+- Set `DEBUG=1` to emit kernel-level transform/tooling events.
+- Set `LOG_LEVEL` to one of: `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`.
+
+```bash
+DEBUG=1 LOG_LEVEL=DEBUG python main.py run --framework numpy --transforms default
+```
+
 ## Shinkei Visual Samples
 
 <p align="center"><strong>Sample A</strong></p>

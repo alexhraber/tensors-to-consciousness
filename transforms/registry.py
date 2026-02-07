@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from tools import diagnostics
 from transforms.catalog import catalog_default_keys
 from transforms.catalog import catalog_transforms
+
+_LOGGER = diagnostics.get_logger("transforms.registry")
 
 
 @dataclass(frozen=True)
@@ -62,12 +65,16 @@ def list_transform_keys() -> tuple[str, ...]:
 
 def resolve_transform_keys(raw: str | None) -> tuple[str, ...]:
     if raw is None:
+        diagnostics.kernel_event(_LOGGER, "transforms.resolve", raw=raw, resolved=DEFAULT_TRANSFORM_KEYS)
         return DEFAULT_TRANSFORM_KEYS
     s = raw.strip().lower()
     if not s or s == "default":
+        diagnostics.kernel_event(_LOGGER, "transforms.resolve", raw=raw, resolved=DEFAULT_TRANSFORM_KEYS)
         return DEFAULT_TRANSFORM_KEYS
     if s == "all":
-        return list_transform_keys()
+        resolved = list_transform_keys()
+        diagnostics.kernel_event(_LOGGER, "transforms.resolve", raw=raw, resolved=resolved)
+        return resolved
 
     out: list[str] = []
     for part in s.split(","):
@@ -80,8 +87,11 @@ def resolve_transform_keys(raw: str | None) -> tuple[str, ...]:
         if key not in out:
             out.append(key)
     if not out:
+        diagnostics.kernel_event(_LOGGER, "transforms.resolve", raw=raw, resolved=DEFAULT_TRANSFORM_KEYS)
         return DEFAULT_TRANSFORM_KEYS
-    return tuple(out)
+    resolved = tuple(out)
+    diagnostics.kernel_event(_LOGGER, "transforms.resolve", raw=raw, resolved=resolved)
+    return resolved
 
 
 def specs_for_keys(keys: tuple[str, ...]) -> tuple[TransformSpec, ...]:

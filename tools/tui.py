@@ -8,6 +8,7 @@ import json
 import os
 import re
 import select
+import signal
 import shutil
 import subprocess
 import sys
@@ -666,6 +667,14 @@ def _render_interactive(
         pipeline = [str(transforms[script_index]["key"])]
     _apply_profile_to_state(state, script_index)
     old = termios.tcgetattr(fd)
+    prev_sigint = signal.getsignal(signal.SIGINT)
+    interrupt_requested = False
+
+    def _handle_sigint(_signum, _frame) -> None:
+        nonlocal interrupt_requested
+        interrupt_requested = True
+
+    signal.signal(signal.SIGINT, _handle_sigint)
     _enter_alt()
     tty.setcbreak(fd)
     needs_render = True
@@ -683,6 +692,18 @@ def _render_interactive(
     try:
         while True:
             try:
+                if interrupt_requested:
+                    if on_landing:
+                        break
+                    interrupt_requested = False
+                    on_landing = True
+                    motion_enabled = False
+                    show_details = False
+                    needs_render = True
+                    tick_refresh = False
+                    dynamic_lines = 0
+                    continue
+
                 if needs_render:
                     if on_landing:
                         _clear_screen()
@@ -819,6 +840,16 @@ def _render_interactive(
                     continue
                 if ch == "q":
                     break
+                if ch == "\x03":
+                    if on_landing:
+                        break
+                    on_landing = True
+                    motion_enabled = False
+                    show_details = False
+                    needs_render = True
+                    tick_refresh = False
+                    dynamic_lines = 0
+                    continue
                 if on_landing:
                     if ch in {"\r", "\n"}:
                         on_landing = False
@@ -913,6 +944,7 @@ def _render_interactive(
                 tick_refresh = False
                 dynamic_lines = 0
     finally:
+        signal.signal(signal.SIGINT, prev_sigint)
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
         _leave_alt()
     return 0

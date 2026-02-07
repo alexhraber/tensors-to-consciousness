@@ -11,6 +11,7 @@ from pathlib import Path
 
 from transforms.registry import list_transform_keys
 from transforms.registry import resolve_transform_keys
+from tools import diagnostics
 from tools.runtime import SUPPORTED_FRAMEWORKS, load_config, python_in_venv
 
 DEFAULT_FRAMEWORK = "numpy"
@@ -128,6 +129,8 @@ def ensure_setup_if_needed(
 
 
 def main() -> int:
+    diagnostics.configure_logging()
+    logger = diagnostics.get_logger("main")
     args = parse_args()
     if getattr(args, "list_transforms", False):
         print("Available transforms:")
@@ -155,6 +158,8 @@ def main() -> int:
 
     if inputs:
         env["INPUTS"] = inputs
+
+    logger.info("launch target=%s framework=%s", args.target or "interactive", framework or "auto")
 
     try:
         config, setup_ran = ensure_setup_if_needed(
@@ -234,4 +239,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        raise SystemExit(130)
