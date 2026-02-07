@@ -1,7 +1,7 @@
 # Rust Core
 
-Python remains the product surface (`explorer.py`, `tools/tui.py`, `tools/shinkei.py`).
-Rust provides optional compute/render acceleration via `ttc_rust_core`.
+Rust is the product surface (`explorer`).
+Python executes transform and framework math. Rust provides optional compute/render acceleration via `ttc_rust_core`.
 
 ## Scope
 

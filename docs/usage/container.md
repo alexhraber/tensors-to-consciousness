@@ -19,7 +19,7 @@ Service behavior:
 - interactive TTY is enabled (`stdin_open: true`, `tty: true`)
 - repository is mounted at `/workspace`
 - configuration persists in a named volume
-- service default command is `python explorer.py`
+- service default command is `explorer`
 
 ## Hardware Profiles
 
@@ -52,7 +52,7 @@ ssh <host> "cd /path/to/tensors-to-consciousness && docker compose run --rm -e R
 ## One-Off Commands
 
 ```bash
-docker compose run --rm explorer python explorer.py --list-transforms
-docker compose run --rm explorer python explorer.py run --framework numpy --transforms default
+docker compose run --rm explorer explorer list-transforms
+docker compose run --rm explorer explorer run --framework numpy --transforms default
 docker compose run --rm explorer python -m tests --suite unit
 ```

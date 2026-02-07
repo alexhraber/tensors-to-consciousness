@@ -2,6 +2,7 @@
 python = "3.14"
 uv = "latest"
 act = "latest"
+rust = "stable"
 
 [tasks.install-test-deps]
 description = "Install local/CI test and runtime-light dependencies."
@@ -51,11 +52,17 @@ python -m coverage xml -o coverage.xml
 [tasks.cli-smoke]
 description = "Smoke-check core CLIs."
 run = '''
-python explorer.py --help
+mise run rust-build
+./target/debug/explorer --help
+./target/debug/explorer list-transforms >/dev/null
 python -m tools.setup --help
 python -m tools.validate --help
 python -m tools.tui --help
 '''
+
+[tasks.rust-build]
+description = "Build the Rust explorer binary."
+run = "cargo build -p tensors-explorer"
 
 [tasks.docs-generate]
 description = "Generate reference docs."

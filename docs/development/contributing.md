@@ -7,7 +7,7 @@ This project is maintained as an architecture-first exploration platform. Contri
 - `transforms/`: canonical transform catalog and metadata definitions.
 - `frameworks/<framework>/`: backend execution adapters.
 - `tools/`: runtime, diagnostics, rendering, and TUI surfaces.
-- `explorer.py`: primary user-facing entrypoint.
+- `explorer` (Rust): primary user-facing entrypoint and TUI host.
 - `rust_core/`: optional acceleration kernels consumed by Python bridges.
 
 ## Local Workflow
@@ -19,8 +19,9 @@ python tools/setup_contributor.py
 python tools/install_githooks.py
 python -m pip install pre-commit
 pre-commit install
-python explorer.py
-python explorer.py run --transforms default
+mise run rust-build
+./target/debug/explorer
+./target/debug/explorer run --framework jax --transforms default
 mise run test-all
 ```
 
@@ -79,15 +80,15 @@ Requirements:
 
 1. Add or modify transform definitions in `transforms/transforms.json`.
 2. Verify registry/catalog resolution remains valid.
-3. Validate setup and run paths through `explorer.py`.
+3. Validate setup and run paths through `explorer`.
 4. Run both unit and integration test suites.
 
 Validation commands:
 
 ```bash
-python explorer.py --list-transforms
-python explorer.py validate
-python explorer.py run --transforms default
+./target/debug/explorer list-transforms
+./target/debug/explorer validate --framework jax
+./target/debug/explorer run --framework jax --transforms default
 mise run test-unit
 mise run test-integration
 ```

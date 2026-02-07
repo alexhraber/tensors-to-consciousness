@@ -34,8 +34,8 @@ Framework default by platform:
 Examples:
 
 ```bash
-python explorer.py run --framework jax --transforms default
-DEBUG=1 LOG_LEVEL=DEBUG python explorer.py run --framework jax --transforms default
+explorer run --framework jax --transforms default
+DEBUG=1 LOG_LEVEL=DEBUG explorer run --framework jax --transforms default
 ```
 
 ## Precedence
