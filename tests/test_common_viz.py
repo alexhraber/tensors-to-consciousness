@@ -33,11 +33,11 @@ class CommonVizTests(unittest.TestCase):
         arr = np.array([], dtype=np.float32)
         self.assertEqual(common_viz._ascii_heatmap(arr), "(empty)")
 
-    def test_gpu_render_constant_tensor_still_visible(self) -> None:
+    def test_half_block_render_constant_tensor_still_visible(self) -> None:
         common_viz = _load_common_viz()
         np = common_viz.np
         arr = np.ones((8, 8), dtype=np.float32)
-        out = common_viz._braille_heatmap(arr, width=8, height=4)
+        out = common_viz._pixel_heatmap(arr, width=8, height=4)
         self.assertTrue(any(ch.strip() for ch in out.splitlines()))
 
     def test_viz_stage_filters_and_limit(self) -> None:
@@ -79,7 +79,7 @@ class CommonVizTests(unittest.TestCase):
                 common_viz.viz_stage("stage_off", scope, lambda x: x, framework="numpy")
         self.assertEqual(buf.getvalue(), "")
 
-    def test_viz_stage_kitty_falls_back_to_half_cubes(self) -> None:
+    def test_viz_stage_kitty_falls_back_to_half_block(self) -> None:
         common_viz = _load_common_viz()
         np = common_viz.np
         scope = {"x": np.arange(64, dtype=np.float32).reshape(8, 8)}
@@ -94,9 +94,9 @@ class CommonVizTests(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 common_viz.viz_stage("stage_fallback", scope, lambda x: x, framework="numpy")
-        self.assertIn("[VIS renderer=half-cubes]", buf.getvalue())
+        self.assertIn("[VIS renderer=half-block]", buf.getvalue())
 
-    def test_viz_stage_default_prefers_fluid_render_when_inline_available(self) -> None:
+    def test_viz_stage_default_prefers_kitty_when_inline_available(self) -> None:
         common_viz = _load_common_viz()
         np = common_viz.np
         scope = {"x": np.arange(64, dtype=np.float32).reshape(8, 8)}
@@ -107,13 +107,20 @@ class CommonVizTests(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 common_viz.viz_stage("stage_fluid", scope, lambda x: x, framework="numpy")
-        self.assertIn("[VIS renderer=fluid-render]", buf.getvalue())
+        self.assertIn("[VIS renderer=kitty]", buf.getvalue())
 
-    def test_inline_support_ssh_heuristic(self) -> None:
+    def test_inline_support_requires_capability_or_force(self) -> None:
         common_viz = _load_common_viz()
         with patch.dict(
             os.environ,
-            {"SSH_TTY": "/dev/pts/1", "COLORTERM": "truecolor", "TERM": "xterm-256color"},
+            {"COLORTERM": "truecolor", "TERM": "xterm-256color"},
+            clear=False,
+        ), patch.object(common_viz.sys.stdout, "isatty", return_value=True):
+            self.assertFalse(common_viz._supports_inline_image_graphics())
+
+        with patch.dict(
+            os.environ,
+            {"T2C_VIZ_FORCE_INLINE": "1"},
             clear=False,
         ), patch.object(common_viz.sys.stdout, "isatty", return_value=True):
             self.assertTrue(common_viz._supports_inline_image_graphics())

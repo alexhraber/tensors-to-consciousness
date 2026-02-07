@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import base64
+import io
 from typing import Any, Callable
 
 import numpy as np
@@ -36,15 +37,30 @@ def _supports_kitty_graphics() -> bool:
 
 def _supports_inline_image_graphics() -> bool:
     # Currently backed by kitty-compatible graphics protocol.
-    # Over SSH, TERM/TERM_PROGRAM may be lossy; keep this permissive.
+    # Keep detection strict to avoid "blank" output on unsupported terminals.
     if os.environ.get("T2C_VIZ_DISABLE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return False
-    if _supports_kitty_graphics():
-        return True
     if os.environ.get("T2C_VIZ_FORCE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return True
-    # If we're on a real color TTY, try inline protocol first.
-    return _supports_graphical_terminal()
+    if not sys.stdout.isatty():
+        return False
+
+    # Strong positive signals for kitty graphics support.
+    term = os.environ.get("TERM", "").lower()
+    term_program = os.environ.get("TERM_PROGRAM", "").lower()
+    if os.environ.get("KITTY_WINDOW_ID"):
+        return True
+    if "kitty" in term:
+        return True
+    if term_program == "kitty":
+        return True
+
+    # Ghostty compatibility can vary by environment/proxy/multiplexer.
+    # Require explicit opt-in to avoid blank frames.
+    if term_program == "ghostty" or "ghostty" in term:
+        return os.environ.get("T2C_VIZ_GHOSTTY_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}
+
+    return False
 
 
 def _viridis(v: float) -> tuple[int, int, int]:
@@ -131,67 +147,6 @@ def _full_block_heatmap(arr: np.ndarray, width: int = 56, height: int = 20) -> s
     return "\n".join(lines)
 
 
-def _braille_heatmap(arr: np.ndarray, width: int = 72, height: int = 24) -> str:
-    """High-density truecolor renderer using Unicode Braille cells (2x4 pixels/cell)."""
-    if arr.ndim == 1:
-        arr = arr.reshape(1, -1)
-    if arr.ndim > 2:
-        arr = arr.reshape(arr.shape[0], -1)
-    arr = np.asarray(arr, dtype=np.float32)
-    if arr.size == 0:
-        return "(empty)"
-
-    px_h = max(4, height * 4)
-    px_w = max(2, width * 2)
-    sampled = _upsample_interp(arr, out_h=px_h, out_w=px_w)
-    if sampled.shape[0] < 4:
-        sampled = np.vstack([sampled] * (4 // sampled.shape[0] + 1))[:4, :]
-    if sampled.shape[1] < 2:
-        sampled = np.hstack([sampled] * (2 // sampled.shape[1] + 1))[:, :2]
-
-    mn = float(np.min(sampled))
-    mx = float(np.max(sampled))
-    if mx - mn < 1e-12:
-        # Keep constant tensors visible as a mid-tone tile rather than blank space.
-        norm = np.full_like(sampled, 0.5, dtype=np.float32)
-    else:
-        norm = (sampled - mn) / (mx - mn)
-
-    dot_map = {
-        (0, 0): 1,
-        (1, 0): 2,
-        (2, 0): 4,
-        (3, 0): 64,
-        (0, 1): 8,
-        (1, 1): 16,
-        (2, 1): 32,
-        (3, 1): 128,
-    }
-
-    lines: list[str] = []
-    for r in range(0, norm.shape[0], 4):
-        block_rows = norm[r : r + 4, :]
-        if block_rows.shape[0] < 4:
-            block_rows = np.vstack([block_rows, block_rows[-1:, :].repeat(4 - block_rows.shape[0], axis=0)])
-        row_chars = []
-        for c in range(0, norm.shape[1], 2):
-            block = block_rows[:, c : c + 2]
-            if block.shape[1] < 2:
-                block = np.hstack([block, block[:, -1:]])
-            bits = 0
-            for (rr, cc), bit in dot_map.items():
-                if block[rr, cc] > 0.45:
-                    bits |= bit
-            mean_v = float(np.mean(block))
-            if bits == 0 and mean_v > 0.05:
-                bits = 1
-            ch = " " if bits == 0 else chr(0x2800 + bits)
-            cr, cg, cb = _viridis(mean_v)
-            row_chars.append(f"\x1b[38;2;{cr};{cg};{cb}m{ch}\x1b[0m")
-        lines.append("".join(row_chars))
-    return "\n".join(lines)
-
-
 def _pixel_heatmap(arr: np.ndarray, width: int = 48, height: int = 20) -> str:
     """High-density terminal renderer using truecolor half blocks.
 
@@ -234,14 +189,17 @@ def _pixel_heatmap(arr: np.ndarray, width: int = 48, height: int = 20) -> str:
     return "\n".join(lines)
 
 
-def _kitty_from_rgb(rgb: np.ndarray, cells_w: int = 48, cells_h: int = 12) -> str:
-    rgb = np.asarray(rgb, dtype=np.uint8)
-    if rgb.ndim != 3 or rgb.shape[2] != 3:
+def _kitty_transmit_payload(
+    payload_b64: str,
+    *,
+    format_code: int,
+    pixel_w: int,
+    pixel_h: int,
+    cells_w: int,
+    cells_h: int,
+) -> str:
+    if not payload_b64:
         return "(empty)"
-    if rgb.size == 0:
-        return "(empty)"
-
-    payload = base64.b64encode(rgb.tobytes()).decode("ascii")
 
     # Kitty/ghostty graphics protocol in chunked mode.
     # Large payloads must be split across multiple escape sequences.
@@ -249,15 +207,18 @@ def _kitty_from_rgb(rgb: np.ndarray, cells_w: int = 48, cells_h: int = 12) -> st
     chunk_size = 4096
     first = True
     i = 0
-    while i < len(payload):
-        part = payload[i : i + chunk_size]
+    while i < len(payload_b64):
+        part = payload_b64[i : i + chunk_size]
         i += chunk_size
-        more = 1 if i < len(payload) else 0
+        more = 1 if i < len(payload_b64) else 0
         if first:
-            prefix = (
-                f"\x1b_Ga=T,f=24,s={rgb.shape[1]},v={rgb.shape[0]},"
-                f"c={cells_w},r={cells_h},m={more};"
-            )
+            if pixel_w > 0 and pixel_h > 0:
+                prefix = (
+                    f"\x1b_Ga=T,f={format_code},s={pixel_w},v={pixel_h},"
+                    f"c={cells_w},r={cells_h},m={more};"
+                )
+            else:
+                prefix = f"\x1b_Ga=T,f={format_code},c={cells_w},r={cells_h},m={more};"
             first = False
         else:
             prefix = f"\x1b_Gm={more};"
@@ -268,6 +229,38 @@ def _kitty_from_rgb(rgb: np.ndarray, cells_w: int = 48, cells_h: int = 12) -> st
             seq = f"\x1bPtmux;{escaped_seq}\x1b\\"
         chunks.append(seq)
     return "".join(chunks)
+
+
+def _kitty_from_rgb(rgb: np.ndarray, cells_w: int = 48, cells_h: int = 12) -> str:
+    rgb = np.asarray(rgb, dtype=np.uint8)
+    if rgb.ndim != 3 or rgb.shape[2] != 3:
+        return "(empty)"
+    if rgb.size == 0:
+        return "(empty)"
+    payload_b64 = base64.b64encode(rgb.tobytes()).decode("ascii")
+    return _kitty_transmit_payload(
+        payload_b64,
+        format_code=24,
+        pixel_w=rgb.shape[1],
+        pixel_h=rgb.shape[0],
+        cells_w=cells_w,
+        cells_h=cells_h,
+    )
+
+
+def _kitty_from_png_bytes(png_bytes: bytes, cells_w: int = 64, cells_h: int = 18) -> str:
+    if not png_bytes:
+        return "(empty)"
+    payload_b64 = base64.b64encode(png_bytes).decode("ascii")
+    # PNG dimensions are self-described; s/v can be omitted for f=100.
+    return _kitty_transmit_payload(
+        payload_b64,
+        format_code=100,
+        pixel_w=0,
+        pixel_h=0,
+        cells_w=cells_w,
+        cells_h=cells_h,
+    )
 
 
 def _upsample_interp(arr: np.ndarray, out_h: int, out_w: int) -> np.ndarray:
@@ -347,6 +340,55 @@ def _fluid_inline_render(arr: np.ndarray, width: int = 320, height: int = 180) -
     return _kitty_from_rgb(rgb, cells_w=64, cells_h=18)
 
 
+def _matplotlib_plot_png(arr: np.ndarray, width_px: int = 960, height_px: int = 540) -> bytes | None:
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception:
+        return None
+
+    arr = np.asarray(arr, dtype=np.float32)
+    if arr.ndim == 0 or arr.size == 0:
+        return None
+
+    # Reduce >2D tensors to a plottable 2D view.
+    if arr.ndim > 2:
+        arr2 = arr.reshape(arr.shape[0], -1)
+    else:
+        arr2 = arr
+
+    dpi = 120
+    fig_w = max(4.0, width_px / dpi)
+    fig_h = max(2.5, height_px / dpi)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=dpi)
+    fig.patch.set_facecolor("#0a0a0d")
+    ax.set_facecolor("#0f111a")
+
+    if arr2.ndim == 1 or 1 in arr2.shape:
+        y = np.ravel(arr2)
+        x = np.arange(y.size, dtype=np.int32)
+        ax.plot(x, y, color="#4ec9f5", linewidth=1.8)
+        ax.fill_between(x, y, np.min(y), color="#4ec9f5", alpha=0.15)
+        ax.set_title("Tensor Signal", color="#e6edf3", fontsize=11)
+    else:
+        im = ax.imshow(arr2, cmap="viridis", aspect="auto", interpolation="bilinear")
+        ax.set_title("Tensor Field", color="#e6edf3", fontsize=11)
+        cbar = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+        cbar.ax.tick_params(colors="#9aa4b2", labelsize=8)
+
+    ax.tick_params(colors="#9aa4b2", labelsize=8)
+    for spine in ax.spines.values():
+        spine.set_color("#2a2f3a")
+    ax.grid(color="#1f2530", linewidth=0.4, alpha=0.6)
+    fig.tight_layout()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", facecolor=fig.get_facecolor())
+    plt.close(fig)
+    return buf.getvalue()
+
+
 def _ascii_heatmap(arr: np.ndarray, width: int = 36, height: int = 12) -> str:
     ramp = " .:-=+*#%@"
     if arr.ndim == 1:
@@ -400,66 +442,41 @@ def viz_stage(
 
     # Prefer larger tensors to show the most informative surfaces.
     candidates.sort(key=lambda item: item[1].size, reverse=True)
-    style = os.environ.get("T2C_VIZ_STYLE", "fluid-render").strip().lower()
+    style = os.environ.get("T2C_VIZ_STYLE", "kitty").strip().lower()
     use_graphics = style != "ascii" and _supports_graphical_terminal()
     kitty_ok = _supports_kitty_graphics()
     inline_image_ok = _supports_inline_image_graphics()
     chosen = "ascii"
-    if style in {"fluid-render", "fluid-image", "auto", "fluid"}:
-        # Ordered fallback chain:
-        # 1) fluid-render (inline raster image)
-        # 2) gpu-render (braille truecolor)
-        # 3) kitty protocol image
-        # 4) half-cubes (truecolor)
-        # 5) full-cubes (truecolor)
-        # 6) ascii
-        if inline_image_ok:
-            chosen = "fluid-render"
+    # Canonical fallback chain:
+    # kitty -> half-block -> full-block -> ascii
+    # Legacy aliases are preserved for compatibility.
+    if style in {"kitty", "image", "auto", "fluid-render", "fluid-image", "fluid"}:
+        if inline_image_ok and kitty_ok:
+            chosen = "kitty"
         elif use_graphics:
-            chosen = "gpu-render"
-        elif kitty_ok:
-            chosen = "kitty"
+            chosen = "half-block"
         elif sys.stdout.isatty():
-            chosen = "half-cubes"
+            chosen = "full-block"
         else:
             chosen = "ascii"
-    elif style in {"gpu-render", "gpu", "braille"}:
-        # Skip fluid render in this explicit mode.
+    elif style in {"gpu-render", "gpu", "half-block", "half-cubes", "half", "pixel"}:
         if use_graphics:
-            chosen = "gpu-render"
-        elif kitty_ok:
-            chosen = "kitty"
+            chosen = "half-block"
         elif sys.stdout.isatty():
-            chosen = "half-cubes"
+            chosen = "full-block"
         else:
             chosen = "ascii"
-    elif style in {"half-cubes", "half", "pixel"}:
+    elif style in {"full-block", "full-cubes", "full", "ansi"}:
         if use_graphics:
-            chosen = "half-cubes"
-        elif sys.stdout.isatty():
-            chosen = "full-cubes"
-        else:
-            chosen = "ascii"
-    elif style in {"full-cubes", "full", "ansi"}:
-        if use_graphics:
-            chosen = "full-cubes"
+            chosen = "full-block"
         else:
             chosen = "ascii"
     elif style in {"ascii", "text"}:
         chosen = "ascii"
-    elif style in {"kitty", "image"}:
-        if kitty_ok:
-            chosen = "kitty"
-        elif use_graphics:
-            chosen = "half-cubes"
-        elif sys.stdout.isatty():
-            chosen = "full-cubes"
-        else:
-            chosen = "ascii"
-    if os.environ.get("T2C_VIZ_TRACE", "0").strip() in {"1", "true", "yes", "on"}:
+    if os.environ.get("T2C_VIZ_TRACE", "1").strip().lower() in {"1", "true", "yes", "on"}:
         print(f"[VIS renderer={chosen}]")
-        if os.environ.get("SSH_TTY") and not inline_image_ok:
-            print("[VIS hint] SSH detected. Set T2C_VIZ_FORCE_INLINE=1 to force inline image protocol.")
+        if chosen != "kitty":
+            print("[VIS hint] Kitty graphics unavailable; using fallback renderer.")
 
     print(f"\n[VIS:{framework}] {stage}")
     for name, arr in candidates[:limit]:
@@ -468,15 +485,15 @@ def viz_stage(
             f"- {name}: shape={arr_f.shape} mean={arr_f.mean():.4f} "
             f"std={arr_f.std():.4f} min={arr_f.min():.4f} max={arr_f.max():.4f}"
         )
-        if chosen == "fluid-render":
-            print(_fluid_inline_render(arr_f, width=360, height=200))
-        elif chosen == "gpu-render":
-            print(_braille_heatmap(arr_f, width=72, height=24))
-        elif chosen == "kitty":
-            print(_kitty_from_rgb(_fluid_rgb(arr_f, width=220, height=120), cells_w=52, cells_h=14))
-        elif chosen == "half-cubes":
+        if chosen == "kitty":
+            png_bytes = _matplotlib_plot_png(arr_f, width_px=960, height_px=540)
+            if png_bytes is not None:
+                print(_kitty_from_png_bytes(png_bytes, cells_w=72, cells_h=22))
+            else:
+                print(_pixel_heatmap(arr_f, width=72, height=30))
+        elif chosen == "half-block":
             print(_pixel_heatmap(arr_f, width=72, height=30))
-        elif chosen == "full-cubes":
+        elif chosen == "full-block":
             print(_full_block_heatmap(arr_f, width=72, height=30))
         else:
             print(_ascii_heatmap(arr_f))
