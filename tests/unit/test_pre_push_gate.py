@@ -2,10 +2,20 @@ from __future__ import annotations
 
 import unittest
 
-from tools.pre_push_gate import select_act_tasks
+from tools.pre_push_gate import _resolve_jobs, select_act_tasks
 
 
 class PrePushGateTests(unittest.TestCase):
+    def test_resolve_jobs_defaults_to_two_for_multiple_tasks(self) -> None:
+        self.assertEqual(_resolve_jobs(None, 4), 2)
+
+    def test_resolve_jobs_caps_by_task_count(self) -> None:
+        self.assertEqual(_resolve_jobs(8, 3), 3)
+
+    def test_resolve_jobs_minimum_one(self) -> None:
+        self.assertEqual(_resolve_jobs(0, 3), 1)
+        self.assertEqual(_resolve_jobs(None, 1), 1)
+
     def test_runtime_change_selects_core_jobs(self) -> None:
         tasks = select_act_tasks(["tools/tui.py"])
         self.assertIn("act-ci-test", tasks)

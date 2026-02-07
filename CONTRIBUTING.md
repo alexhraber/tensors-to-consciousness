@@ -45,6 +45,7 @@ mise run test-all
 - Local Actions simulation with `act` (workflow-driven, executes `mise` tasks): `mise run act-ci`
 - Full pre-push gate (single validation choke point: hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
 - Pre-push cache: successful gate jobs are cached per change signature in `.git/t2c-cache/act-gate.json` to keep repeat loops fast
+- Pre-push parallelism: set `CI_GATE_JOBS=<n>` (or run `python tools/pre_push_gate.py --jobs <n>`) to tune concurrent local act jobs; default is `2`
 
 Commit message examples:
 

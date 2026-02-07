@@ -7,6 +7,7 @@ import subprocess
 import sys
 import argparse
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 
@@ -85,6 +86,21 @@ def _run_task(task: str) -> None:
     subprocess.run(["mise", "run", task], cwd=ROOT, check=True)
 
 
+def _resolve_jobs(jobs_arg: int | None, task_count: int) -> int:
+    if task_count <= 1:
+        return 1
+    if jobs_arg is not None:
+        return max(1, min(jobs_arg, task_count))
+    jobs_env = os.environ.get("CI_GATE_JOBS")
+    if jobs_env:
+        try:
+            return max(1, min(int(jobs_env), task_count))
+        except ValueError:
+            pass
+    cpu = os.cpu_count() or 2
+    return max(1, min(2, cpu, task_count))
+
+
 def _load_cache() -> dict[str, dict[str, float]]:
     try:
         payload = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
@@ -132,6 +148,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable local gate cache and force all selected act jobs to run.",
     )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=None,
+        help="Number of parallel act tasks to run (default: 2, capped by selected tasks).",
+    )
     return parser.parse_args()
 
 
@@ -157,25 +179,49 @@ def main() -> int:
     if args.mode == "pre-push":
         print(f"[{prefix}] Base ref: {base_ref}")
     print(f"[{prefix}] Changed files: {len(paths)}")
+    runnable_tasks: list[tuple[str, str]] = []
     for task in tasks:
         cache_key = f"{args.mode}:{task}:{signature}"
         if not cache_disabled and cache_key in cache_entries:
             print(f"[{prefix}] Skipping {task} (cached success).")
             continue
-        print(f"[{prefix}] Running {task}")
-        try:
-            _run_task(task)
-        except subprocess.CalledProcessError as exc:
-            print(f"[{prefix}] ERROR {task} failed (exit {exc.returncode}).", file=sys.stderr)
-            print(
-                f"[{prefix}] Install/refresh toolchain with `mise install`, "
-                f"then retry. For one-off bypass: `SKIP_ACT=1 git commit` or `SKIP_ACT=1 git push`.",
-                file=sys.stderr,
-            )
-            return exc.returncode or 1
-        if not cache_disabled:
-            cache_entries[cache_key] = {"ts": time.time()}
-            cache_dirty = True
+        runnable_tasks.append((task, cache_key))
+
+    if not runnable_tasks:
+        print(f"[{prefix}] Completed selected act jobs.")
+        return 0
+
+    workers = _resolve_jobs(args.jobs, len(runnable_tasks))
+    print(f"[{prefix}] Running {len(runnable_tasks)} act job(s) with {workers} worker(s).")
+
+    failures: list[tuple[str, int]] = []
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        future_map = {}
+        for task, cache_key in runnable_tasks:
+            print(f"[{prefix}] Running {task}")
+            future = pool.submit(_run_task, task)
+            future_map[future] = (task, cache_key)
+
+        for future in as_completed(future_map):
+            task, cache_key = future_map[future]
+            try:
+                future.result()
+                if not cache_disabled:
+                    cache_entries[cache_key] = {"ts": time.time()}
+                    cache_dirty = True
+            except subprocess.CalledProcessError as exc:
+                failures.append((task, exc.returncode or 1))
+
+    if failures:
+        for task, code in failures:
+            print(f"[{prefix}] ERROR {task} failed (exit {code}).", file=sys.stderr)
+        print(
+            f"[{prefix}] Install/refresh toolchain with `mise install`, "
+            f"then retry. For one-off bypass: `SKIP_ACT=1 git commit` or `SKIP_ACT=1 git push`.",
+            file=sys.stderr,
+        )
+        return failures[0][1]
+
     if not cache_disabled and cache_dirty:
         _save_cache(cache_entries)
     print(f"[{prefix}] Completed selected act jobs.")
