@@ -79,8 +79,6 @@ def main() -> int:
         return 1
 
     env = os.environ.copy()
-    if framework == "mlx":
-        env["T2C_BACKEND"] = "mlx"
 
     scripts: list[str]
     if args.target == "validate":

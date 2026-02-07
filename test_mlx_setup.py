@@ -1,5 +1,5 @@
-from test_backend_setup import main
+from _run_universal import run_target
 
 
 if __name__ == "__main__":
-    main()
+    run_target("validate")

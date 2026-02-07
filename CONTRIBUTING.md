@@ -1,13 +1,15 @@
 # Contributing
 
-## Scope
+## Architecture
 
-This project has two extension surfaces:
+The repo is framework-track based.
 
-1. Backend abstraction (`t2c/frameworks`) for canonical top-level scripts
-2. Dedicated framework track (`scripts/<framework>/`) for per-framework chapter replicas
+- Source implementations live in `scripts/<framework>/`
+- Universal execution is handled by:
+  - `setup_framework.py` (choose/install/validate once)
+  - `run.py` (run chapters/validation universally)
 
-## Local Workflow
+## Local workflow
 
 ```bash
 python setup_framework.py <framework>
@@ -15,24 +17,9 @@ python run.py validate
 python run.py all
 ```
 
-## Add a Backend (`t2c/frameworks`)
+## Add or update a framework track
 
-1. Add `t2c/frameworks/<name>_backend.py` with `load() -> Backend`.
-2. Register `<name>` in `_AVAILABLE_BACKENDS` in `t2c/frameworks/__init__.py`.
-3. Ensure backend exports meet contract:
-   - `core` (`mx` alias)
-   - optional `nn`
-4. Validate:
-
-```bash
-T2C_BACKEND=<name> python 0_computational_primitives.py
-T2C_BACKEND=<name> python 1_automatic_differentiation.py
-python test_backend_setup.py
-```
-
-## Add a Framework Track (`scripts/<framework>`)
-
-Create:
+A framework track should include:
 
 - `scripts/<framework>/utils.py`
 - `scripts/<framework>/test_<framework>_setup.py`
@@ -46,21 +33,32 @@ Create:
 
 Requirements:
 
-- Keep chapter naming and sequence identical.
-- Keep conceptual output aligned across frameworks.
-- Use framework-native autodiff where available.
-- If numerical gradients are used, state it clearly in `README.md`.
+- Keep chapter names and sequence identical.
+- Keep conceptual behavior aligned across frameworks.
+- Prefer framework-native autodiff where available.
+- If numerical gradients are required, document it in `README.md`.
 
-## Documentation Requirements
+## Runner integration checklist
 
 When adding/changing frameworks:
 
-- Update `README.md` setup and notes.
-- Ensure `setup_framework.py` includes install + validation mapping.
-- Ensure `run.py` can resolve validation/chapter execution for the framework.
+1. Update `setup_framework.py` framework map (`deps`, `validate` script).
+2. Ensure `run.py` can resolve the framework name and scripts.
+3. Validate setup + run path:
 
-## Style and Hygiene
+```bash
+python setup_framework.py <framework>
+python run.py validate
+python run.py 0
+```
 
-- Do not commit generated runtime state (`.t2c/`, `out/`, `__pycache__/`).
-- Keep scripts executable with direct `python <script>.py` usage.
-- Prefer small, isolated commits with clear messages.
+## Documentation expectations
+
+- Keep `README.md` aligned with actual setup/run behavior.
+- Keep examples using universal commands (`setup_framework.py`, `run.py`).
+
+## Hygiene
+
+- Do not commit generated runtime state (`.t2c/`, `.venv/`, `out/`, `__pycache__/`).
+- Keep scripts runnable with direct `python <script>.py`.
+- Prefer small, focused commits with clear messages.

@@ -75,10 +75,7 @@ def setup_one(framework: str, venv_dir: Path, skip_validate: bool) -> None:
         return
 
     validate_script = Path(config["validate"])
-    env = os.environ.copy()
-    if framework == "mlx":
-        env["T2C_BACKEND"] = "mlx"
-    run_cmd([str(py), str(validate_script)], env=env)
+    run_cmd([str(py), str(validate_script)], env=os.environ.copy())
 
 
 def parse_args() -> argparse.Namespace:

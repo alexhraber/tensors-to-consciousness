@@ -33,7 +33,7 @@ This repository contains 7 theory-first chapters implemented across peer framewo
 - `keras`
 - `cupy`
 
-The universal workflow is:
+The standard workflow is:
 
 1. `python setup_framework.py <framework>`
 2. `python run.py validate`
@@ -67,7 +67,7 @@ python setup_framework.py mlx
 # or: jax | pytorch | numpy | keras | cupy
 ```
 
-### 3) Run universal commands
+### 3) Run commands
 
 ```bash
 python run.py validate
@@ -108,9 +108,9 @@ python setup_framework.py cupy --skip-validate
 python setup_framework.py all
 ```
 
-## Universal Runner
+## Run Script
 
-`run.py` reads `.t2c/config.json` and routes commands to the selected framework.
+`run.py` reads `.t2c/config.json` and runs commands for your selected framework.
 
 ```bash
 python run.py validate
@@ -130,6 +130,15 @@ Optional overrides:
 python run.py 0 --framework jax
 python run.py all --venv .venv-jax
 ```
+
+Framework scripts still exist and are used by `run.py` internally:
+
+- `scripts/mlx/*`
+- `scripts/jax/*`
+- `scripts/pytorch/*`
+- `scripts/numpy/*`
+- `scripts/keras/*`
+- `scripts/cupy/*`
 
 ## Framework Tracks
 
