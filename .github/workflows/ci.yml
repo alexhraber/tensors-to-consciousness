@@ -111,6 +111,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
+          cache-dependency-glob: ".github/ci/requirements-test.txt"
 
       - name: Toolchain versions
         run: |
