@@ -16,7 +16,7 @@ CACHE_FILE = ROOT / ".git" / "t2c-cache" / "act-gate.json"
 
 
 def _git_output(*args: str) -> str:
-    return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
+    return subprocess.check_output(["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
 
 
 def _best_base_ref() -> str:
@@ -229,6 +229,27 @@ def main() -> int:
                     cache_dirty = True
             except subprocess.CalledProcessError as exc:
                 failures.append((task, exc.returncode or 1))
+
+    # `act` can collide on shared dependency container names when multiple jobs from
+    # the same workflow are launched concurrently. If that happens, retry act tasks
+    # once in serial mode to preserve a fast path while keeping pushes reliable.
+    if failures and workers > 1:
+        failed_task_names = {task for task, _ in failures}
+        failed_non_act = [task for task, _ in failures if not task.startswith("act-ci-")]
+        if not failed_non_act:
+            print(f"[{prefix}] Retrying failed act jobs sequentially (act container-name collision fallback).")
+            failures = []
+            for task, cache_key in runnable_tasks:
+                if task not in failed_task_names:
+                    continue
+                print(f"[{prefix}] Retrying {task}")
+                try:
+                    _run_task(task)
+                    if not cache_disabled:
+                        cache_entries[cache_key] = {"ts": time.time()}
+                        cache_dirty = True
+                except subprocess.CalledProcessError as exc:
+                    failures.append((task, exc.returncode or 1))
 
     if failures:
         for task, code in failures:
