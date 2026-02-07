@@ -44,12 +44,6 @@ python t2c.py <target>
   <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
 </p>
 
-Maintainers can regenerate these GIFs with:
-
-```bash
-python tools/generate_viz_assets.py
-```
-
 ## Overview
 
 This repository contains 7 theory-first research modules implemented across peer framework tracks:
