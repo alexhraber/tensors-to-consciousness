@@ -15,30 +15,26 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tools.runtime import SUPPORTED_FRAMEWORKS, python_in_venv
+
 FRAMEWORK_CONFIG = {
     "mlx": {
         "deps": ["mlx"],
-        "validate": "scripts/mlx/test_mlx_setup.py",
     },
     "jax": {
         "deps": ["jax[cpu]"],
-        "validate": "scripts/jax/test_jax_setup.py",
     },
     "pytorch": {
         "deps": ["torch"],
-        "validate": "scripts/pytorch/test_pytorch_setup.py",
     },
     "numpy": {
         "deps": ["numpy"],
-        "validate": "scripts/numpy/test_numpy_setup.py",
     },
     "keras": {
         "deps": ["keras", "tensorflow"],
-        "validate": "scripts/keras/test_keras_setup.py",
     },
     "cupy": {
         "deps": ["cupy-cuda12x"],
-        "validate": "scripts/cupy/test_cupy_setup.py",
     },
 }
 CONFIG_DIR = Path(".t2c")
@@ -59,12 +55,6 @@ def write_active_config(framework: str, venv_dir: Path) -> None:
     CONFIG_FILE.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
 
-def python_in_venv(venv_dir: Path) -> Path:
-    if os.name == "nt":
-        return venv_dir / "Scripts" / "python.exe"
-    return venv_dir / "bin" / "python"
-
-
 def setup_one(framework: str, venv_dir: Path, skip_validate: bool) -> None:
     config = FRAMEWORK_CONFIG[framework]
     py = python_in_venv(venv_dir)
@@ -74,8 +64,7 @@ def setup_one(framework: str, venv_dir: Path, skip_validate: bool) -> None:
     if skip_validate:
         return
 
-    validate_script = Path(config["validate"])
-    run_cmd([str(py), str(validate_script)], env=os.environ.copy())
+    run_cmd([str(py), "-m", "tools.validate", "--framework", framework])
 
 
 def parse_args() -> argparse.Namespace:
@@ -84,7 +73,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "framework",
-        choices=[*FRAMEWORK_CONFIG.keys(), "all"],
+        choices=[*SUPPORTED_FRAMEWORKS, "all"],
         help="Framework to set up.",
     )
     parser.add_argument(
@@ -122,9 +111,9 @@ def main() -> int:
         write_active_config(args.framework, venv_dir)
         print(f"\nActive framework set to: {args.framework}")
         print("Use these commands:")
-        print("  python run.py validate")
-        print("  python run.py 0")
-        print("  python run.py all")
+        print("  python t2c.py validate")
+        print("  python t2c.py 0")
+        print("  python t2c.py all")
 
     print("\nSetup complete.")
     return 0

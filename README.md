@@ -36,14 +36,13 @@ This repository contains 7 theory-first chapters implemented across peer framewo
 Top-level operational commands:
 
 - `python setup.py <framework>`: install + validate selected framework and save active selection
-- `python validate.py`: run validation for active framework
-- `python run.py <target>`: run chapter targets (`0..6`, `all`) for active framework
+- `python t2c.py <target>`: run targets (`validate`, `0..6`, `all`) for active framework and auto-setup if needed
 
 The standard workflow is:
 
 1. `python setup.py <framework>`
-2. `python validate.py`
-3. `python run.py 0` ... `python run.py 6` or `python run.py all`
+2. `python t2c.py validate`
+3. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
 
 ## Chapter Sequence
 
@@ -76,9 +75,9 @@ python setup.py mlx
 ### 3) Run commands
 
 ```bash
-python validate.py
-python run.py 0
-python run.py all
+python t2c.py validate
+python t2c.py 0
+python t2c.py all
 ```
 
 ## Primary Setup Script
@@ -103,7 +102,7 @@ What setup does:
 
 1. Creates/uses a virtual environment via `uv` (default: `.venv`)
 2. Installs dependencies with `uv pip install`
-3. Runs the corresponding validation script (`test_*_setup.py`)
+3. Runs the corresponding validation script (`scripts/<framework>/test_setup.py`)
 4. Saves active selection to `.t2c/config.json`
 
 Useful options:
@@ -114,35 +113,30 @@ python setup.py cupy --skip-validate
 python setup.py all
 ```
 
-## Run Script
+## Runtime Entrypoint
 
-`run.py` reads `.t2c/config.json` and runs chapter commands for your selected framework.
-
-```bash
-python run.py 0
-python run.py 1
-python run.py 2
-python run.py 3
-python run.py 4
-python run.py 5
-python run.py 6
-python run.py all
-```
-
-Use `validate.py` to run the validation script for the active framework:
+`t2c.py` is the single runtime entrypoint. It reads `.t2c/config.json`, and if the configured venv is missing, it runs `setup.py` automatically before executing your target.
 
 ```bash
-python validate.py
+python t2c.py 0
+python t2c.py 1
+python t2c.py 2
+python t2c.py 3
+python t2c.py 4
+python t2c.py 5
+python t2c.py 6
+python t2c.py all
 ```
 
 Optional overrides:
 
 ```bash
-python run.py 0 --framework jax
-python run.py all --venv .venv-jax
+python t2c.py 0 --framework jax
+python t2c.py all --venv .venv-jax
+python t2c.py 0 --no-setup
 ```
 
-Framework scripts still exist and are used by `run.py` internally:
+Framework scripts still exist and are used by `t2c.py` internally:
 
 - `scripts/mlx/*`
 - `scripts/jax/*`
@@ -157,19 +151,18 @@ All framework scripts live under `scripts/<framework>/`.
 
 | Framework | Setup | Validation | Chapters |
 |---|---|---|---|
-| MLX | `python setup.py mlx` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
-| JAX | `python setup.py jax` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
-| PyTorch | `python setup.py pytorch` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
-| NumPy | `python setup.py numpy` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
-| Keras | `python setup.py keras` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
-| CuPy | `python setup.py cupy` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
+| MLX | `python setup.py mlx` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| JAX | `python setup.py jax` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| PyTorch | `python setup.py pytorch` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| NumPy | `python setup.py numpy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| Keras | `python setup.py keras` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| CuPy | `python setup.py cupy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
 
 ## Notes
 
 - `numpy` and `cupy` use finite-difference gradients in autodiff-heavy sections.
 - `keras` mixes gradient tape and numerical approximations in selected sections.
 - CuPy install in setup defaults to `cupy-cuda12x`; use a wheel matching your CUDA runtime.
-- Legacy scripts `test_backend_setup.py` / `test_mlx_setup.py` are validation aliases retained for compatibility.
 
 ## Contributing
 

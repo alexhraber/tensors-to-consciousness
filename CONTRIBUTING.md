@@ -7,15 +7,14 @@ The repo is framework-track based.
 - Source implementations live in `scripts/<framework>/`
 - Operational commands are:
   - `setup.py` (choose/install/validate once)
-  - `validate.py` (run validation for active framework)
-  - `run.py` (run chapter targets)
+  - `t2c.py` (run `validate` and chapter targets)
 
 ## Local workflow
 
 ```bash
 python setup.py <framework>
-python validate.py
-python run.py all
+python t2c.py validate
+python t2c.py all
 ```
 
 ## Add or update a framework track
@@ -23,7 +22,7 @@ python run.py all
 A framework track should include:
 
 - `scripts/<framework>/utils.py`
-- `scripts/<framework>/test_<framework>_setup.py`
+- `scripts/<framework>/test_setup.py`
 - `scripts/<framework>/0_computational_primitives.py`
 - `scripts/<framework>/1_automatic_differentiation.py`
 - `scripts/<framework>/2_optimization_theory.py`
@@ -44,19 +43,19 @@ Requirements:
 When adding/changing frameworks:
 
 1. Update `setup.py` framework map (`deps`, `validate` script).
-2. Ensure `run.py` can resolve the framework name and scripts.
+2. Ensure `t2c.py` can resolve the framework name and scripts.
 3. Validate setup + run path:
 
 ```bash
 python setup.py <framework>
-python validate.py
-python run.py 0
+python t2c.py validate
+python t2c.py 0
 ```
 
 ## Documentation expectations
 
 - Keep `README.md` aligned with actual setup/run behavior.
-- Keep examples aligned with operational commands (`setup.py`, `validate.py`, `run.py`).
+- Keep examples aligned with operational commands (`setup.py`, `t2c.py`).
 
 ## Hygiene
 
