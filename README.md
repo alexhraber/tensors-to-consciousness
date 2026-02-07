@@ -38,13 +38,13 @@ Primary launch (container-first):
 
 ```bash
 docker compose build explorer
-docker compose run --rm explorer python main.py
+docker compose run --rm explorer
 ```
 
 GPU passthrough launch:
 
 ```bash
-docker compose --profile gpu run --rm explorer-gpu python main.py
+docker compose --profile nvidia run --rm explorer-nvidia
 ```
 
 <p align="center">

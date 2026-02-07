@@ -11,7 +11,7 @@ docker compose build explorer
 ## 2) Run the explorer in container
 
 ```bash
-docker compose run --rm explorer python main.py
+docker compose run --rm explorer
 ```
 
 Notes:
@@ -22,22 +22,34 @@ Notes:
 
 ## 3) Run with GPU passthrough
 
-GPU-enabled service:
+NVIDIA:
 
 ```bash
-docker compose --profile gpu run --rm explorer-gpu python main.py
+docker compose --profile nvidia run --rm explorer-nvidia
+```
+
+AMD ROCm:
+
+```bash
+docker compose --profile amd run --rm explorer-amd
+```
+
+Intel iGPU:
+
+```bash
+docker compose --profile intel run --rm explorer-intel
 ```
 
 Pass-through details:
 
-- `gpus: all` for NVIDIA container runtime support.
-- `/dev/dri` device mapping for common direct-render paths.
-- `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` are set with safe defaults and can be overridden.
+- `explorer-nvidia` uses `gpus: all` + `/dev/dri` with NVIDIA runtime env vars.
+- `explorer-amd` uses `/dev/dri` + `/dev/kfd` (ROCm-compatible hosts).
+- `explorer-intel` uses `/dev/dri`.
 
 Example with explicit device selection:
 
 ```bash
-NVIDIA_VISIBLE_DEVICES=0 docker compose --profile gpu run --rm explorer-gpu python main.py
+NVIDIA_VISIBLE_DEVICES=0 docker compose --profile nvidia run --rm explorer-nvidia
 ```
 
 ## 4) Run over SSH (including Telescope/terminal multiplexers)
@@ -45,19 +57,19 @@ NVIDIA_VISIBLE_DEVICES=0 docker compose --profile gpu run --rm explorer-gpu pyth
 From your local machine:
 
 ```bash
-ssh <host> "cd /path/to/tensors-to-consciousness && docker compose run --rm explorer python main.py"
+ssh <host> "cd /path/to/tensors-to-consciousness && docker compose run --rm explorer"
 ```
 
 GPU over SSH:
 
 ```bash
-ssh <host> "cd /path/to/tensors-to-consciousness && docker compose --profile gpu run --rm explorer-gpu python main.py"
+ssh <host> "cd /path/to/tensors-to-consciousness && docker compose --profile nvidia run --rm explorer-nvidia"
 ```
 
 If your terminal path cannot display advanced render styles well, force an ASCII rendering fallback:
 
 ```bash
-ssh <host> "cd /path/to/tensors-to-consciousness && RENDER_STYLE=ascii docker compose run --rm explorer python main.py"
+ssh <host> "cd /path/to/tensors-to-consciousness && docker compose run --rm -e RENDER_STYLE=ascii explorer"
 ```
 
 Telescope note:
