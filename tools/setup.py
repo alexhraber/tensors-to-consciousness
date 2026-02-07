@@ -8,14 +8,13 @@ then runs the corresponding validation script.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-from .runtime import CONFIG_FILE, SUPPORTED_FRAMEWORKS, python_in_venv
+from .runtime import SUPPORTED_FRAMEWORKS, python_in_venv, save_config
 
 FRAMEWORK_CONFIG = {
     "mlx": {
@@ -44,12 +43,12 @@ def run_cmd(cmd: list[str], env: dict[str, str] | None = None) -> None:
 
 
 def write_active_config(framework: str, venv_dir: Path) -> None:
-    CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    config = {
+    save_config(
+        {
         "framework": framework,
         "venv": str(venv_dir),
-    }
-    CONFIG_FILE.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+        }
+    )
 
 
 def setup_one(framework: str, venv_dir: Path, skip_validate: bool) -> None:

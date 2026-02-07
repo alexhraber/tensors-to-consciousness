@@ -71,6 +71,13 @@ class SetupScriptTests(unittest.TestCase):
                 self.assertEqual(dep_chain[: len(setup.COMMON_DEPS)], setup.COMMON_DEPS)
                 self.assertEqual(dep_chain[len(setup.COMMON_DEPS) :], cfg["deps"])
 
+    def test_write_active_config_applies_sensible_defaults(self) -> None:
+        with patch.object(setup, "save_config") as save_config_mock:
+            setup.write_active_config("jax", Path(".venv-jax"))
+        payload = save_config_mock.call_args[0][0]
+        self.assertEqual(payload["framework"], "jax")
+        self.assertEqual(payload["venv"], ".venv-jax")
+
 
 if __name__ == "__main__":
     unittest.main()

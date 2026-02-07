@@ -29,5 +29,18 @@ class RuntimeTests(unittest.TestCase):
             with patch.object(runtime, "CONFIG_FILE", config_path):
                 self.assertEqual(runtime.load_config()["framework"], "mlx")
 
+    def test_load_config_optional_includes_sensible_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            config_path = Path(td) / "config.json"
+            config_path.write_text(json.dumps({"framework": "jax", "venv": ".venv-jax"}), encoding="utf-8")
+            with patch.object(runtime, "CONFIG_FILE", config_path):
+                cfg = runtime.load_config_optional()
+        self.assertEqual(cfg["framework"], "jax")
+        self.assertEqual(cfg["venv"], ".venv-jax")
+        self.assertEqual(cfg["platform"], "gpu")
+        self.assertIsInstance(cfg["diagnostics"], dict)
+        self.assertEqual(cfg["diagnostics"]["log_level"], "INFO")
+        self.assertFalse(cfg["diagnostics"]["debug"])
+
 if __name__ == "__main__":
     unittest.main()

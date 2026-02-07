@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
 
+from tools import runtime
+
 _CONFIGURED = False
 _DEBUG_ENABLED = False
 
@@ -17,8 +19,14 @@ class DiagnosticsConfig:
     debug_enabled: bool
 
 
-def _parse_bool(raw: str | None, *, default: bool = False) -> bool:
+def _parse_bool(raw: Any, *, default: bool = False) -> bool:
     if raw is None:
+        return default
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, (int, float)):
+        return bool(raw)
+    if not isinstance(raw, str):
         return default
     value = raw.strip().lower()
     if value in {"1", "true", "yes", "on"}:
@@ -38,8 +46,22 @@ def _normalize_level(raw: str | None) -> str:
 
 def configure_logging() -> DiagnosticsConfig:
     global _CONFIGURED, _DEBUG_ENABLED
-    level_name = _normalize_level(os.environ.get("LOG_LEVEL", "INFO"))
-    _DEBUG_ENABLED = _parse_bool(os.environ.get("DEBUG", "0"), default=False)
+    cfg = runtime.load_config_optional()
+    cfg_diag = cfg.get("diagnostics", {}) if isinstance(cfg, dict) else {}
+    if not isinstance(cfg_diag, dict):
+        cfg_diag = {}
+
+    cfg_level = cfg_diag.get("log_level", cfg.get("log_level", "INFO") if isinstance(cfg, dict) else "INFO")
+    cfg_debug = cfg_diag.get("debug", cfg.get("debug", False) if isinstance(cfg, dict) else False)
+
+    level_name = _normalize_level(str(cfg_level) if cfg_level is not None else "INFO")
+    _DEBUG_ENABLED = _parse_bool(cfg_debug, default=False)
+
+    env_level = os.environ.get("LOG_LEVEL")
+    if env_level is not None:
+        level_name = _normalize_level(env_level)
+    if "DEBUG" in os.environ:
+        _DEBUG_ENABLED = _parse_bool(os.environ.get("DEBUG"), default=_DEBUG_ENABLED)
 
     if _DEBUG_ENABLED and level_name != "DEBUG":
         level_name = "DEBUG"

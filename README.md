@@ -108,6 +108,20 @@ Diagnostics and introspection:
 - Debug tracing is disabled by default.
 - Set `DEBUG=1` to emit kernel-level transform/tooling events.
 - Set `LOG_LEVEL` to one of: `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`.
+- You can also set defaults in `.config/config.json` via `diagnostics.log_level` and `diagnostics.debug`.
+- Environment variables override config values.
+- The config file is normalized with sensible defaults for `platform` and `diagnostics` when written by tooling.
+
+```json
+{
+  "framework": "numpy",
+  "venv": ".venv-numpy",
+  "diagnostics": {
+    "log_level": "INFO",
+    "debug": false
+  }
+}
+```
 
 ```bash
 DEBUG=1 LOG_LEVEL=DEBUG python main.py run --framework numpy --transforms default

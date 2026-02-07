@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import re
 import select
@@ -276,15 +275,10 @@ def _command_console(
 
 
 def _persist_framework(framework: str) -> None:
-    config: dict[str, str] = {}
-    try:
-        config = runtime.load_config()
-    except RuntimeError:
-        config = {"venv": ".venv"}
+    config = runtime.load_config_optional()
     config["framework"] = framework
-    cfg_path = runtime.CONFIG_FILE
-    cfg_path.parent.mkdir(parents=True, exist_ok=True)
-    cfg_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    config["venv"] = f".venv-{framework}"
+    runtime.save_config(config)
 
 
 def _load_platform() -> str:
@@ -299,15 +293,9 @@ def _load_platform() -> str:
 
 
 def _persist_platform(platform: str) -> None:
-    config: dict[str, str] = {}
-    try:
-        config = runtime.load_config()
-    except RuntimeError:
-        config = {"venv": ".venv"}
+    config = runtime.load_config_optional()
     config["platform"] = platform
-    cfg_path = runtime.CONFIG_FILE
-    cfg_path.parent.mkdir(parents=True, exist_ok=True)
-    cfg_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    runtime.save_config(config)
 
 
 def _framework_selector(fd: int, current: str) -> str | None:
