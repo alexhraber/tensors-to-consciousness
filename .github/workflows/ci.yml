@@ -35,11 +35,11 @@ jobs:
     name: Change Detection
     runs-on: ubuntu-latest
     outputs:
-      runtime: ${{ steps.filter.outputs.runtime || steps.act_defaults.outputs.runtime }}
-      tests: ${{ steps.filter.outputs.tests || steps.act_defaults.outputs.tests }}
-      docs: ${{ steps.filter.outputs.docs || steps.act_defaults.outputs.docs }}
-      render: ${{ steps.filter.outputs.render || steps.act_defaults.outputs.render }}
-      ci: ${{ steps.filter.outputs.ci || steps.act_defaults.outputs.ci }}
+      test: ${{ steps.filter.outputs.test || steps.act_defaults.outputs.test }}
+      transform_contract: ${{ steps.filter.outputs.transform_contract || steps.act_defaults.outputs.transform_contract }}
+      framework_contract: ${{ steps.filter.outputs.framework_contract || steps.act_defaults.outputs.framework_contract }}
+      docs_sync: ${{ steps.filter.outputs.docs_sync || steps.act_defaults.outputs.docs_sync }}
+      render_assets: ${{ steps.filter.outputs.render_assets || steps.act_defaults.outputs.render_assets }}
 
     steps:
       - name: Checkout
@@ -50,11 +50,11 @@ jobs:
         if: ${{ env.ACT == 'true' }}
         run: |
           {
-            echo "runtime=true"
-            echo "tests=true"
-            echo "docs=true"
-            echo "render=true"
-            echo "ci=true"
+            echo "test=true"
+            echo "transform_contract=true"
+            echo "framework_contract=true"
+            echo "docs_sync=true"
+            echo "render_assets=true"
           } >> "$GITHUB_OUTPUT"
 
       - name: Filter changed paths
@@ -64,41 +64,54 @@ jobs:
         with:
           base: ${{ github.event.repository.default_branch || 'main' }}
           filters: |
-            runtime:
+            test:
               - "explorer.py"
               - ".python-version"
               - "mise.toml"
               - "transforms/**"
               - "frameworks/**"
               - "tools/**"
-            tests:
               - "tests/**"
               - ".github/ci/requirements-test.txt"
-            docs:
+              - ".github/workflows/ci.yml"
+            transform_contract:
+              - "transforms/**"
+              - "frameworks/engine.py"
+              - "tools/runtime.py"
+              - "tools/playground.py"
+              - "mise.toml"
+              - ".github/workflows/ci.yml"
+            framework_contract:
+              - "frameworks/**"
+              - "tools/setup.py"
+              - "tools/runtime.py"
+              - "mise.toml"
+              - ".github/workflows/ci.yml"
+            docs_sync:
               - "docs/**"
               - "transforms/transforms.json"
               - "tools/generate_catalog_docs.py"
               - "tools/runtime.py"
-            render:
-              - "explorer.py"
+              - "mise.toml"
+              - ".github/workflows/ci.yml"
+            render_assets:
               - "transforms/**"
               - "frameworks/**"
               - "tools/shinkei.py"
-              - "tools/tui.py"
-              - "tools/headless_capture.py"
               - "tools/generate_render_assets.py"
-              - ".github/workflows/ci.yml"
+              - "tools/input_controls.py"
+              - "examples/inputs.framework_matrix.json"
+              - "examples/inputs.spectral_sweep.json"
               - ".github/workflows/assets-readme-sync.yml"
-              - ".github/ci/requirements-test.txt"
-            ci:
+              - ".github/workflows/ci.yml"
               - "mise.toml"
-              - ".github/ci/**"
-              - ".github/workflows/**"
+              - ".python-version"
+              - ".github/ci/requirements-test.txt"
 
   test:
     name: Test (Python 3.14)
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.ci == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.test == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -199,7 +212,7 @@ jobs:
   docs-sync:
     name: Docs Sync
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs == 'true' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs_sync == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -221,7 +234,7 @@ jobs:
   transform-contract:
     name: Transform Contract
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.transform_contract == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -240,7 +253,7 @@ jobs:
   framework-contract:
     name: Framework Contract (${{ matrix.framework }})
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.framework_contract == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -265,7 +278,7 @@ jobs:
   render-assets:
     name: Render Assets Integrity
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.render == 'true' || needs.changes.outputs.ci == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.render_assets == 'true'
     runs-on: ubuntu-latest
 
     steps:

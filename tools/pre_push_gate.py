@@ -58,47 +58,53 @@ def _has_exact(paths: list[str], *names: str) -> bool:
     return any(path in names_set for path in paths)
 
 
+def _is_lightweight_docs_only(paths: list[str]) -> bool:
+    if not paths:
+        return False
+    # Keep README/docs markdown edits fast: these do not need local act runs.
+    return all(path.endswith(".md") or path.startswith("docs/") for path in paths)
+
+
 def select_act_tasks(paths: list[str]) -> list[str]:
-    runtime = _has_prefix(paths, "transforms/", "frameworks/") or _has_exact(
-        paths,
-        "explorer.py",
-        ".python-version",
-        "tools/diagnostics.py",
-        "tools/input_controls.py",
-        "tools/playground.py",
-        "tools/rust_core.py",
-        "tools/runtime.py",
-        "tools/setup.py",
-        "tools/shinkei.py",
-        "tools/tui.py",
-        "tools/validate.py",
+    # Keep local gate fast for docs-only edits (README/docs markdown).
+    if _is_lightweight_docs_only(paths):
+        return []
+
+    # Mirror CI workflow path filters by job scope.
+    test_inputs = _has_exact(paths, "explorer.py", ".python-version", "mise.toml", ".github/workflows/ci.yml") or _has_prefix(
+        paths, "transforms/", "frameworks/", "tools/", "tests/"
     )
-    tests = _has_prefix(paths, "tests/") or _has_exact(paths, ".github/ci/requirements-test.txt")
-    ci_runtime = _has_prefix(paths, ".github/ci/", ".github/workflows/") or _has_exact(
-        paths, "mise.toml", "tools/pre_push_gate.py"
-    )
-    docs_catalog = _has_exact(paths, "transforms/transforms.json", "tools/generate_catalog_docs.py")
+    test_inputs = test_inputs or _has_exact(paths, ".github/ci/requirements-test.txt", "tools/pre_push_gate.py")
 
     transform_contract_inputs = _has_prefix(paths, "transforms/") or _has_exact(
         paths,
         "frameworks/engine.py",
         "tools/runtime.py",
         "tools/playground.py",
+        "mise.toml",
+        ".github/workflows/ci.yml",
     )
+
     framework_contract_inputs = _has_prefix(paths, "frameworks/") or _has_exact(
         paths,
         "tools/setup.py",
         "tools/runtime.py",
+        "mise.toml",
+        ".github/workflows/ci.yml",
+    )
+
+    docs_sync_inputs = _has_prefix(paths, "docs/") or _has_exact(
+        paths, "transforms/transforms.json", "tools/generate_catalog_docs.py", "tools/runtime.py", "mise.toml", ".github/workflows/ci.yml"
     )
 
     tasks: list[str] = []
-    if runtime or tests or ci_runtime:
+    if test_inputs:
         tasks.append("act-ci-test")
-    if transform_contract_inputs or ci_runtime:
-        tasks.extend(["act-ci-transform-contract", "act-ci-framework-contract-jax"])
-    elif framework_contract_inputs:
+    if transform_contract_inputs:
+        tasks.append("act-ci-transform-contract")
+    if framework_contract_inputs:
         tasks.append("act-ci-framework-contract-jax")
-    if docs_catalog:
+    if docs_sync_inputs and not _is_lightweight_docs_only(paths):
         tasks.append("act-ci-docs-sync")
     return tasks
 

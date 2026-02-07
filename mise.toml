@@ -6,6 +6,7 @@ act = "latest"
 [tasks.install-test-deps]
 description = "Install local/CI test and runtime-light dependencies."
 run = '''
+export UV_CACHE_DIR="${UV_CACHE_DIR:-${TMPDIR:-/tmp}/uv-cache}"
 uv pip install --python "$(which python)" -r .github/ci/requirements-test.txt
 '''
 
@@ -173,8 +174,12 @@ description = "Regenerate README-linked render assets."
 run = '''
 python tools/generate_render_assets.py \
   --framework numpy \
+  --frames 36 \
+  --fps 12 \
+  --width 320 \
+  --height 180 \
   --only optimization_flow attention_dynamics phase_portraits tui_explorer \
-  --tui-capture headless
+  --tui-capture synthetic
 '''
 
 [tasks.act-check]
@@ -239,22 +244,7 @@ description = "Pre-push quality gate with path-based job selection (hook -> act 
 run = "python tools/pre_push_gate.py --jobs nproc"
 
 [tasks.submit-pr]
-description = "Push current feature branch and open a PR with GitHub CLI."
+description = "Push current feature branch and open/reuse a PR via GitHub API with DNS override fallback."
 run = '''
-if ! command -v gh >/dev/null 2>&1; then
-  echo "gh is required. Install GitHub CLI first: https://cli.github.com/" >&2
-  exit 1
-fi
-BRANCH="$(git branch --show-current)"
-if [ -z "$BRANCH" ]; then
-  echo "Cannot determine current branch (detached HEAD)." >&2
-  exit 1
-fi
-if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-  echo "Refusing to open PR from protected branch '$BRANCH'." >&2
-  echo "Create a feature branch first, e.g.: git switch -c chore/<topic>" >&2
-  exit 1
-fi
-git push -u origin "$BRANCH"
-gh pr create --base main --head "$BRANCH" --fill
+python tools/submit_pr.py --base main
 '''
