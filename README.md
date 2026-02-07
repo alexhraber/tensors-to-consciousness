@@ -31,6 +31,7 @@
 - [Chapter Sequence](#chapter-sequence)
 - [Live Previews](#live-previews)
 - [Quickstart](#quickstart)
+- [Primary Setup Script](#primary-setup-script)
 - [Canonical Path (Backend-Selected)](#canonical-path-backend-selected)
 - [Dedicated Framework Tracks](#dedicated-framework-tracks)
 - [Notes](#notes)
@@ -92,49 +93,75 @@ source env/bin/activate
 #### MLX
 
 ```bash
-pip install mlx
-python scripts/mlx/test_mlx_setup.py
+python setup_framework.py mlx
 python scripts/mlx/0_computational_primitives.py
 ```
 
 #### JAX
 
 ```bash
-pip install "jax[cpu]"
-python scripts/jax/test_jax_setup.py
+python setup_framework.py jax
 python scripts/jax/0_computational_primitives.py
 ```
 
 #### PyTorch
 
 ```bash
-pip install torch
-python scripts/pytorch/test_pytorch_setup.py
+python setup_framework.py pytorch
 python scripts/pytorch/0_computational_primitives.py
 ```
 
 #### NumPy
 
 ```bash
-pip install numpy
-python scripts/numpy/test_numpy_setup.py
+python setup_framework.py numpy
 python scripts/numpy/0_computational_primitives.py
 ```
 
 #### Keras
 
 ```bash
-pip install keras tensorflow
-python scripts/keras/test_keras_setup.py
+python setup_framework.py keras
 python scripts/keras/0_computational_primitives.py
 ```
 
 #### CuPy
 
 ```bash
-pip install cupy-cuda12x
-python scripts/cupy/test_cupy_setup.py
+python setup_framework.py cupy
 python scripts/cupy/0_computational_primitives.py
+```
+
+## Primary Setup Script
+
+Use `setup_framework.py` as the entrypoint for environment setup and dependency install:
+
+```bash
+python setup_framework.py <framework>
+```
+
+Supported values:
+
+- `mlx`
+- `jax`
+- `pytorch`
+- `numpy`
+- `keras`
+- `cupy`
+- `all`
+
+What it does:
+
+1. Creates/uses a virtual environment via `uv` (default: `.venv`).
+2. Installs framework dependencies with `uv pip install`.
+3. Runs the corresponding validation script (`test_*_setup.py`).
+
+Useful options:
+
+```bash
+python setup_framework.py jax --venv .venv-jax
+python setup_framework.py cupy --skip-validate
+python setup_framework.py all
 ```
 
 ## Canonical Path (Backend-Selected)
@@ -157,15 +184,14 @@ export T2C_BACKEND=mlx
 ### Setup
 
 ```bash
-pip install mlx
-export T2C_BACKEND=mlx
-python test_backend_setup.py
+python setup_framework.py mlx
 ```
 
-Compatibility entrypoint (legacy naming):
+Validation scripts (legacy-compatible naming):
 
 ```bash
 python test_mlx_setup.py
+python test_backend_setup.py
 ```
 
 ### Run all main chapters
@@ -186,20 +212,22 @@ All dedicated tracks live under `scripts/<framework>/`.
 
 | Framework | Install | Setup Test | Chapters |
 |---|---|---|---|
-| MLX | `pip install mlx` | `python scripts/mlx/test_mlx_setup.py` | `python scripts/mlx/0_computational_primitives.py` ... `python scripts/mlx/6_theoretical_limits.py` |
-| JAX | `pip install "jax[cpu]"` | `python scripts/jax/test_jax_setup.py` | `python scripts/jax/0_computational_primitives.py` ... `python scripts/jax/6_theoretical_limits.py` |
-| PyTorch | `pip install torch` | `python scripts/pytorch/test_pytorch_setup.py` | `python scripts/pytorch/0_computational_primitives.py` ... `python scripts/pytorch/6_theoretical_limits.py` |
-| NumPy | `pip install numpy` | `python scripts/numpy/test_numpy_setup.py` | `python scripts/numpy/0_computational_primitives.py` ... `python scripts/numpy/6_theoretical_limits.py` |
-| Keras | `pip install keras tensorflow` | `python scripts/keras/test_keras_setup.py` | `python scripts/keras/0_computational_primitives.py` ... `python scripts/keras/6_theoretical_limits.py` |
-| CuPy | `pip install cupy-cuda12x` | `python scripts/cupy/test_cupy_setup.py` | `python scripts/cupy/0_computational_primitives.py` ... `python scripts/cupy/6_theoretical_limits.py` |
+| MLX | `python setup_framework.py mlx` | `python scripts/mlx/test_mlx_setup.py` | `python scripts/mlx/0_computational_primitives.py` ... `python scripts/mlx/6_theoretical_limits.py` |
+| JAX | `python setup_framework.py jax` | `python scripts/jax/test_jax_setup.py` | `python scripts/jax/0_computational_primitives.py` ... `python scripts/jax/6_theoretical_limits.py` |
+| PyTorch | `python setup_framework.py pytorch` | `python scripts/pytorch/test_pytorch_setup.py` | `python scripts/pytorch/0_computational_primitives.py` ... `python scripts/pytorch/6_theoretical_limits.py` |
+| NumPy | `python setup_framework.py numpy` | `python scripts/numpy/test_numpy_setup.py` | `python scripts/numpy/0_computational_primitives.py` ... `python scripts/numpy/6_theoretical_limits.py` |
+| Keras | `python setup_framework.py keras` | `python scripts/keras/test_keras_setup.py` | `python scripts/keras/0_computational_primitives.py` ... `python scripts/keras/6_theoretical_limits.py` |
+| CuPy | `python setup_framework.py cupy` | `python scripts/cupy/test_cupy_setup.py` | `python scripts/cupy/0_computational_primitives.py` ... `python scripts/cupy/6_theoretical_limits.py` |
 
 > CuPy: choose the wheel that matches your CUDA version.
+> The setup script uses `cupy-cuda12x` by default.
 
 ## Notes
 
 - `numpy` and `cupy` tracks use finite-difference gradients in autodiff-heavy sections.
 - `keras` track mixes gradient tape with numerical approximations in selected sections.
 - Missing dependencies will surface as `ModuleNotFoundError` in setup tests.
+- `test_*_setup.py` scripts are validation scripts and are run by `setup_framework.py`.
 
 ## Contributing
 
