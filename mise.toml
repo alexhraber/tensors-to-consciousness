@@ -55,9 +55,10 @@ run = '''
 mise run build
 ./target/debug/explorer --help
 ./target/debug/explorer list-transforms >/dev/null
-python -m tools.setup --help
-python -m tools.validate --help
-python -m tools.tui --help
+./target/debug/explorer tui --help
+./target/debug/explorer run --help
+./target/debug/explorer validate --help
+./target/debug/explorer ops --help
 '''
 
 [tasks.build]

@@ -180,7 +180,7 @@ def capture_command_gif(
 def capture_tui_session_gif(
     *,
     output_gif: Path,
-    python_exe: str,
+    explorer_bin: str,
     framework: str = "jax",
     transforms: str = "default",
     width: int = 1280,
@@ -190,7 +190,7 @@ def capture_tui_session_gif(
 ) -> None:
     cmd = (
         "export TERM=xterm-256color COLORTERM=truecolor PYTHONUNBUFFERED=1; "
-        f"{shlex.quote(python_exe)} -m tools.tui --framework {shlex.quote(framework)} --transforms {shlex.quote(transforms)}"
+        f"{shlex.quote(explorer_bin)} tui --framework {shlex.quote(framework)} --transforms {shlex.quote(transforms)}"
     )
     capture_command_gif(
         output_gif=output_gif,

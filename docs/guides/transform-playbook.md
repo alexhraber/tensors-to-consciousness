@@ -26,7 +26,7 @@ python tools/scaffold_algo.py --complexity 2 --key rk4_solver --title "RK4 Solve
 explorer run --framework jax --transforms chain_rule,gradient_descent,adam
 explorer tui --framework jax
 explorer list-transforms
-python -m tools.playground --framework jax --transforms chain_rule,adam --render
+explorer run --framework jax --transforms chain_rule,adam
 ```
 
 ## Nuanced Preset Examples
