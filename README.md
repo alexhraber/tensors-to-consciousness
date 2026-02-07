@@ -1,7 +1,5 @@
 <div align="center">
 
-# tensors-to-consciousness
-
 <img src="assets/banner.svg" alt="tensors-to-consciousness banner" width="100%">
 
 <p>
