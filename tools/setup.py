@@ -60,7 +60,8 @@ def setup_one(framework: str, venv_dir: Path, skip_validate: bool) -> None:
     config = FRAMEWORK_CONFIG[framework]
     py = python_in_venv(venv_dir)
 
-    run_cmd(["uv", "pip", "install", "--python", str(py), *COMMON_DEPS, *config["deps"]])
+    # Latest-first dependency policy: refresh to newest available versions on setup.
+    run_cmd(["uv", "pip", "install", "--python", str(py), "--upgrade", *COMMON_DEPS, *config["deps"]])
 
     if skip_validate:
         return

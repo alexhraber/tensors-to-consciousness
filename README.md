@@ -42,7 +42,7 @@ First run pipeline:
 
 1. Detect framework config
 2. Prompt user for framework if missing
-3. Auto-setup environment + dependencies
+3. Auto-setup environment + latest available dependencies
 4. Validate the framework track
 5. Run all research modules
 
