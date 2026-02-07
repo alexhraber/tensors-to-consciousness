@@ -6,7 +6,7 @@
 
 <p>
   <a href="https://pypi.org/project/mlx/"><img alt="MLX version" src="https://img.shields.io/pypi/v/mlx?label=MLX&logo=apple&logoColor=white&color=111111"></a>
-  <a href="https://pypi.org/project/jax/"><img alt="JAX logo" src="https://pypi-camo.freetls.fastly.net/a1669ade48edd86167330c456c5da04cde93a850/68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f6a61782d6d6c2f6a61782f6d61696e2f696d616765732f6a61785f6c6f676f5f32353070782e706e67" height="20"></a>
+  <a href="https://pypi.org/project/jax/"><img alt="JAX version" src="https://img.shields.io/pypi/v/jax?label=JAX&color=FE5F00&logo=https%3A%2F%2Fraw.githubusercontent.com%2Fjax-ml%2Fjax%2Fmain%2Fimages%2Fjax_logo_250px.png"></a>
   <a href="https://pypi.org/project/torch/"><img alt="PyTorch version" src="https://img.shields.io/pypi/v/torch?label=PyTorch&logo=pytorch&logoColor=white&color=EE4C2C"></a>
   <a href="https://pypi.org/project/numpy/"><img alt="NumPy version" src="https://img.shields.io/pypi/v/numpy?label=NumPy&logo=numpy&logoColor=white&color=013243"></a>
   <a href="https://pypi.org/project/keras/"><img alt="Keras version" src="https://img.shields.io/pypi/v/keras?label=Keras&logo=keras&logoColor=white&color=D00000"></a>
