@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import select
 import shutil
@@ -13,6 +14,7 @@ import termios
 import tty
 from types import ModuleType
 
+from tools import runtime
 from tools import shinkei
 
 
@@ -154,7 +156,13 @@ def _quick_edit_state(fd: int, state: shinkei.VizState, old: list[int]) -> None:
         return
 
 
-def _command_console(fd: int, old: list[int], state: shinkei.VizState, framework: str) -> bool:
+def _command_console(
+    fd: int,
+    old: list[int],
+    state: shinkei.VizState,
+    framework: str,
+    platform: str,
+) -> bool:
     termios.tcsetattr(fd, termios.TCSADRAIN, old)
     _leave_alt()
     print("\nCommand console (type `help`). `back` returns to studio, `quit` exits.")
@@ -182,7 +190,7 @@ def _command_console(fd: int, old: list[int], state: shinkei.VizState, framework
         if cmd == "show":
             print(
                 f"view={state.view} seed={state.seed} samples={state.samples} grid={state.grid} "
-                f"freq={state.freq:.3f} amp={state.amplitude:.3f} damping={state.damping:.3f} noise={state.noise:.3f} phase={state.phase:.3f}"
+                f"freq={state.freq:.3f} amp={state.amplitude:.3f} damping={state.damping:.3f} noise={state.noise:.3f} phase={state.phase:.3f} platform={platform}"
             )
             continue
         if cmd == "view" and len(parts) == 2:
@@ -232,9 +240,119 @@ def _command_console(fd: int, old: list[int], state: shinkei.VizState, framework
                 shinkei.state_json(state),
             ]
             print("+ " + " ".join(cmdline))
-            subprocess.run(cmdline, check=False)
+            env = os.environ.copy()
+            env.update(_platform_env(framework, platform))
+            subprocess.run(cmdline, check=False, env=env)
             continue
         print("Unknown command. Type `help`.")
+
+
+def _persist_framework(framework: str) -> None:
+    config: dict[str, str] = {}
+    try:
+        config = runtime.load_config()
+    except RuntimeError:
+        config = {"venv": ".venv"}
+    config["framework"] = framework
+    cfg_path = runtime.CONFIG_FILE
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    cfg_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
+def _load_platform() -> str:
+    try:
+        cfg = runtime.load_config()
+        platform = str(cfg.get("platform", "gpu")).lower()
+        if platform in {"cpu", "gpu"}:
+            return platform
+    except RuntimeError:
+        pass
+    return "gpu"
+
+
+def _persist_platform(platform: str) -> None:
+    config: dict[str, str] = {}
+    try:
+        config = runtime.load_config()
+    except RuntimeError:
+        config = {"venv": ".venv"}
+    config["platform"] = platform
+    cfg_path = runtime.CONFIG_FILE
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    cfg_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
+def _framework_selector(fd: int, current: str) -> str | None:
+    options = list(runtime.SUPPORTED_FRAMEWORKS)
+    idx = options.index(current) if current in options else 0
+    while True:
+        _clear_screen()
+        print("┌──────────────────────────────────────────────┐")
+        print("│ Switch Framework                             │")
+        print("├──────────────────────────────────────────────┤")
+        for i, fw in enumerate(options):
+            marker = ">" if i == idx else " "
+            current_tag = " (current)" if fw == current else ""
+            print(f"│ {marker} {fw}{current_tag}".ljust(47) + "│")
+        print("├──────────────────────────────────────────────┤")
+        print("│ Controls: [n]/[j] next  [p]/[k] prev         │")
+        print("│           [Enter] select  [q] cancel         │")
+        print("└──────────────────────────────────────────────┘")
+        sys.stdout.flush()
+
+        ch = _read_char(fd, timeout_s=30.0)
+        if ch in {"n", "j", "\t"}:
+            idx = (idx + 1) % len(options)
+            continue
+        if ch in {"p", "k"}:
+            idx = (idx - 1) % len(options)
+            continue
+        if ch in {"\r", "\n"}:
+            return options[idx]
+        if ch in {"q", "\x1b"}:
+            return None
+
+
+def _platform_selector(fd: int, current: str) -> str | None:
+    options = ["cpu", "gpu"]
+    idx = options.index(current) if current in options else 1
+    while True:
+        _clear_screen()
+        print("┌──────────────────────────────────────────────┐")
+        print("│ Compute Platform                             │")
+        print("├──────────────────────────────────────────────┤")
+        for i, mode in enumerate(options):
+            marker = ">" if i == idx else " "
+            current_tag = " (current)" if mode == current else ""
+            print(f"│ {marker} {mode}{current_tag}".ljust(47) + "│")
+        print("├──────────────────────────────────────────────┤")
+        print("│ Controls: [n]/[j] next  [p]/[k] prev         │")
+        print("│           [Enter] select  [q] cancel         │")
+        print("└──────────────────────────────────────────────┘")
+        sys.stdout.flush()
+
+        ch = _read_char(fd, timeout_s=30.0)
+        if ch in {"n", "j", "\t"}:
+            idx = (idx + 1) % len(options)
+            continue
+        if ch in {"p", "k"}:
+            idx = (idx - 1) % len(options)
+            continue
+        if ch in {"\r", "\n"}:
+            return options[idx]
+        if ch in {"q", "\x1b"}:
+            return None
+
+
+def _platform_env(framework: str, platform: str) -> dict[str, str]:
+    env: dict[str, str] = {"T2C_PLATFORM": platform}
+    if framework == "jax":
+        env["JAX_PLATFORM_NAME"] = platform
+    if framework in {"pytorch", "keras", "cupy"} and platform == "cpu":
+        env["CUDA_VISIBLE_DEVICES"] = "-1"
+    if framework == "keras":
+        env["TF_CPP_MIN_LOG_LEVEL"] = "2"
+    return env
 
 
 def _frame_line(text: str, width: int = 104) -> str:
@@ -243,13 +361,19 @@ def _frame_line(text: str, width: int = 104) -> str:
     return "│" + text.ljust(width - 2) + "│"
 
 
-def _render_header(framework: str, state: shinkei.VizState, renderer: str, width: int = 104) -> None:
+def _render_header(
+    framework: str,
+    platform: str,
+    state: shinkei.VizState,
+    renderer: str,
+    width: int = 104,
+) -> None:
     top = "┌" + ("─" * (width - 2)) + "┐"
     bot = "└" + ("─" * (width - 2)) + "┘"
     print(top)
     print(
         _frame_line(
-            f" t2c studio · {framework} · view={state.view} · renderer={renderer} ",
+            f" t2c studio · {framework} · {platform} · view={state.view} · renderer={renderer} ",
             width=width,
         )
     )
@@ -293,6 +417,8 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
     use_plots = common_viz._supports_kitty_graphics()
     use_heatmap = common_viz._supports_graphical_terminal()
     fd = sys.stdin.fileno()
+    active_framework = framework
+    active_platform = _load_platform()
     old = termios.tcgetattr(fd)
     _enter_alt()
     tty.setcbreak(fd)
@@ -306,7 +432,8 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
                 renderer = shinkei.renderer_name(use_plots, use_heatmap)
                 layout = _layout_for_view(state.view)
                 _render_header(
-                    framework=framework,
+                    framework=active_framework,
+                    platform=active_platform,
                     state=state,
                     renderer=renderer,
                     width=layout["header_w"],
@@ -314,7 +441,7 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
                 print()
 
                 if use_plots:
-                    png = common_viz._matplotlib_plot_png(arr_f, stage=stage, tensor_name=framework)
+                    png = common_viz._matplotlib_plot_png(arr_f, stage=stage, tensor_name=active_framework)
                     if png:
                         print(
                             common_viz._kitty_from_png_bytes(
@@ -359,7 +486,7 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
                 print()
                 print(common_viz._format_caption(caption))
                 print(
-                    "Controls: [1] simple  [2] advanced  [3] ultra  [i] guided input  [e] quick key=value  [:] command mode  [r] reseed  [q] quit"
+                    "Controls: [1] simple  [2] advanced  [3] ultra  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [:] command mode  [r] reseed  [q] quit"
                 )
                 sys.stdout.flush()
                 needs_render = False
@@ -384,11 +511,23 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
             elif ch == "i":
                 _guided_edit_state(fd, state, old)
                 needs_render = True
+            elif ch == "f":
+                chosen = _framework_selector(fd, active_framework)
+                if chosen and chosen != active_framework:
+                    active_framework = chosen
+                    _persist_framework(active_framework)
+                needs_render = True
+            elif ch == "p":
+                chosen_platform = _platform_selector(fd, active_platform)
+                if chosen_platform and chosen_platform != active_platform:
+                    active_platform = chosen_platform
+                    _persist_platform(active_platform)
+                needs_render = True
             elif ch == "e":
                 _quick_edit_state(fd, state, old)
                 needs_render = True
             elif ch == ":":
-                if not _command_console(fd, old, state, framework):
+                if not _command_console(fd, old, state, active_framework, active_platform):
                     break
                 needs_render = True
     finally:

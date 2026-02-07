@@ -53,6 +53,8 @@ On first run it will:
 Inside the studio:
 
 - `1/2/3`: switch `simple` / `advanced` / `ultra` views
+- `f`: open framework switch modal and cycle framework tracks
+- `p`: switch compute platform (`cpu` / `gpu`)
 - `i`: guided parameter input (complexity-aware by view)
 - `e`: quick `key=value` edit
 - `r`: reseed
