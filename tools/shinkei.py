@@ -11,7 +11,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable
 
-CANONICAL_VIEWS = ("seed", "field", "surge")
+EXPLORER_VIEW = "explore"
 
 
 def _np_module() -> ModuleType:
@@ -30,20 +30,19 @@ class VizState:
     noise: float = 0.13
     phase: float = 0.6
     grid: int = 96
-    view: str = "field"
+    view: str = EXPLORER_VIEW
 
 
 def normalize_view(view: str | None) -> str:
-    raw = (view or "field").strip().lower()
-    return raw if raw in CANONICAL_VIEWS else "field"
+    _ = view
+    return EXPLORER_VIEW
 
 
 def parse_view_arg(raw: str) -> str:
     view = raw.strip().lower()
-    if view not in CANONICAL_VIEWS:
-        allowed = ", ".join(CANONICAL_VIEWS)
-        raise argparse.ArgumentTypeError(f"invalid view '{raw}'; choose one of: {allowed}")
-    return view
+    if view != EXPLORER_VIEW:
+        raise argparse.ArgumentTypeError(f"invalid view '{raw}'; only '{EXPLORER_VIEW}' is supported")
+    return EXPLORER_VIEW
 
 
 def _supports_graphical_terminal() -> bool:
@@ -509,7 +508,7 @@ def _coerce_float(data: dict[str, object], key: str, default: float, lo: float, 
     return max(lo, min(hi, out))
 
 
-def build_state(view: str, inputs: str | None = None) -> VizState:
+def build_state(view: str | None = None, inputs: str | None = None) -> VizState:
     normalized_view = normalize_view(view)
     merged = _load_inputs_blob(inputs)
     env_blob = os.environ.get("T2C_INPUTS", "").strip()
@@ -555,17 +554,13 @@ def state_json(state: VizState) -> str:
 
 
 def stage_payload(np: ModuleType, state: VizState) -> tuple[object, str, str]:
-    mode = normalize_view(state.view)
+    _ = normalize_view(state.view)
     rng = np.random.default_rng(state.seed)
     x = np.linspace(0.0, 4.0 * np.pi, state.samples, dtype=np.float32)
     envelope = np.exp(-state.damping * x).astype(np.float32)
     base = (state.amplitude * np.sin(state.freq * x + state.phase)).astype(np.float32)
     mod = (0.42 * np.cos(0.5 * state.freq * x - state.phase)).astype(np.float32)
     noisy = (base * envelope + mod + state.noise * rng.normal(size=state.samples)).astype(np.float32)
-
-    if mode == "seed":
-        caption = "Damped oscillation with controlled noise envelope."
-        return noisy, "seed", caption
 
     g = state.grid
     y = np.linspace(-2.0, 2.0, g, dtype=np.float32)
@@ -576,17 +571,13 @@ def stage_payload(np: ModuleType, state: VizState) -> tuple[object, str, str]:
         * np.exp(-state.damping * (xx**2 + yy**2))
     ).astype(np.float32)
     field += (state.noise * 0.2 * rng.normal(size=(g, g))).astype(np.float32)
-    if mode == "field":
-        caption = "Tensor field showing coupled wave interference and decay."
-        return field, "field", caption
-
     spec = np.abs(np.fft.rfft(noisy - np.mean(noisy))).astype(np.float32)
     take = min(g, spec.shape[0])
     profile = spec[:take]
     surge = np.outer(np.linspace(0.2, 1.0, g, dtype=np.float32), profile).astype(np.float32)
     surge += field[:g, :take]
-    caption = "Multi-scale energy map combining spatial field and frequency response."
-    return surge, "surge", caption
+    caption = "Multi-scale tensor energy map combining spatial field and frequency response."
+    return surge, EXPLORER_VIEW, caption
 
 
 def renderer_name(use_plots: bool, use_heatmap: bool) -> str:
@@ -756,8 +747,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--view",
         type=parse_view_arg,
-        choices=list(CANONICAL_VIEWS),
-        default="field",
+        choices=[EXPLORER_VIEW],
+        default=EXPLORER_VIEW,
     )
     parser.add_argument("--inputs", help="Path to JSON config or inline JSON", default=None)
     return parser.parse_args()

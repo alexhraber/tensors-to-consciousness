@@ -80,7 +80,7 @@ class TuiEntrypointTests(unittest.TestCase):
             framework="jax",
             width=80,
             height=24,
-            view="surge",
+            view="explore",
             no_tui=True,
             inputs='{"seed":11,"samples":2048,"freq":2.5,"grid":128}',
         )
@@ -89,7 +89,7 @@ class TuiEntrypointTests(unittest.TestCase):
         self.assertEqual(state.samples, 2048)
         self.assertAlmostEqual(state.freq, 2.5)
         self.assertEqual(state.grid, 128)
-        self.assertEqual(state.view, "surge")
+        self.assertEqual(state.view, "explore")
 
     def test_stage_payload_respects_view_shapes(self) -> None:
         try:
@@ -97,20 +97,10 @@ class TuiEntrypointTests(unittest.TestCase):
         except ModuleNotFoundError:
             self.skipTest("numpy not installed in test interpreter")
 
-        state = shinkei.VizState(samples=512, grid=64, view="seed")
+        state = shinkei.VizState(samples=512, grid=64, view="explore")
         arr_simple, stage_simple, _ = shinkei.stage_payload(np, state)
-        self.assertEqual(stage_simple, "seed")
-        self.assertEqual(arr_simple.ndim, 1)
-
-        state.view = "field"
-        arr_adv, stage_adv, _ = shinkei.stage_payload(np, state)
-        self.assertEqual(stage_adv, "field")
-        self.assertEqual(arr_adv.ndim, 2)
-
-        state.view = "surge"
-        arr_ultra, stage_ultra, _ = shinkei.stage_payload(np, state)
-        self.assertEqual(stage_ultra, "surge")
-        self.assertEqual(arr_ultra.ndim, 2)
+        self.assertEqual(stage_simple, "explore")
+        self.assertEqual(arr_simple.ndim, 2)
 
 
 if __name__ == "__main__":

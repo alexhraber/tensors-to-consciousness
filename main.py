@@ -23,12 +23,12 @@ def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run T2C interactive studio or sandbox transform targets for a selected framework."
+        description="Run T2C interactive explorer or sandbox transform targets for a selected framework."
     )
     parser.add_argument(
         "target",
         nargs="?",
-        help="One of: validate, viz, run (default: interactive studio).",
+        help="One of: validate, viz, run (default: interactive explorer).",
     )
     parser.add_argument(
         "--framework",
@@ -65,7 +65,7 @@ def parse_args() -> argparse.Namespace:
         "-c",
         "--cli",
         action="store_true",
-        help="Force CLI execution flow (skip interactive studio on default run).",
+        help="Force CLI execution flow (skip interactive explorer on default run).",
     )
     return parser.parse_args()
 

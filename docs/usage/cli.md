@@ -2,7 +2,7 @@
 
 This project is operated through `main.py`.
 
-For interactive studio usage, see `docs/usage/tui.md`.
+For interactive explorer usage, see `docs/usage/tui.md`.
 
 ## Core Commands
 

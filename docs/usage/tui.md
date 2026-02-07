@@ -1,6 +1,6 @@
 # TUI Guide
 
-The primary experience is the interactive studio:
+The primary experience is the interactive explorer:
 
 ```bash
 python main.py
@@ -11,7 +11,6 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 
 ## Controls
 
-- `m` / `M`: cycle mode forward/reverse (`seed`, `field`, `surge`)
 - `n` / `b`: move transform cursor next/back
 - `x`: toggle transform include/exclude in active chain
 - `[` / `]`: move selected transform up/down in chain precedence
@@ -19,16 +18,16 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 - `p`: compute platform selector (`cpu` / `gpu`)
 - `i`: guided parameter input
 - `e`: quick `key=value` parameter edit
-- `space`: pause/resume surge-mode live motion
-- `:`: command console (`run`, `set`, `view`, `show`, `help`)
+- `space`: pause/resume live dynamics motion
+- `:`: command console (`run`, `set`, `show`, `help`)
+- `h`: toggle compact/full detail layout
 - `r`: reseed
 - `q`: quit
 
-## Modes
+## Explorer Flow
 
-- `seed`: preset/default visualization browsing with formula + description.
-- `field`: tunable transform parameters with formula + description.
-- `surge`: highest-intensity controls + live transformation motion.
+The explorer runs as one continuous view.
+Transform chains, parameter edits, and live dynamics are toggles within the same screen.
 
 ## Start with a Specific Transform Set
 
