@@ -30,8 +30,6 @@
   <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
 </p>
 
----
-
 ## CLI-First
 
 This is a CLI-native open-source research project with one public entrypoint:
