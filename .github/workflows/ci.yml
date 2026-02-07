@@ -62,7 +62,7 @@ jobs:
             runtime:
               - "main.py"
               - ".python-version"
-              - "inputs.example.json"
+              - "examples/inputs.example.json"
               - "scripts/**"
               - "tools/runtime.py"
               - "tools/setup.py"

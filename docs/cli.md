@@ -25,7 +25,7 @@ python main.py viz --module 2 --algorithm momentum
 ## Input Overrides
 
 ```bash
-python main.py all --framework jax --inputs inputs.example.json
+python main.py all --framework jax --inputs examples/inputs.example.json
 ```
 
 `--inputs` supports:

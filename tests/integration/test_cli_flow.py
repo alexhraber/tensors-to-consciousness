@@ -184,7 +184,7 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             venv=".venv-jax",
             no_setup=True,
             cli=False,
-            inputs="inputs.example.json",
+            inputs="examples/inputs.example.json",
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -195,7 +195,7 @@ class T2CFlowIntegrationTests(unittest.TestCase):
                         rc = t2c.main()
         self.assertEqual(rc, 0)
         env = run_cmd_mock.call_args.kwargs["env"]
-        self.assertEqual(env.get("T2C_INPUTS"), "inputs.example.json")
+        self.assertEqual(env.get("T2C_INPUTS"), "examples/inputs.example.json")
 
     def test_t2c_main_executes_module_zero(self) -> None:
         args = argparse.Namespace(

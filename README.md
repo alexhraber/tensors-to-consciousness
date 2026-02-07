@@ -50,37 +50,12 @@ On first run it will:
 5. Validate the framework track
 6. Launch the interactive visualization studio
 
-Mode behavior:
-
-- `simple`: browse default/preset visualizations for each script profile with formula + description.
-- `advanced`: same profile context, but with tunable algorithm parameters.
-- `ultra`: advanced controls plus live transformation motion.
-
-Detailed controls, direct module/algorithm fetch, and command examples live in:
+Detailed usage lives in:
 
 - `docs/tui.md`
 - `docs/cli.md`
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
-
-### Studio + Inputs
-
-Default behavior stays random, but you can override generated inputs per framework/script/call:
-
-```bash
-python main.py all --framework jax --inputs inputs.example.json
-```
-
-You can also pass raw JSON via `--inputs`.
-
-Config keys:
-
-- `seed`: global seed
-- `frameworks.<name>.seed`: framework seed override
-- `normal` / `uniform`: framework-wide distribution tuning
-- `frameworks.<name>.scripts.<script>.calls.<label|line>`: per-call overrides
-
-See `inputs.example.json` for a working template.
 
 ## Frameworks
 
@@ -92,13 +67,6 @@ The entire research track is implemented in each of the following frameworks:
 - `numpy`
 - `keras`
 - `cupy`
-
-Advanced targets available through `main.py`:
-
-- `validate`
-- `viz`
-- `0..6`
-- `all`
 
 ## Notes
 
