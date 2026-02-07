@@ -59,25 +59,30 @@ def _has_exact(paths: list[str], *names: str) -> bool:
 
 
 def select_act_tasks(paths: list[str]) -> list[str]:
-    runtime = _has_prefix(paths, "transforms/", "frameworks/", "tools/") or _has_exact(
-        paths, "explorer.py", ".python-version", "mise.toml"
+    runtime = _has_prefix(paths, "transforms/", "frameworks/") or _has_exact(
+        paths,
+        "explorer.py",
+        ".python-version",
+        "tools/diagnostics.py",
+        "tools/input_controls.py",
+        "tools/playground.py",
+        "tools/rust_core.py",
+        "tools/runtime.py",
+        "tools/setup.py",
+        "tools/shinkei.py",
+        "tools/tui.py",
+        "tools/validate.py",
     )
     tests = _has_prefix(paths, "tests/") or _has_exact(paths, ".github/ci/requirements-test.txt")
-    docs = _has_prefix(paths, "docs/") or _has_exact(
-        paths, "transforms/transforms.json", "tools/generate_catalog_docs.py", "tools/runtime.py"
-    )
+    docs_catalog = _has_exact(paths, "transforms/transforms.json", "tools/generate_catalog_docs.py")
     ci = _has_prefix(paths, ".github/ci/", ".github/workflows/") or _has_exact(paths, "mise.toml")
 
     tasks: list[str] = []
     if runtime or tests or ci:
-        tasks.extend(
-            [
-                "act-ci-test",
-                "act-ci-transform-contract",
-                "act-ci-framework-contract-numpy",
-            ]
-        )
-    if docs or runtime or ci:
+        tasks.append("act-ci-test")
+    if runtime or ci:
+        tasks.extend(["act-ci-transform-contract", "act-ci-framework-contract-numpy"])
+    if docs_catalog:
         tasks.append("act-ci-docs-sync")
     return tasks
 
@@ -140,10 +145,10 @@ def _save_cache(entries: dict[str, dict[str, float]]) -> None:
     CACHE_FILE.write_text(json.dumps({"entries": entries}, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def _cache_signature(mode: str, base_ref: str, paths: list[str]) -> str:
+def _cache_signature(mode: str, paths: list[str]) -> str:
     head = _git_output("rev-parse", "HEAD")
     if mode == "pre-push":
-        payload = f"mode={mode}\nhead={head}\nbase={base_ref}\npaths=" + "\n".join(sorted(paths))
+        payload = f"mode={mode}\nhead={head}\npaths=" + "\n".join(sorted(paths))
     else:
         staged = _git_output("diff", "--cached")
         payload = f"mode={mode}\nhead={head}\nstaged_diff={staged}"
@@ -188,7 +193,7 @@ def main() -> int:
         return 0
 
     prefix = "pre-commit" if args.mode == "pre-commit" else "pre-push"
-    signature = _cache_signature(args.mode, base_ref, paths)
+    signature = _cache_signature(args.mode, paths)
     cache_entries = {} if cache_disabled else _load_cache()
     cache_dirty = False
     if args.mode == "pre-push":

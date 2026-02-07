@@ -34,12 +34,20 @@ class PrePushGateTests(unittest.TestCase):
         self.assertIn("act-ci-test", tasks)
         self.assertIn("act-ci-transform-contract", tasks)
         self.assertIn("act-ci-framework-contract-numpy", tasks)
-        self.assertIn("act-ci-docs-sync", tasks)
+        self.assertNotIn("act-ci-docs-sync", tasks)
         self.assertNotIn("act-ci-assets-sync", tasks)
+
+    def test_tests_only_change_selects_test_job(self) -> None:
+        tasks = select_act_tasks(["tests/unit/test_pre_push_gate.py"])
+        self.assertEqual(tasks, ["act-ci-test"])
 
     def test_docs_only_change_selects_docs_job(self) -> None:
         tasks = select_act_tasks(["docs/usage/tui.md"])
-        self.assertEqual(tasks, ["act-ci-docs-sync"])
+        self.assertEqual(tasks, [])
+
+    def test_catalog_source_change_selects_docs_job(self) -> None:
+        tasks = select_act_tasks(["transforms/transforms.json"])
+        self.assertIn("act-ci-docs-sync", tasks)
 
     def test_render_change_selects_assets_sync_only(self) -> None:
         tasks = select_act_tasks(["assets/render/tui_explorer.gif"])
@@ -50,7 +58,7 @@ class PrePushGateTests(unittest.TestCase):
         self.assertIn("act-ci-test", tasks)
         self.assertIn("act-ci-transform-contract", tasks)
         self.assertIn("act-ci-framework-contract-numpy", tasks)
-        self.assertIn("act-ci-docs-sync", tasks)
+        self.assertNotIn("act-ci-docs-sync", tasks)
         self.assertNotIn("act-ci-assets-sync", tasks)
 
     def test_irrelevant_change_selects_nothing(self) -> None:

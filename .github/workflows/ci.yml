@@ -94,8 +94,16 @@ jobs:
               - "tools/generate_catalog_docs.py"
               - "tools/runtime.py"
             render:
+              - "explorer.py"
+              - "transforms/**"
+              - "frameworks/**"
+              - "tools/shinkei.py"
+              - "tools/tui.py"
+              - "tools/headless_capture.py"
               - "tools/generate_render_assets.py"
-              - "assets/render/**"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/assets-readme-sync.yml"
+              - ".github/ci/requirements-test.txt"
             ci:
               - "mise.toml"
               - ".github/ci/**"

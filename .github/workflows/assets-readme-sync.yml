@@ -4,38 +4,32 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "README.md"
-      - "assets/render/**"
       - "explorer.py"
-      - "examples/**"
+      - "transforms/**"
       - "frameworks/**"
-      - "tools/generate_render_assets.py"
-      - "tools/headless_capture.py"
       - "tools/shinkei.py"
       - "tools/tui.py"
-      - "transforms/**"
+      - "tools/headless_capture.py"
+      - "tools/generate_render_assets.py"
       - ".python-version"
       - "mise.toml"
-      - "Dockerfile"
       - ".github/ci/requirements-test.txt"
+      - ".github/workflows/ci.yml"
       - ".github/workflows/assets-readme-sync.yml"
   pull_request:
     branches: ["main"]
     paths:
-      - "README.md"
-      - "assets/render/**"
       - "explorer.py"
-      - "examples/**"
+      - "transforms/**"
       - "frameworks/**"
-      - "tools/generate_render_assets.py"
-      - "tools/headless_capture.py"
       - "tools/shinkei.py"
       - "tools/tui.py"
-      - "transforms/**"
+      - "tools/headless_capture.py"
+      - "tools/generate_render_assets.py"
       - ".python-version"
       - "mise.toml"
-      - "Dockerfile"
       - ".github/ci/requirements-test.txt"
+      - ".github/workflows/ci.yml"
       - ".github/workflows/assets-readme-sync.yml"
   workflow_dispatch:
 
