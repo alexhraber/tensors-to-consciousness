@@ -56,9 +56,9 @@ Detailed usage lives in:
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
 
-## Frameworks
+## Supported Frameworks
 
-The entire research track is implemented in each of the following frameworks:
+The project currently supports the following frameworks:
 
 - `mlx`
 - `jax`
@@ -67,14 +67,12 @@ The entire research track is implemented in each of the following frameworks:
 - `keras`
 - `cupy`
 
-## Algorithm Layout
+## Transforms
 
-Algorithm definitions and math contracts live under `algos/` (framework-agnostic).
-Framework backends live under `frameworks/<framework>/` and provide reusable ops/models utilities.
-Algorithm ordering, complexity ranking, defaults, and execution mapping are centralized in `algos/registry.py`.
-The canonical transform catalog is `algos/transforms.json`, including a `framework_interface` contract that defines required backend `utils` entrypoints and engine ops-adapter primitives.
+Transform definitions are framework-agnostic and live in `algos/transforms.json`.
+Framework backends (`frameworks/<framework>/utils.py`) implement the execution contract consumed by the engine.
 
-### Top 5 Core Transforms
+Top 5 core transforms:
 
 - `tensor_ops`
 - `chain_rule`
@@ -82,15 +80,15 @@ The canonical transform catalog is `algos/transforms.json`, including a `framewo
 - `momentum`
 - `adam`
 
-Use `python main.py --list-transforms` for the full catalog.
+Use `python main.py --list-transforms` for the full transform catalog.
 
-To scaffold a new abstract algorithm + backend adapters:
+To scaffold a new transform + backend adapters:
 
 ```bash
 python tools/scaffold_algo.py --complexity 2 --key rk4_solver --title "RK4 Solver" --formula "x_{t+1}=x_t+..." --description "Fourth-order integration"
 ```
 
-Sandbox-style runs use algorithm combinations instead of fixed `0..6` level targets:
+Explore transform pipelines:
 
 ```bash
 python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
