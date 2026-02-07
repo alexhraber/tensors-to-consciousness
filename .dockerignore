@@ -1,5 +1,9 @@
 .git
 .github
+!.github/ci
+!.github/ci/**
+!.github/workflows
+!.github/workflows/**
 .githooks
 .venv
 .venv-*

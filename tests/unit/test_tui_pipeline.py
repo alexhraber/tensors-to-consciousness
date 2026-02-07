@@ -9,7 +9,7 @@ from tools import tui
 
 class TuiPipelineTests(unittest.TestCase):
     def test_draw_text_frame_uses_rust_patch(self) -> None:
-        with patch.object(tui.rust_core, "frame_patch", return_value="\x1b[Hpatched"):
+        with patch.object(tui.core, "frame_patch", return_value="\x1b[Hpatched"):
             with patch.object(tui.sys.stdout, "write") as write_mock:
                 with patch.object(tui.sys.stdout, "flush") as flush_mock:
                     with patch.object(tui, "_clear_screen") as clear_mock:
@@ -20,7 +20,7 @@ class TuiPipelineTests(unittest.TestCase):
         clear_mock.assert_not_called()
 
     def test_draw_text_frame_falls_back_without_rust_patch(self) -> None:
-        with patch.object(tui.rust_core, "frame_patch", return_value=None):
+        with patch.object(tui.core, "frame_patch", return_value=None):
             with patch.object(tui, "_clear_screen") as clear_mock:
                 with patch("builtins.print") as print_mock:
                     out = tui._draw_text_frame("next", "prev")
@@ -51,7 +51,7 @@ class TuiPipelineTests(unittest.TestCase):
         state = shinkei.RenderState(seed=7)
         with patch.object(tui.termios, "tcsetattr"):
             with patch.object(tui.tty, "setcbreak"):
-                with patch.object(tui.rust_core, "parse_assignment", return_value=("seed", "42")):
+                with patch.object(tui.core, "parse_assignment", return_value=("seed", "42")):
                     with patch("builtins.input", return_value="ignored"):
                         tui._quick_edit_state(fd=0, state=state, old=[0, 0, 0, 0, 0, 0, 0])
         self.assertEqual(state.seed, 42)

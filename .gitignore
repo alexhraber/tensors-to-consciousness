@@ -53,7 +53,7 @@ nosetests.xml
 # Runtime/local state
 # ------------------------------
 .config/
-.t2c/
+.explorer/
 out/
 tmp/
 temp/

@@ -355,7 +355,7 @@ def main() -> int:
     all_assets = ["optimization_flow", "attention_dynamics", "phase_portraits", "tui_explorer"]
     selected = args.only if args.only else all_assets
 
-    with tempfile.TemporaryDirectory(prefix="t2c_render_") as td:
+    with tempfile.TemporaryDirectory(prefix="explorer_render_") as td:
         tmp = Path(td)
         gif_width = max(480, args.width * 2)
 

@@ -4,9 +4,9 @@
 
 1. Transform catalog (`transforms/`): mathematical definitions and metadata.
 2. Framework engines (`frameworks/`): backend-specific execution surfaces.
-3. Runtime and orchestration (`explorer.py`, `tools/runtime.py`): environment, setup, and dispatch.
-4. Interaction and rendering (`tools/tui.py`, `tools/shinkei.py`): operator control plane and terminal output.
-5. Optional Rust core (`rust_core/`): accelerated compute/render kernels behind Python bridges.
+3. Runtime and orchestration (`explorer` (Rust), `tools/runtime.py` (Python)): environment, setup, and dispatch.
+4. Interaction and rendering (`explorer` (Rust) TUI host, `tools/shinkei.py` (Python)): operator control plane and terminal output.
+5. Optional core module (`crates/core/`): accelerated compute/render kernels behind Python bridges.
 
 ## Execution Model
 
@@ -20,7 +20,7 @@ At runtime, the system evaluates a selected transform chain in order:
 
 This model intentionally avoids hardcoding module permutations. Framework engines discover and execute transform sequences dynamically.
 
-Python remains the public product interface. Rust is used as an internal acceleration layer where available.
+Rust is the public product surface (CLI + TUI). Python is the compute layer for transforms and framework execution.
 
 ## Transform Contract
 

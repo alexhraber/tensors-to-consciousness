@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-python tools/git_policy.py --hook pre-commit
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
 
-python tools/setup_contributor.py --quiet
+if [[ ! -x ./target/debug/explorer ]]; then
+  cargo build -p explorer >/dev/null
+fi
+
+./target/debug/explorer ops git-policy --hook pre-commit
+./target/debug/explorer ops bootstrap --quiet

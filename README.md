@@ -37,7 +37,8 @@ Local:
 ```bash
 mise install
 mise run install-test-deps
-python explorer.py
+mise run build
+./target/debug/explorer
 ```
 
 ## Explorer Preview

@@ -2,6 +2,7 @@
 python = "3.14"
 uv = "latest"
 act = "latest"
+rust = "stable"
 
 [tasks.install-test-deps]
 description = "Install local/CI test and runtime-light dependencies."
@@ -10,7 +11,7 @@ export UV_CACHE_DIR="${UV_CACHE_DIR:-${TMPDIR:-/tmp}/uv-cache}"
 uv pip install --python "$(which python)" -r .github/ci/requirements-test.txt
 '''
 
-[tasks.py-compile]
+[tasks.compile]
 description = "Bytecode compile all tracked Python files."
 run = '''
 python -m py_compile $(git ls-files '*.py')
@@ -51,11 +52,21 @@ python -m coverage xml -o coverage.xml
 [tasks.cli-smoke]
 description = "Smoke-check core CLIs."
 run = '''
-python explorer.py --help
+mise run build
+./target/debug/explorer --help
+./target/debug/explorer list-transforms >/dev/null
 python -m tools.setup --help
 python -m tools.validate --help
 python -m tools.tui --help
 '''
+
+[tasks.build]
+description = "Build the Rust explorer binary."
+run = "cargo build -p explorer"
+
+[tasks.image]
+description = "Build the local CI container image once (reused by pre-push gate)."
+run = "docker build --target ci -t explorer-ci:local ."
 
 [tasks.docs-generate]
 description = "Generate reference docs."
@@ -240,11 +251,16 @@ depends = ["act-check"]
 run = "act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync --env LOCAL_ACT=true"
 
 [tasks.pre-push]
-description = "Pre-push quality gate with path-based job selection (hook -> act -> workflow -> mise)."
-run = "python tools/pre_push_gate.py --jobs nproc"
+description = "Pre-push quality gate with path-based job selection (Docker-first)."
+run = '''
+mise run build
+mise run image
+./target/debug/explorer ops pre-push-gate --jobs nproc
+'''
 
 [tasks.submit-pr]
 description = "Push current feature branch and open/reuse a PR via GitHub API with DNS override fallback."
 run = '''
-python tools/submit_pr.py --base main
+mise run build
+./target/debug/explorer ops submit-pr --base main
 '''

@@ -1,7 +1,7 @@
-# Rust Core
+# Core Module
 
-Python remains the product surface (`explorer.py`, `tools/tui.py`, `tools/shinkei.py`).
-Rust provides optional compute/render acceleration via `ttc_rust_core`.
+Rust is the product surface (`explorer`).
+Python executes ML math (transforms + framework backends). Rust provides optional accelerated kernels via `core`.
 
 ## Scope
 
@@ -16,31 +16,31 @@ Current Rust-accelerated paths:
 Fallback behavior:
 
 - If the extension is unavailable, Python implementations are used automatically.
-- Set `TTC_DISABLE_RUST_CORE=1` to force Python fallback.
+- Set `EXPLORER_DISABLE_CORE=1` to force Python fallback.
 
 ## Build
 
 ```bash
-./tools/build_rust_core.sh
+./tools/build_core.sh
 ```
 
 Equivalent manual command:
 
 ```bash
-uvx maturin develop --release -m rust_core/Cargo.toml
+uvx maturin develop --release
 ```
 
 ## Verify
 
 ```bash
 python - <<'PY'
-from tools import rust_core
-print("loaded:", rust_core.load_rust_core() is not None)
+from tools import core
+print("loaded:", core.load_core() is not None)
 PY
 ```
 
 ## Notes
 
-- Rust crate location: `rust_core/`
-- Python bridge: `tools/rust_core.py`
+- Rust crate location: `crates/core/`
+- Python bridge: `tools/core.py`
 - Runtime integration points: `tools/shinkei.py`

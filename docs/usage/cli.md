@@ -1,25 +1,23 @@
 # CLI Guide
 
-`explorer.py` is the canonical CLI entrypoint.
+`explorer` is the canonical entrypoint. Rust hosts the product surface; Python executes transforms and framework math.
 
 ## Core Commands
 
 ```bash
-python explorer.py --help
-python explorer.py -c
-python explorer.py validate
-python explorer.py run --framework jax --transforms default
-python explorer.py render --framework numpy --transforms gradient_descent,momentum --transform momentum
-python explorer.py --list-transforms
+explorer --help
+explorer list-transforms
+explorer validate --framework jax
+explorer run --framework jax --transforms default
 ```
 
 ## Inputs and Presets
 
 ```bash
-python explorer.py run --framework jax --transforms chain_rule,adam --inputs examples/inputs.example.json
-python explorer.py run --framework numpy --transforms spectral_filter,wave_propagation --inputs examples/inputs.spectral_sweep.json
-python explorer.py run --framework pytorch --transforms constraint_projection,entropy_flow --inputs examples/inputs.stability_focus.json
-python explorer.py run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
+explorer run --framework jax --transforms chain_rule,adam --inputs examples/inputs.example.json
+explorer run --framework numpy --transforms spectral_filter,wave_propagation --inputs examples/inputs.spectral_sweep.json
+explorer run --framework pytorch --transforms constraint_projection,entropy_flow --inputs examples/inputs.stability_focus.json
+explorer run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
 ```
 
 `--inputs` accepts:

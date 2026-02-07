@@ -124,7 +124,11 @@ fn upsample_interp(src: &[f32], in_h: usize, in_w: usize, out_h: usize, out_w: u
 }
 
 #[pyfunction]
-fn ascii_heatmap(arr: PyReadonlyArrayDyn<'_, f32>, width: usize, height: usize) -> PyResult<String> {
+fn ascii_heatmap(
+    arr: PyReadonlyArrayDyn<'_, f32>,
+    width: usize,
+    height: usize,
+) -> PyResult<String> {
     let ramp: &[u8] = b" .:-=+*#%@";
     let (flat, h, w) = flatten_to_2d(arr);
     if flat.is_empty() || h == 0 || w == 0 {
@@ -155,8 +159,13 @@ fn ascii_heatmap(arr: PyReadonlyArrayDyn<'_, f32>, width: usize, height: usize) 
     for (iy, &yy) in ys.iter().enumerate() {
         for &xx in &xs {
             let raw = flat[yy * w + xx];
-            let norm = if span.abs() < 1e-12 { 0.5 } else { (raw - mn) / span };
-            let idx = ((norm.clamp(0.0, 1.0) * ((ramp.len() - 1) as f32)) as usize).min(ramp.len() - 1);
+            let norm = if span.abs() < 1e-12 {
+                0.5
+            } else {
+                (raw - mn) / span
+            };
+            let idx =
+                ((norm.clamp(0.0, 1.0) * ((ramp.len() - 1) as f32)) as usize).min(ramp.len() - 1);
             out.push(ramp[idx] as char);
         }
         if iy + 1 < ys.len() {
@@ -168,7 +177,11 @@ fn ascii_heatmap(arr: PyReadonlyArrayDyn<'_, f32>, width: usize, height: usize) 
 }
 
 #[pyfunction]
-fn pixel_heatmap(arr: PyReadonlyArrayDyn<'_, f32>, width: usize, height: usize) -> PyResult<String> {
+fn pixel_heatmap(
+    arr: PyReadonlyArrayDyn<'_, f32>,
+    width: usize,
+    height: usize,
+) -> PyResult<String> {
     let (flat, h, w) = flatten_to_2d(arr);
     if flat.is_empty() || h == 0 || w == 0 {
         return Ok("(empty)".to_string());
@@ -213,11 +226,22 @@ fn pixel_heatmap(arr: PyReadonlyArrayDyn<'_, f32>, width: usize, height: usize) 
         for x in 0..out_w {
             let vt = sampled[top_i + x];
             let vb = sampled[bot_i + x];
-            let nt = if span.abs() < 1e-12 { 0.5 } else { (vt - mn) / span };
-            let nb = if span.abs() < 1e-12 { 0.5 } else { (vb - mn) / span };
+            let nt = if span.abs() < 1e-12 {
+                0.5
+            } else {
+                (vt - mn) / span
+            };
+            let nb = if span.abs() < 1e-12 {
+                0.5
+            } else {
+                (vb - mn) / span
+            };
             let (tr, tg, tb) = viridis(nt);
             let (br, bg, bb) = viridis(nb);
-            out.push_str(&format!("\x1b[38;2;{};{};{}m\x1b[48;2;{};{};{}m▀\x1b[0m", tr, tg, tb, br, bg, bb));
+            out.push_str(&format!(
+                "\x1b[38;2;{};{};{}m\x1b[48;2;{};{};{}m▀\x1b[0m",
+                tr, tg, tb, br, bg, bb
+            ));
         }
         if row + 1 < lines {
             out.push('\n');
@@ -286,7 +310,7 @@ fn frame_patch(prev: &str, next: &str) -> PyResult<String> {
 }
 
 #[pymodule]
-fn ttc_rust_core(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn core(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(ascii_heatmap, m)?)?;
     m.add_function(wrap_pyfunction!(pixel_heatmap, m)?)?;
     m.add_function(wrap_pyfunction!(parse_assignment, m)?)?;

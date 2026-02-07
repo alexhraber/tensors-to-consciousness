@@ -11,7 +11,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable
 
-from tools import rust_core
+from tools import core
 
 EXPLORER_VIEW = "explore"
 
@@ -168,7 +168,7 @@ def _upsample_interp(arr: object, out_h: int, out_w: int) -> object:
 
 
 def _pixel_heatmap(arr: object, width: int = 48, height: int = 20) -> str:
-    rust_out = rust_core.pixel_heatmap(arr, width=width, height=height)
+    rust_out = core.pixel_heatmap(arr, width=width, height=height)
     if rust_out is not None:
         return rust_out
 
@@ -390,7 +390,7 @@ def _matplotlib_plot_png(
 
 
 def _ascii_heatmap(arr: object, width: int = 36, height: int = 12) -> str:
-    rust_out = rust_core.ascii_heatmap(arr, width=width, height=height)
+    rust_out = core.ascii_heatmap(arr, width=width, height=height)
     if rust_out is not None:
         return rust_out
 
