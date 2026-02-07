@@ -65,22 +65,7 @@ def select_act_tasks(paths: list[str]) -> list[str]:
     docs = _has_prefix(paths, "docs/") or _has_exact(
         paths, "transforms/transforms.json", "tools/generate_catalog_docs.py", "tools/runtime.py"
     )
-    render = _has_prefix(paths, "assets/render/") or _has_exact(paths, "tools/generate_render_assets.py")
     ci = _has_prefix(paths, ".github/ci/", ".github/workflows/") or _has_exact(paths, "mise.toml")
-    assets_sync = _has_prefix(paths, "assets/render/", "examples/", "frameworks/", "transforms/") or _has_exact(
-        paths,
-        "README.md",
-        "explorer.py",
-        "tools/generate_render_assets.py",
-        "tools/headless_capture.py",
-        "tools/shinkei.py",
-        "tools/tui.py",
-        ".python-version",
-        "mise.toml",
-        "Dockerfile",
-        ".github/ci/requirements-test.txt",
-        ".github/workflows/assets-readme-sync.yml",
-    )
 
     tasks: list[str] = []
     if runtime or tests or ci:
@@ -93,10 +78,6 @@ def select_act_tasks(paths: list[str]) -> list[str]:
         )
     if docs or runtime or ci:
         tasks.append("act-ci-docs-sync")
-    if render or ci:
-        tasks.append("act-ci-render-assets")
-    if assets_sync:
-        tasks.append("act-ci-assets-sync")
     return tasks
 
 

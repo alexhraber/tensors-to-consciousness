@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+msg_file="${1:-}"
+if [[ -z "${msg_file}" || ! -f "${msg_file}" ]]; then
+  echo "commit-msg hook: missing commit message file argument" >&2
+  exit 1
+fi
+
+subject="$(head -n 1 "$msg_file" | tr -d '\r')"
+
+# Allow Git-generated merge/revert subjects.
+if [[ "$subject" =~ ^Merge\  ]] || [[ "$subject" =~ ^Revert\ \" ]]; then
+  exit 0
+fi
+
+# Conventional-style format:
+#   type(scope)!: subject
+#   type!: subject
+#   type: subject
+pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/-]+\))?(!)?: .+'
+
+if [[ ! "$subject" =~ $pattern ]]; then
+  cat >&2 <<'EOF'
+Invalid commit message subject.
+Expected format:
+  type(scope): summary
+Examples:
+  fix(tui): handle ctrl+c cleanly
+  chore(ci): tighten act local gating
+  docs: refresh contribution guide
+Allowed types:
+  build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
+EOF
+  exit 1
+fi

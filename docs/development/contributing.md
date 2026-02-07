@@ -27,12 +27,14 @@ mise run test-all
 ## Commit Hygiene
 
 - Keep changes scoped and reviewable.
+- Use conventional commit subjects: `type(scope): summary` (enforced by `.githooks/commit-msg`).
 - Regenerate generated references when catalog/framework contracts change.
 - Do not commit runtime state (`.config/`, virtual environments, caches, output scratch files).
 
 ## Hooks and Automation
 
 - Repo hook entry: `.githooks/pre-commit`
+- Repo hook entry: `.githooks/commit-msg`
 - Repo hook entry: `.githooks/pre-push`
 - Installer: `python tools/install_githooks.py`
 - Contributor bootstrap: `python tools/setup_contributor.py` (auto-invoked by `.githooks/pre-commit` when needed)
@@ -43,6 +45,12 @@ mise run test-all
 - Local Actions simulation with `act` (workflow-driven, executes `mise` tasks): `mise run act-ci`
 - Full pre-push gate (single validation choke point: hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
 - Pre-push cache: successful gate jobs are cached per change signature in `.git/t2c-cache/act-gate.json` to keep repeat loops fast
+
+Commit message examples:
+
+- `fix(tui): handle ctrl+c cleanly`
+- `chore(ci): consolidate python target to 3.14`
+- `docs: refine operator workflow`
 
 ## Adding or Updating Framework Backends
 
