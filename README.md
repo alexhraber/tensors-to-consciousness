@@ -6,7 +6,7 @@
 
 <p>
   <a href="https://github.com/ml-explore/mlx"><img alt="MLX" src="https://img.shields.io/badge/MLX-Apple-000000?logo=apple&logoColor=white"></a>
-  <a href="https://github.com/jax-ml/jax"><img alt="JAX" src="https://img.shields.io/badge/JAX-Framework-FE5F00?logo=jax&logoColor=white"></a>
+  <a href="https://github.com/jax-ml/jax"><img alt="JAX" src="assets/jax-badge.svg"></a>
   <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-Framework-EE4C2C?logo=pytorch&logoColor=white"></a>
   <a href="https://numpy.org/"><img alt="NumPy" src="https://img.shields.io/badge/NumPy-Framework-013243?logo=numpy&logoColor=white"></a>
   <a href="https://keras.io/"><img alt="Keras" src="https://img.shields.io/badge/Keras-Framework-D00000?logo=keras&logoColor=white"></a>
