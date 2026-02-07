@@ -31,7 +31,7 @@ CMD ["explorer"]
 FROM runtime AS ci
 
 COPY .github/ci/requirements-test.txt /tmp/requirements-test.txt
-RUN uv pip install -r /tmp/requirements-test.txt
+RUN uv pip install --system -r /tmp/requirements-test.txt
 
 FROM ci AS render
 
