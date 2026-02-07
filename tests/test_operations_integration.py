@@ -11,7 +11,8 @@ from unittest.mock import patch
 import main as t2c
 from tools import setup
 from tools import validate
-from tools import viz_terminal
+from tools import tui
+from tools import shinkei
 
 
 class ValidateEntrypointTests(unittest.TestCase):
@@ -54,7 +55,7 @@ class VizTerminalTests(unittest.TestCase):
             self.skipTest("numpy not installed in test interpreter")
 
         rgba = np.zeros((20, 40, 4), dtype="uint8")
-        out = viz_terminal._to_ascii(rgba, width=16, height=8)
+        out = shinkei.to_ascii(rgba, width=16, height=8)
         lines = out.splitlines()
         self.assertEqual(len(lines), 8)
         self.assertTrue(all(len(line) == 16 for line in lines))
@@ -69,12 +70,49 @@ class VizTerminalTests(unittest.TestCase):
                 raise ModuleNotFoundError("mocked missing matplotlib")
             return real_import(name, globals, locals, fromlist, level)
 
-        with patch.object(viz_terminal, "parse_args", return_value=args):
+        with patch.object(tui, "parse_args", return_value=args):
             with patch("builtins.__import__", side_effect=fake_import):
                 with redirect_stderr(stderr):
-                    rc = viz_terminal.main()
+                    rc = tui.main()
         self.assertEqual(rc, 1)
         self.assertIn("matplotlib is not installed", stderr.getvalue())
+
+    def test_build_state_reads_inputs_blob(self) -> None:
+        args = argparse.Namespace(
+            framework="jax",
+            width=80,
+            height=24,
+            view="ultra",
+            no_tui=True,
+            inputs='{"seed":11,"samples":2048,"freq":2.5,"grid":128}',
+        )
+        state = shinkei.build_state(view=args.view, inputs=args.inputs)
+        self.assertEqual(state.seed, 11)
+        self.assertEqual(state.samples, 2048)
+        self.assertAlmostEqual(state.freq, 2.5)
+        self.assertEqual(state.grid, 128)
+        self.assertEqual(state.view, "ultra")
+
+    def test_stage_payload_respects_view_shapes(self) -> None:
+        try:
+            import numpy as np
+        except ModuleNotFoundError:
+            self.skipTest("numpy not installed in test interpreter")
+
+        state = shinkei.VizState(samples=512, grid=64, view="simplified")
+        arr_simple, stage_simple, _ = shinkei.stage_payload(np, state)
+        self.assertEqual(stage_simple, "simplified")
+        self.assertEqual(arr_simple.ndim, 1)
+
+        state.view = "advanced"
+        arr_adv, stage_adv, _ = shinkei.stage_payload(np, state)
+        self.assertEqual(stage_adv, "advanced")
+        self.assertEqual(arr_adv.ndim, 2)
+
+        state.view = "ultra"
+        arr_ultra, stage_ultra, _ = shinkei.stage_payload(np, state)
+        self.assertEqual(stage_ultra, "ultra")
+        self.assertEqual(arr_ultra.ndim, 2)
 
 
 class RuntimeExecutionFlowTests(unittest.TestCase):

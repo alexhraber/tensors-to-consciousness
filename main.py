@@ -29,12 +29,12 @@ def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run research-module/validation targets for a selected framework."
+        description="Run T2C interactive studio or research targets for a selected framework."
     )
     parser.add_argument(
         "target",
         nargs="?",
-        help="One of: validate, viz, 0,1,2,3,4,5,6, all (default: auto mode).",
+        help="One of: validate, viz, 0,1,2,3,4,5,6, all (default: interactive studio).",
     )
     parser.add_argument(
         "--framework",
@@ -54,6 +54,12 @@ def parse_args() -> argparse.Namespace:
         "--inputs",
         help="Path to input-override JSON (or raw JSON string) used by all scripts.",
     )
+    parser.add_argument(
+        "-c",
+        "--cli",
+        action="store_true",
+        help="Force CLI execution flow (skip interactive studio on default run).",
+    )
     return parser.parse_args()
 
 
@@ -70,6 +76,12 @@ def prompt_framework_choice() -> str:
             if 1 <= pos <= len(SUPPORTED_FRAMEWORKS):
                 return SUPPORTED_FRAMEWORKS[pos - 1]
         print(f"Invalid selection: {raw}")
+
+
+def prompt_inputs_override() -> str | None:
+    print("Input overrides (optional): provide JSON file path or inline JSON.")
+    raw = input("Inputs (Enter for random defaults): ").strip()
+    return raw or None
 
 
 def ensure_setup_if_needed(
@@ -122,8 +134,6 @@ def main() -> int:
     os.chdir(repo_root)
     env = os.environ.copy()
     inputs = getattr(args, "inputs", None)
-    if inputs:
-        env["T2C_INPUTS"] = inputs
 
     existing_framework = None
     try:
@@ -143,6 +153,17 @@ def main() -> int:
             return 1
         framework = prompt_framework_choice()
 
+    # On default interactive flow, allow input tuning without extra flags.
+    if (
+        hasattr(args, "inputs")
+        and inputs is None
+        and onboarding_mode
+        and sys.stdin.isatty()
+    ):
+        inputs = prompt_inputs_override()
+    if inputs:
+        env["T2C_INPUTS"] = inputs
+
     try:
         config, setup_ran = ensure_setup_if_needed(
             framework=framework,
@@ -159,15 +180,20 @@ def main() -> int:
     venv_dir = Path(config["venv"])
     py = python_in_venv(venv_dir)
 
+    force_cli = bool(getattr(args, "cli", False))
     if args.target is None:
         if setup_ran:
             run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
-        scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]
+        if force_cli:
+            scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]
+        else:
+            run_cmd([str(py), "-m", "tools.tui", "--framework", framework], env=env)
+            return 0
     elif args.target == "validate":
         run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         return 0
     elif args.target == "viz":
-        run_cmd([str(py), "-m", "tools.viz_terminal", "--framework", framework], env=env)
+        run_cmd([str(py), "-m", "tools.tui", "--framework", framework], env=env)
         return 0
     elif args.target == "all":
         scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]

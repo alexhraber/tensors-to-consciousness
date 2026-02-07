@@ -172,14 +172,41 @@ class T2CTests(unittest.TestCase):
                         rc = t2c.main()
         self.assertEqual(rc, 0)
         cmd = run_cmd_mock.call_args[0][0]
-        self.assertEqual(cmd, [".venv-jax/bin/python", "-m", "tools.viz_terminal", "--framework", "jax"])
+        self.assertEqual(cmd, [".venv-jax/bin/python", "-m", "tools.tui", "--framework", "jax"])
 
-    def test_t2c_main_onboarding_prompts_then_runs_validate_and_all(self) -> None:
+    def test_t2c_main_onboarding_prompts_then_runs_validate_and_viz(self) -> None:
         args = argparse.Namespace(
             target=None,
             framework=None,
             venv=None,
             no_setup=False,
+            cli=False,
+        )
+        with patch.object(t2c, "parse_args", return_value=args):
+            with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
+                with patch.object(t2c.sys.stdin, "isatty", return_value=True):
+                    with patch.object(t2c, "prompt_framework_choice", return_value="jax"):
+                        with patch.object(
+                            t2c,
+                            "ensure_setup_if_needed",
+                            return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
+                        ):
+                            with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
+                                with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                                    rc = t2c.main()
+        self.assertEqual(rc, 0)
+        calls = [c[0][0] for c in run_cmd_mock.call_args_list]
+        self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
+        self.assertEqual(calls[1], [".venv-jax/bin/python", "-m", "tools.tui", "--framework", "jax"])
+        self.assertEqual(len(calls), 2)
+
+    def test_t2c_main_onboarding_cli_flag_runs_modules(self) -> None:
+        args = argparse.Namespace(
+            target=None,
+            framework=None,
+            venv=None,
+            no_setup=False,
+            cli=True,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):

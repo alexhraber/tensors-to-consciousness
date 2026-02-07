@@ -44,15 +44,25 @@ First run pipeline:
 
 1. Detect framework config
 2. Prompt user for framework if missing
-3. Auto-setup environment + latest available dependencies
-4. Validate the framework track
-5. Run all research modules
+3. Prompt for optional input overrides (JSON path or inline JSON)
+4. Auto-setup environment + latest available dependencies
+5. Validate the framework track
+6. Launch the interactive visualization studio
 
 For manual/advanced control:
 
 ```bash
 python main.py --help
+python main.py -c        # force CLI flow (skip studio)
 ```
+
+Interactive visualization studio:
+
+```bash
+python main.py viz
+```
+
+Inside the studio: `1/2/3` switches `simplified/advanced/ultra`, `e` edits parameters, `r` reseeds, `:` opens command console, `q` exits.
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
 
