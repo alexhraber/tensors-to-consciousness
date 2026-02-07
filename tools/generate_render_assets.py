@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import hashlib
 import shutil
 import subprocess
 import tempfile
@@ -119,6 +120,29 @@ def _advance_tensor_field(
             field.tensor = np.clip(arr, -1e4, 1e4)
         index += 1
     return field, index
+
+
+def _stable_seed(*parts: str) -> int:
+    payload = "|".join(parts).encode("utf-8")
+    # 32-bit seed for numpy default_rng portability.
+    return int.from_bytes(hashlib.sha256(payload).digest()[:4], "big")
+
+
+def _reset_framework_rng(engine: FrameworkEngine, *, seed: int) -> None:
+    # Asset generation must be deterministic for CI drift checks. The numpy backend
+    # uses a module-global RNG; reset it per asset so outputs do not depend on
+    # generation order or prior runs within the same Python process.
+    if engine.framework != "numpy":
+        return
+    try:
+        import numpy as np
+        import importlib
+
+        mod = importlib.import_module("frameworks.numpy.utils")
+        if hasattr(mod, "RNG"):
+            mod.RNG = np.random.default_rng(int(seed) & 0xFFFFFFFF)
+    except Exception:
+        return
 
 
 def _fill_rect(
@@ -243,7 +267,8 @@ def render_tui_explorer(frame: int, width: int, height: int) -> bytearray:
     return buf
 
 
-def encode_gif(frames_dir: Path, output_gif: Path, fps: int, pattern: str) -> None:
+def encode_gif(frames_dir: Path, output_gif: Path, fps: int, pattern: str, *, width_px: int) -> None:
+    width_px = max(160, int(width_px))
     palette = frames_dir / "palette.png"
     subprocess.run(
         [
@@ -256,7 +281,7 @@ def encode_gif(frames_dir: Path, output_gif: Path, fps: int, pattern: str) -> No
             "-i",
             str(frames_dir / pattern),
             "-vf",
-            f"fps={fps},scale=960:-1:flags=lanczos,palettegen",
+            f"fps={fps},scale={width_px}:-1:flags=lanczos,palettegen",
             str(palette),
         ],
         check=True,
@@ -274,7 +299,7 @@ def encode_gif(frames_dir: Path, output_gif: Path, fps: int, pattern: str) -> No
             "-i",
             str(palette),
             "-lavfi",
-            f"fps={fps},scale=960:-1:flags=lanczos[x];[x][1:v]paletteuse",
+            f"fps={fps},scale={width_px}:-1:flags=lanczos[x];[x][1:v]paletteuse",
             str(output_gif),
         ],
         check=True,
@@ -284,11 +309,11 @@ def encode_gif(frames_dir: Path, output_gif: Path, fps: int, pattern: str) -> No
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate GIF previews in assets/render.")
     parser.add_argument("--output-dir", default="assets/render", help="Output directory.")
-    parser.add_argument("--frames", type=int, default=84, help="Frames per GIF.")
+    parser.add_argument("--frames", type=int, default=48, help="Frames per GIF.")
     parser.add_argument("--fps", type=int, default=12, help="GIF fps.")
-    parser.add_argument("--width", type=int, default=480, help="Frame width.")
-    parser.add_argument("--height", type=int, default=270, help="Frame height.")
-    parser.add_argument("--framework", default="jax", help="Framework backend used for pipeline renders.")
+    parser.add_argument("--width", type=int, default=320, help="Frame width.")
+    parser.add_argument("--height", type=int, default=180, help="Frame height.")
+    parser.add_argument("--framework", default="numpy", help="Framework backend used for pipeline renders.")
     parser.add_argument(
         "--tui-capture",
         choices=["headless", "synthetic"],
@@ -332,6 +357,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="t2c_render_") as td:
         tmp = Path(td)
+        gif_width = max(480, args.width * 2)
 
         for name in selected:
             if name == "tui_explorer":
@@ -356,7 +382,7 @@ def main() -> int:
                     for i in range(args.frames):
                         rgb = render_tui_explorer(i, args.width, args.height)
                         write_ppm(frames_dir / f"{i:03d}.ppm", args.width, args.height, rgb)
-                    encode_gif(frames_dir, output_gif, args.fps, "%03d.ppm")
+                    encode_gif(frames_dir, output_gif, args.fps, "%03d.ppm", width_px=gif_width)
                 print(f"wrote {output_gif}")
                 continue
 
@@ -366,6 +392,7 @@ def main() -> int:
             frames_dir.mkdir(parents=True, exist_ok=True)
 
             engine = FrameworkEngine(args.framework)
+            _reset_framework_rng(engine, seed=_stable_seed(args.framework, name, ",".join(pipeline)))
             n = max(48, min(192, int(max(args.width, args.height) * 0.24)))
             field = TensorField(tensor=engine._normal((n, n)))
             op_index = 0
@@ -401,7 +428,7 @@ def main() -> int:
                 )
                 (frames_dir / f"{i:03d}.png").write_bytes(png)
 
-            encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.png")
+            encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.png", width_px=gif_width)
             print(f"wrote {out_dir / f'{name}.gif'}")
 
     return 0

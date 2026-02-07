@@ -6,6 +6,7 @@ act = "latest"
 [tasks.install-test-deps]
 description = "Install local/CI test and runtime-light dependencies."
 run = '''
+export UV_CACHE_DIR="${UV_CACHE_DIR:-${TMPDIR:-/tmp}/uv-cache}"
 uv pip install --python "$(which python)" -r .github/ci/requirements-test.txt
 '''
 
@@ -173,8 +174,12 @@ description = "Regenerate README-linked render assets."
 run = '''
 python tools/generate_render_assets.py \
   --framework numpy \
+  --frames 36 \
+  --fps 12 \
+  --width 320 \
+  --height 180 \
   --only optimization_flow attention_dynamics phase_portraits tui_explorer \
-  --tui-capture headless
+  --tui-capture synthetic
 '''
 
 [tasks.act-check]
