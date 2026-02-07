@@ -34,23 +34,24 @@
 
 `tensors-to-consciousness` centers on an interactive terminal environment for rigorous mathematical rendering, comparative framework analysis, and exploratory AI/ML experimentation.
 
-Primary entrypoint:
+Primary launch (container-first):
 
 ```bash
-python main.py
+docker compose build explorer
+docker compose run --rm explorer python main.py
 ```
 
 <p align="center">
   <img src="assets/render/tui_explorer.gif" alt="TUI explorer preview" width="86%">
 </p>
 
-On first run it will:
+Local (non-container) launch:
 
-1. Detect framework config
-2. Use default framework `numpy` if missing
-3. Auto-setup environment + latest available dependencies
-4. Validate the framework track
-5. Launch the interactive rendering explorer
+```bash
+python main.py
+```
+
+On first run, the tool will auto-configure a framework runtime and launch the explorer.
 
 Detailed usage lives in:
 
@@ -58,6 +59,7 @@ Detailed usage lives in:
 - [TUI Guide](docs/usage/tui.md)
 - [CLI Guide](docs/usage/cli.md)
 - [Container + SSH Guide](docs/usage/container.md)
+- [Diagnostics + Logging Guide](docs/usage/diagnostics.md)
 - [Transforms Reference](docs/reference/transforms.md)
 - [Frameworks Reference](docs/reference/frameworks.md)
 
@@ -89,11 +91,12 @@ Top 5 core transforms:
 
 ## References
 
+- [Docs Index](docs/README.md)
+- [Container + SSH Guide](docs/usage/container.md)
+- [Diagnostics + Logging Guide](docs/usage/diagnostics.md)
 - [Transforms Reference](docs/reference/transforms.md)
-- [Transform Playbook](docs/guides/transform-playbook.md)
+- [Frameworks Reference](docs/reference/frameworks.md)
 - [Contributing Guide](CONTRIBUTING.md)
-- [Tests Guide](tests/README.md)
-- [CI Workflow](.github/workflows/ci.yml)
 
 Core exploration commands:
 
@@ -101,31 +104,6 @@ Core exploration commands:
 python main.py --list-transforms
 python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
 python main.py render --framework numpy --transforms default
-```
-
-Diagnostics and introspection:
-
-- Default logging level is `INFO`.
-- Debug tracing is disabled by default.
-- Set `DEBUG=1` to emit kernel-level transform/tooling events.
-- Set `LOG_LEVEL` to one of: `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`.
-- You can also set defaults in `.config/config.json` via `diagnostics.log_level` and `diagnostics.debug`.
-- Environment variables override config values.
-- The config file is normalized with sensible defaults for `platform` and `diagnostics` when written by tooling.
-
-```json
-{
-  "framework": "numpy",
-  "venv": ".venv-numpy",
-  "diagnostics": {
-    "log_level": "INFO",
-    "debug": false
-  }
-}
-```
-
-```bash
-DEBUG=1 LOG_LEVEL=DEBUG python main.py run --framework numpy --transforms default
 ```
 
 ## Shinkei Visual Samples

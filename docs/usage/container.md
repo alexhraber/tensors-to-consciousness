@@ -34,6 +34,10 @@ If your terminal path cannot display advanced render styles well, force an ASCII
 ssh <host> "cd /path/to/tensors-to-consciousness && RENDER_STYLE=ascii docker compose run --rm explorer python main.py"
 ```
 
+Telescope note:
+
+- This workflow is compatible with Telescope-driven remote terminals because the container run is TTY-attached (`stdin_open: true`, `tty: true`).
+
 ## 4) One-off command examples
 
 ```bash
