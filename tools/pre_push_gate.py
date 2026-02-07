@@ -59,25 +59,30 @@ def _has_exact(paths: list[str], *names: str) -> bool:
 
 
 def select_act_tasks(paths: list[str]) -> list[str]:
-    runtime = _has_prefix(paths, "transforms/", "frameworks/", "tools/") or _has_exact(
-        paths, "explorer.py", ".python-version", "mise.toml"
+    runtime = _has_prefix(paths, "transforms/", "frameworks/") or _has_exact(
+        paths,
+        "explorer.py",
+        ".python-version",
+        "tools/diagnostics.py",
+        "tools/input_controls.py",
+        "tools/playground.py",
+        "tools/rust_core.py",
+        "tools/runtime.py",
+        "tools/setup.py",
+        "tools/shinkei.py",
+        "tools/tui.py",
+        "tools/validate.py",
     )
     tests = _has_prefix(paths, "tests/") or _has_exact(paths, ".github/ci/requirements-test.txt")
-    docs = _has_prefix(paths, "docs/") or _has_exact(
-        paths, "transforms/transforms.json", "tools/generate_catalog_docs.py", "tools/runtime.py"
-    )
+    docs = _has_prefix(paths, "docs/") or _has_exact(paths, "transforms/transforms.json", "tools/generate_catalog_docs.py")
     ci = _has_prefix(paths, ".github/ci/", ".github/workflows/") or _has_exact(paths, "mise.toml")
 
     tasks: list[str] = []
     if runtime or tests or ci:
-        tasks.extend(
-            [
-                "act-ci-test",
-                "act-ci-transform-contract",
-                "act-ci-framework-contract-numpy",
-            ]
-        )
-    if docs or runtime or ci:
+        tasks.append("act-ci-test")
+    if runtime or ci:
+        tasks.extend(["act-ci-transform-contract", "act-ci-framework-contract-numpy"])
+    if docs:
         tasks.append("act-ci-docs-sync")
     return tasks
 
