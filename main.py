@@ -21,6 +21,10 @@ def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
     subprocess.run(cmd, check=True, env=env)
 
 
+def _default_venv_for_framework(framework: str) -> Path:
+    return Path(f".venv-{framework}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run T2C interactive explorer or sandbox transform targets for a selected framework."
@@ -86,14 +90,23 @@ def ensure_setup_if_needed(
         config_exists = False
 
     framework = framework or config.get("framework")
-    venv_dir = Path(venv or config.get("venv", ".venv"))
-    py = python_in_venv(venv_dir)
-
     if framework is None:
         raise RuntimeError(
             "No active framework configured. Run a command with "
             "`--framework <framework>` once (example: `python main.py validate --framework jax`)."
         )
+
+    configured_framework = config.get("framework")
+    configured_venv = config.get("venv")
+    if venv is not None:
+        venv_dir = Path(venv)
+    elif config_exists and configured_venv and framework == configured_framework:
+        venv_dir = Path(configured_venv)
+    else:
+        # Keep framework environments isolated by default.
+        venv_dir = _default_venv_for_framework(framework)
+
+    py = python_in_venv(venv_dir)
 
     requested_differs = framework_overridden and framework != config.get("framework")
     needs_setup = (not config_exists) or (not py.exists()) or requested_differs

@@ -63,6 +63,23 @@ class AppFlowIntegrationTests(unittest.TestCase):
                     env=env,
                 )
 
+    def test_ensure_setup_switch_framework_uses_isolated_default_venv(self) -> None:
+        env: dict[str, str] = {}
+        with patch.object(app, "load_config", return_value={"framework": "mlx", "venv": ".venv-mlx"}):
+            with patch.object(app, "run_cmd") as run_cmd_mock:
+                config, setup_ran = app.ensure_setup_if_needed(
+                    framework="jax",
+                    venv=None,
+                    framework_overridden=True,
+                    allow_setup=True,
+                    env=env,
+                )
+        self.assertTrue(setup_ran)
+        self.assertEqual(config["framework"], "jax")
+        self.assertEqual(config["venv"], ".venv-jax")
+        cmd = run_cmd_mock.call_args[0][0]
+        self.assertIn(".venv-jax", cmd)
+
     def test_app_main_invalid_target(self) -> None:
         args = argparse.Namespace(
             target="bad",

@@ -447,20 +447,18 @@ def _render_header(
 ) -> None:
     top = "┌" + ("─" * (width - 2)) + "┐"
     bot = "└" + ("─" * (width - 2)) + "┘"
-    print(top)
-    print(
-        _frame_line(
-            f" explorer · {framework} · {platform} · view={state.view} · renderer={renderer} ",
-            width=width,
-        )
+    header_line = _frame_line(
+        f" explorer · {framework} · {platform} · view={state.view} · renderer={renderer} ",
+        width=width,
     )
-    print(
-        _frame_line(
-            f" seed={state.seed} samples={state.samples} grid={state.grid} freq={state.freq:.3f} amp={state.amplitude:.3f} damp={state.damping:.3f} noise={state.noise:.3f} phase={state.phase:.3f} ",
-            width=width,
-        )
+    stats_line = _frame_line(
+        f" seed={state.seed} samples={state.samples} grid={state.grid} freq={state.freq:.3f} amp={state.amplitude:.3f} damp={state.damping:.3f} noise={state.noise:.3f} phase={state.phase:.3f} ",
+        width=width,
     )
-    print(bot)
+    print(_style(top, fg=(83, 109, 154)))
+    print(_style(header_line, fg=(208, 224, 252), bold=True))
+    print(_style(stats_line, fg=(142, 166, 206)))
+    print(_style(bot, fg=(83, 109, 154)))
 
 
 def _render_landing(framework: str, platform: str, width: int, term_cols: int, term_rows: int) -> None:
@@ -774,24 +772,29 @@ def _render_interactive(
                             renderer=renderer,
                             width=layout["header_w"],
                         )
-                        print()
-                        print(
-                            f"transform [{transform['key']}] {transform['title']} · complexity={profile.get('complexity', '?')}"
+                    print()
+                    print(
+                        _style(
+                            f"transform [{transform['key']}] {transform['title']} · complexity={profile.get('complexity', '?')}",
+                            fg=(200, 220, 255),
+                            bold=True,
                         )
-                        if show_details:
-                            print(f"formula: {transform['formula']}")
-                            print(f"description: {transform['description']}")
-                            print()
-                        live = "live" if motion_enabled else "paused"
-                        print(f"live-dynamics: {live} · phase={transform_label}")
+                    )
+                    if show_details:
+                        print(_style(f"formula: {transform['formula']}", fg=(159, 184, 228)))
+                        print(_style(f"description: {transform['description']}", fg=(159, 184, 228)))
                         print()
-                        if show_details:
-                            for line in selector_lines:
-                                print(line)
-                        print("pipeline: " + (" -> ".join(pipeline) if pipeline else "(none)"))
-                        if not show_details:
-                            print("hint: press [h] for transform details and full controls")
-                        print()
+                    live = "live" if motion_enabled else "paused"
+                    live_color = (153, 231, 173) if motion_enabled else (255, 214, 136)
+                    print(_style(f"live-dynamics: {live} · phase={transform_label}", fg=live_color, bold=True))
+                    print()
+                    if show_details:
+                        for line in selector_lines:
+                            print(_style(line, fg=(155, 180, 222)))
+                    print(_style("pipeline: " + (" -> ".join(pipeline) if pipeline else "(none)"), fg=(136, 208, 251)))
+                    if not show_details:
+                        print(_style("hint: press [h] for transform details and full controls", fg=(140, 160, 192), dim=True))
+                    print()
 
                     print(render)
                     if use_plots:
@@ -799,7 +802,7 @@ def _render_interactive(
                         sys.stdout.write("\n")
                     print()
                     print(caption_line)
-                    print(controls_line)
+                    print(_style(controls_line, fg=(136, 160, 202)))
                     sys.stdout.flush()
                     dynamic_lines = _line_count(render) + 1 + _line_count(caption_line) + 1
                     if use_plots:
