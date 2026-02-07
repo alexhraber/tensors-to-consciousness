@@ -21,7 +21,7 @@
 
 ---
 
-## Terminal Exploration Platform
+## Tenor Exploration Platform
 
 `tensors-to-consciousness` is a framework-agnostic exploration system for mathematical transforms on tensor fields.
 
