@@ -18,29 +18,43 @@ python -m py_compile $(git ls-files '*.py')
 '''
 
 [tasks.test-unit]
-description = "Run unit tests."
-run = "python -m tests --suite unit"
+description = "Run Rust tests (default)."
+run = '''
+mise run build
+./target/debug/explorer ops test --scope rust
+'''
 
-[tasks.test-integration]
-description = "Run integration tests."
-run = "python -m tests --suite integration"
+[tasks.test-python]
+description = "Run Python (ML/transform) tests."
+run = '''
+mise run build
+./target/debug/explorer ops test --scope python
+'''
 
 [tasks.test-all]
-description = "Run all tests."
-run = "python -m tests --suite all"
+description = "Run all tests (Rust + Python ML/transform)."
+run = '''
+mise run build
+./target/debug/explorer ops test --scope all
+'''
+
+[tasks.test]
+description = "Unified test runner (Rust by default). Pass `--scope rust|python|all`."
+run = '''
+mise run build
+./target/debug/explorer ops test
+'''
 
 [tasks.cov-unit]
 description = "Run unit tests with coverage."
 run = '''
 python -m coverage erase
-python -m coverage run -m tests --suite unit
+python -m coverage run -m tests.python --suite unit
 '''
 
 [tasks.cov-integration]
-description = "Run integration tests with appended coverage."
-run = '''
-python -m coverage run --append -m tests --suite integration
-'''
+description = "Reserved (Rust tests are not covered by Python coverage)."
+run = "true"
 
 [tasks.cov-report]
 description = "Enforce and emit coverage outputs."
@@ -55,9 +69,10 @@ run = '''
 mise run build
 ./target/debug/explorer --help
 ./target/debug/explorer list-transforms >/dev/null
-python -m tools.setup --help
-python -m tools.validate --help
-python -m tools.tui --help
+./target/debug/explorer tui --help
+./target/debug/explorer run --help
+./target/debug/explorer validate --help
+./target/debug/explorer ops --help
 '''
 
 [tasks.build]

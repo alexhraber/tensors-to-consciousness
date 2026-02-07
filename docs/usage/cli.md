@@ -28,7 +28,6 @@ explorer run --framework keras --transforms reaction_diffusion,stochastic_proces
 ## Test Commands
 
 ```bash
-python -m tests
-python -m tests --suite unit
-python -m tests --suite integration
+cargo test -p explorer
+python -m tests.python --suite unit
 ```

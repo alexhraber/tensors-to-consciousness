@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import math
 import hashlib
+import os
 import shutil
 import subprocess
 import tempfile
@@ -358,6 +359,17 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="explorer_render_") as td:
         tmp = Path(td)
         gif_width = max(480, args.width * 2)
+        explorer_bin = os.environ.get("EXPLORER_BIN", "").strip()
+        if not explorer_bin:
+            for candidate in (
+                ROOT / "target" / "debug" / "explorer",
+                ROOT / "target" / "release" / "explorer",
+            ):
+                if candidate.exists():
+                    explorer_bin = candidate.as_posix()
+                    break
+        if not explorer_bin:
+            explorer_bin = "explorer"
 
         for name in selected:
             if name == "tui_explorer":
@@ -368,7 +380,7 @@ def main() -> int:
                     try:
                         capture_tui_session_gif(
                             output_gif=output_gif,
-                            python_exe=sys.executable,
+                            explorer_bin=explorer_bin,
                             framework=args.framework,
                             transforms="default",
                             width=max(1280, args.width * 2),

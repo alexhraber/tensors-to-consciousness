@@ -72,7 +72,7 @@ Requirements:
 
 1. Add or modify transform definitions in `transforms/transforms.json`.
 2. Verify registry/catalog resolution remains valid.
-3. Validate setup and run paths through `explorer.py`.
+3. Validate setup and run paths through `explorer`.
 4. Run both unit and integration test suites.
 
 Validation commands:

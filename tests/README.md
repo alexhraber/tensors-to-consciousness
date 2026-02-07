@@ -1,15 +1,12 @@
-# Test Layout
+# Tests
 
-This repository separates test intent by scope:
+This repository is Rust-first.
 
-- `tests/unit`: fast, isolated tests for single modules/functions.
-- `tests/integration`: entrypoint and cross-module flow tests.
+- Rust tests: `cargo test -p explorer`
+- Python (ML/transform) tests: `python -m tests.python --suite unit`
 
-Run commands:
+`mise` wraps the common paths:
 
-- `python -m tests` (all suites)
-- `python -m tests --suite unit`
-- `python -m tests --suite integration`
-
-CI should execute `all`; local iteration should prefer `unit` first.
-
+- `mise run test` (Rust by default)
+- `mise run test -- --scope python`
+- `mise run test -- --scope all`

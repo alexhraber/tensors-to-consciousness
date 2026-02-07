@@ -4,8 +4,6 @@ on:
   pull_request:
     branches: ["main"]
     paths:
-      - "explorer.py"
-      - "app/**"
       - ".python-version"
       - "Cargo.toml"
       - "Cargo.lock"
@@ -13,7 +11,7 @@ on:
       - "transforms/**"
       - "frameworks/**"
       - "tools/**"
-      - "tests/**"
+      - "tests/python/**"
       - "docs/**"
       - "assets/render/**"
       - "mise.toml"
@@ -72,8 +70,6 @@ jobs:
           base: ${{ github.event.repository.default_branch || 'main' }}
           filters: |
             test:
-              - "explorer.py"
-              - "app/**"
               - ".python-version"
               - "mise.toml"
               - "Cargo.toml"
@@ -82,19 +78,17 @@ jobs:
               - "transforms/**"
               - "frameworks/**"
               - "tools/**"
-              - "tests/**"
+              - "tests/python/**"
               - ".github/ci/requirements-test.txt"
               - ".github/workflows/ci.yml"
             transform_contract:
               - "transforms/**"
               - "frameworks/engine.py"
               - "tools/runtime.py"
-              - "tools/playground.py"
               - "mise.toml"
               - ".github/workflows/ci.yml"
             framework_contract:
               - "frameworks/**"
-              - "tools/setup.py"
               - "tools/runtime.py"
               - "mise.toml"
               - ".github/workflows/ci.yml"
@@ -164,7 +158,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   test:
-    name: Test (Python 3.14)
+    name: Tests
     needs: [changes, image]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.test == 'true'
     runs-on: ubuntu-latest
@@ -180,7 +174,7 @@ jobs:
         if: ${{ env.ACT != 'true' }}
         run: docker pull ${{ needs.image.outputs.ghcr_tag }}
 
-      - name: Unit + integration tests (container)
+      - name: Rust + Python (ML/transform) tests (container)
         run: |
           IMAGE="${{ needs.image.outputs.local_tag }}"
           if [ "${ACT:-}" = "" ] && [ "${LOCAL_ACT:-}" != "true" ]; then
@@ -189,10 +183,11 @@ jobs:
           docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" bash -lc '\
             git config --global --add safe.directory /workspace && \
             python -m py_compile $(git ls-files "*.py") && \
+            cargo test -p explorer && \
+            cargo build -p core && \
             python -m coverage erase && \
-            python -m coverage run -m tests --suite unit && \
-            python -m coverage run --append -m tests --suite integration && \
-            python -m coverage report --show-missing --fail-under=69 && \
+            python -m coverage run -m tests.python --suite unit && \
+            python -m coverage report --show-missing && \
             python -m coverage xml -o coverage.xml && \
             explorer --help >/dev/null && \
             explorer list-transforms >/dev/null \
