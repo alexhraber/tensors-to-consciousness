@@ -16,8 +16,11 @@ class PrePushGateTests(unittest.TestCase):
     def test_parse_jobs_value_invalid(self) -> None:
         self.assertIsNone(_parse_jobs_value("abc"))
 
-    def test_resolve_jobs_defaults_to_two_for_multiple_tasks(self) -> None:
-        self.assertEqual(_resolve_jobs(None, ["local-a", "local-b", "local-c", "local-d"]), 2)
+    def test_resolve_jobs_defaults_to_cpu_for_multiple_tasks(self) -> None:
+        self.assertEqual(
+            _resolve_jobs(None, ["local-a", "local-b", "local-c", "local-d"]),
+            min(os.cpu_count() or 2, 4),
+        )
 
     def test_resolve_jobs_caps_by_task_count(self) -> None:
         self.assertEqual(_resolve_jobs("8", ["a", "b", "c"]), 3)
@@ -26,8 +29,8 @@ class PrePushGateTests(unittest.TestCase):
         self.assertEqual(_resolve_jobs("0", ["a", "b", "c"]), 1)
         self.assertEqual(_resolve_jobs(None, ["a"]), 1)
 
-    def test_resolve_jobs_serializes_act_tasks_by_default(self) -> None:
-        self.assertEqual(_resolve_jobs("4", ["act-ci-test", "act-ci-docs-sync"]), 1)
+    def test_resolve_jobs_parallelizes_act_tasks(self) -> None:
+        self.assertEqual(_resolve_jobs("4", ["act-ci-test", "act-ci-docs-sync"]), 2)
 
     def test_runtime_change_selects_core_jobs(self) -> None:
         tasks = select_act_tasks(["tools/tui.py"])

@@ -47,7 +47,7 @@ mise run test-all
 - Full pre-push gate (single validation choke point: hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
 - PR submission helper: `mise run submit-pr` (pushes current feature branch and runs `gh pr create --fill`)
 - Pre-push cache: successful gate jobs are cached per change signature in `.git/t2c-cache/act-gate.json` to keep repeat loops fast
-- Pre-push parallelism: set `CI_GATE_JOBS=<n|nproc>` (or run `python tools/pre_push_gate.py --jobs <n|nproc>`) to tune concurrency; `act-ci-*` jobs are serialized by default for `act` stability (override with `CI_GATE_ACT_PARALLEL=1`)
+- Pre-push parallelism: default is all local cores (`CI_GATE_JOBS=nproc`); set `CI_GATE_JOBS=<n|nproc>` (or run `python tools/pre_push_gate.py --jobs <n|nproc>`) to tune concurrency
 
 Commit message examples:
 
