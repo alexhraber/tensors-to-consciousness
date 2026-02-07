@@ -33,9 +33,9 @@
   <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
 </p>
 
-## TUI-First Research Studio
+## TUI-First Research Explorer
 
-`tensors-to-consciousness` is built around an interactive terminal studio for mathematical AI/ML exploration.
+`tensors-to-consciousness` is built around an interactive terminal explorer for mathematical AI/ML visualization and exploration.
 Primary entrypoint:
 
 ```bash
@@ -43,7 +43,7 @@ python main.py
 ```
 
 <p align="center">
-  <img src="assets/viz/tui_studio.gif" alt="TUI studio preview" width="86%">
+  <img src="assets/viz/tui_studio.gif" alt="TUI explorer preview" width="86%">
 </p>
 
 On first run it will:
@@ -52,7 +52,7 @@ On first run it will:
 2. Use default framework `numpy` if missing
 3. Auto-setup environment + latest available dependencies
 4. Validate the framework track
-5. Launch the interactive visualization studio
+5. Launch the interactive visualization explorer
 
 Detailed usage lives in:
 
@@ -88,6 +88,17 @@ Top 5 core transforms:
 - `momentum`
 - `adam`
 
+## References
+
+- [Transforms Reference](docs/reference/transforms.md)
+- [Transform Playbook](docs/guides/transform-playbook.md)
+- [Contributing Guide](docs/development/contributing.md)
+- [Tests Guide](tests/README.md)
+- [CI Tests Workflow](.github/workflows/ci-tests.yml)
+- [CI Contracts Workflow](.github/workflows/ci-contracts.yml)
+- [CI Docs Sync Workflow](.github/workflows/ci-docs-sync.yml)
+- [CI Viz Assets Workflow](.github/workflows/ci-viz-assets.yml)
+
 Ultra imperative commands:
 
 ```bash
@@ -96,33 +107,21 @@ python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
 python main.py viz --framework numpy --transforms default
 ```
 
-For full transform details, presets, and nuanced examples, use:
-- [Transforms Reference](docs/reference/transforms.md)
-- [Transform Playbook](docs/guides/transform-playbook.md)
+## Shinkei Visual Samples
 
-References:
-- [Contributing Guide](docs/development/contributing.md)
-- [Tests Guide](tests/README.md)
-- [CI Tests Workflow](.github/workflows/ci-tests.yml)
-- [CI Contracts Workflow](.github/workflows/ci-contracts.yml)
-- [CI Docs Sync Workflow](.github/workflows/ci-docs-sync.yml)
-- [CI Viz Assets Workflow](.github/workflows/ci-viz-assets.yml)
-
-## Shinkei Progression
-
-<p align="center"><strong>Seed</strong></p>
+<p align="center"><strong>Sample A</strong></p>
 <p align="center">
-  <img src="assets/viz/optimization_flow.gif" alt="Shinkei seed progression - optimization flow" width="72%">
+  <img src="assets/viz/optimization_flow.gif" alt="Shinkei sample A - optimization flow" width="72%">
 </p>
 
-<p align="center"><strong>Field</strong></p>
+<p align="center"><strong>Sample B</strong></p>
 <p align="center">
-  <img src="assets/viz/attention_dynamics.gif" alt="Shinkei field progression - attention dynamics" width="72%">
+  <img src="assets/viz/attention_dynamics.gif" alt="Shinkei sample B - attention dynamics" width="72%">
 </p>
 
-<p align="center"><strong>Surge</strong></p>
+<p align="center"><strong>Sample C</strong></p>
 <p align="center">
-  <img src="assets/viz/phase_portraits.gif" alt="Shinkei surge progression - phase portraits" width="72%">
+  <img src="assets/viz/phase_portraits.gif" alt="Shinkei sample C - phase portraits" width="72%">
 </p>
 
 ## Notes
