@@ -237,3 +237,24 @@ run = "act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync
 [tasks.pre-push]
 description = "Pre-push quality gate with path-based job selection (hook -> act -> workflow -> mise)."
 run = "python tools/pre_push_gate.py"
+
+[tasks.submit-pr]
+description = "Push current feature branch and open a PR with GitHub CLI."
+run = '''
+if ! command -v gh >/dev/null 2>&1; then
+  echo "gh is required. Install GitHub CLI first: https://cli.github.com/" >&2
+  exit 1
+fi
+BRANCH="$(git branch --show-current)"
+if [ -z "$BRANCH" ]; then
+  echo "Cannot determine current branch (detached HEAD)." >&2
+  exit 1
+fi
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  echo "Refusing to open PR from protected branch '$BRANCH'." >&2
+  echo "Create a feature branch first, e.g.: git switch -c chore/<topic>" >&2
+  exit 1
+fi
+git push -u origin "$BRANCH"
+gh pr create --base main --head "$BRANCH" --fill
+'''
