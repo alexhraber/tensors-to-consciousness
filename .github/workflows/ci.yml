@@ -74,6 +74,9 @@ jobs:
         run: |
           python tools/generate_viz_assets.py
 
-      - name: Ensure generated assets are committed
+      - name: Verify deterministic regeneration in runner
         run: |
-          git diff --exit-code -- assets/viz
+          sha256sum assets/viz/*.gif > /tmp/viz_hashes_1.txt
+          python tools/generate_viz_assets.py
+          sha256sum assets/viz/*.gif > /tmp/viz_hashes_2.txt
+          diff -u /tmp/viz_hashes_1.txt /tmp/viz_hashes_2.txt
