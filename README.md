@@ -32,15 +32,16 @@
   <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
 </p>
 
-## CLI-First
+## TUI-First Research Studio
 
-This is a CLI-native open-source research project with one public entrypoint:
+`tensors-to-consciousness` is built around an interactive terminal studio for mathematical AI/ML exploration.
+The primary experience is:
 
 ```bash
 python main.py
 ```
 
-First run pipeline:
+On first run it will:
 
 1. Detect framework config
 2. Prompt user for framework if missing
@@ -49,24 +50,18 @@ First run pipeline:
 5. Validate the framework track
 6. Launch the interactive visualization studio
 
-For manual/advanced control:
+Inside the studio:
 
-```bash
-python main.py --help
-python main.py -c        # force CLI flow (skip studio)
-```
-
-Interactive visualization studio:
-
-```bash
-python main.py viz
-```
-
-Inside the studio: `1/2/3` switches `simplified/advanced/ultra`, `e` edits parameters, `r` reseeds, `:` opens command console, `q` exits.
+- `1/2/3`: switch `simple` / `advanced` / `ultra` views
+- `i`: guided parameter input (complexity-aware by view)
+- `e`: quick `key=value` edit
+- `r`: reseed
+- `:`: command mode (`run`, `set`, `view`, `show`, `help`)
+- `q`: quit
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
 
-### Input Tuning (Universal)
+### Studio + Inputs
 
 Default behavior stays random, but you can override generated inputs per framework/script/call:
 
@@ -85,6 +80,17 @@ Config keys:
 
 See `inputs.example.json` for a working template.
 
+### CLI Operations (Advanced)
+
+Direct CLI operation is still available when needed:
+
+```bash
+python main.py --help
+python main.py -c
+python main.py validate
+python main.py all --framework jax --inputs inputs.example.json
+```
+
 ## Frameworks
 
 The entire research track is implemented in each of the following frameworks:
@@ -96,7 +102,7 @@ The entire research track is implemented in each of the following frameworks:
 - `keras`
 - `cupy`
 
-Targets available through `main.py` include:
+Advanced targets available through `main.py`:
 
 - `validate`
 - `viz`

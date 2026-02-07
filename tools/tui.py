@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import os
 import select
+import shutil
 import subprocess
 import sys
 import termios
@@ -261,6 +262,29 @@ def _render_header(framework: str, state: shinkei.VizState, renderer: str, width
     print(bot)
 
 
+def _layout_for_view(view: str) -> dict[str, int]:
+    size = shutil.get_terminal_size(fallback=(140, 44))
+    cols = max(100, size.columns)
+    rows = max(30, size.lines)
+
+    header_w = max(92, min(cols - 2, 150))
+    plot_w = max(72, min(cols - 4, 120))
+    if view == "simplified":
+        plot_h = max(16, min(rows - 14, 24))
+    elif view == "advanced":
+        plot_h = max(18, min(rows - 13, 28))
+    else:
+        plot_h = max(20, min(rows - 12, 32))
+
+    return {
+        "header_w": header_w,
+        "plot_w": plot_w,
+        "plot_h": plot_h,
+        "ascii_w": max(72, min(plot_w, 120)),
+        "ascii_h": max(16, min(plot_h, 30)),
+    }
+
+
 def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str) -> int:
     common_viz = shinkei.load_common_viz()
     if not sys.stdin.isatty():
@@ -280,21 +304,57 @@ def _render_interactive(np: ModuleType, state: shinkei.VizState, framework: str)
                 arr, stage, caption = shinkei.stage_payload(np, state)
                 arr_f = np.asarray(arr, dtype=np.float32)
                 renderer = shinkei.renderer_name(use_plots, use_heatmap)
-                _render_header(framework=framework, state=state, renderer=renderer)
+                layout = _layout_for_view(state.view)
+                _render_header(
+                    framework=framework,
+                    state=state,
+                    renderer=renderer,
+                    width=layout["header_w"],
+                )
                 print()
 
                 if use_plots:
                     png = common_viz._matplotlib_plot_png(arr_f, stage=stage, tensor_name=framework)
                     if png:
-                        print(common_viz._kitty_from_png_bytes(png, cells_w=80, cells_h=22))
+                        print(
+                            common_viz._kitty_from_png_bytes(
+                                png,
+                                cells_w=layout["plot_w"],
+                                cells_h=layout["plot_h"],
+                            )
+                        )
                     elif use_heatmap:
-                        print(common_viz._pixel_heatmap(arr_f, width=80, height=30))
+                        print(
+                            common_viz._pixel_heatmap(
+                                arr_f,
+                                width=layout["plot_w"],
+                                height=layout["plot_h"],
+                            )
+                        )
                     else:
-                        print(common_viz._ascii_heatmap(arr_f, width=96, height=28))
+                        print(
+                            common_viz._ascii_heatmap(
+                                arr_f,
+                                width=layout["ascii_w"],
+                                height=layout["ascii_h"],
+                            )
+                        )
                 elif use_heatmap:
-                    print(common_viz._pixel_heatmap(arr_f, width=80, height=30))
+                    print(
+                        common_viz._pixel_heatmap(
+                            arr_f,
+                            width=layout["plot_w"],
+                            height=layout["plot_h"],
+                        )
+                    )
                 else:
-                    print(common_viz._ascii_heatmap(arr_f, width=96, height=28))
+                    print(
+                        common_viz._ascii_heatmap(
+                            arr_f,
+                            width=layout["ascii_w"],
+                            height=layout["ascii_h"],
+                        )
+                    )
 
                 print()
                 print(common_viz._format_caption(caption))
