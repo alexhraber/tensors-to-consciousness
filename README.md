@@ -30,9 +30,10 @@
   <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
 </p>
 
-## TUI-First Research Explorer
+## Research-Grade Terminal Explorer
 
-`tensors-to-consciousness` is built around an interactive terminal explorer for mathematical AI/ML visualization and exploration.
+`tensors-to-consciousness` centers on an interactive terminal environment for rigorous mathematical visualization, comparative framework analysis, and exploratory AI/ML experimentation.
+
 Primary entrypoint:
 
 ```bash

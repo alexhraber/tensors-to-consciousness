@@ -53,6 +53,27 @@ def _render_pipeline_png(
     arr = np.nan_to_num(arr, nan=0.0, posinf=1e4, neginf=-1e4)
     arr = np.clip(arr, -1e4, 1e4)
 
+    # Tone-map and smooth to keep previews calm and readable.
+    arr2 = arr if arr.ndim == 2 else arr.reshape(arr.shape[0], -1)
+    scale = float(np.percentile(np.abs(arr2), 92))
+    if not np.isfinite(scale) or scale <= 1e-6:
+        scale = 1.0
+    arr2 = np.tanh(arr2 / scale) * 2.0
+
+    padded = np.pad(arr2, ((1, 1), (1, 1)), mode="edge")
+    smooth = (
+        padded[:-2, :-2]
+        + padded[:-2, 1:-1]
+        + padded[:-2, 2:]
+        + padded[1:-1, :-2]
+        + (2.0 * padded[1:-1, 1:-1])
+        + padded[1:-1, 2:]
+        + padded[2:, :-2]
+        + padded[2:, 1:-1]
+        + padded[2:, 2:]
+    ) / 10.0
+    arr = smooth.astype(np.float32)
+
     png = shinkei._matplotlib_plot_png(
         arr,
         stage=stage,
@@ -259,9 +280,9 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     pipeline_specs: dict[str, tuple[tuple[str, ...], int, int]] = {
-        "optimization_flow": (("gradient_descent", "momentum", "adam"), 92, 3),
-        "attention_dynamics": (("attention_surface", "attention_message_passing", "tensor_decomposition"), 96, 2),
-        "phase_portraits": (("wave_propagation", "hamiltonian_step", "entropy_flow"), 104, 3),
+        "optimization_flow": (("gradient_descent", "momentum"), 74, 1),
+        "attention_dynamics": (("attention_surface", "activation_flow"), 78, 1),
+        "phase_portraits": (("wave_propagation", "spectral_filter"), 82, 1),
     }
 
     all_assets = ["optimization_flow", "attention_dynamics", "phase_portraits", "tui_studio"]
@@ -288,8 +309,8 @@ def main() -> int:
 
             pipeline, base_size, base_steps = pipeline_specs[name]
             for i in range(args.frames):
-                size = max(48, min(180, base_size + ((i % 8) - 4) * 2))
-                steps = max(1, base_steps + (i % 3))
+                size = max(52, min(132, base_size + ((i % 6) - 3)))
+                steps = max(1, min(2, base_steps + (i % 2)))
                 stage = f"{name}:f{i:03d}:s{steps}"
                 png = _render_pipeline_png(
                     engine,
