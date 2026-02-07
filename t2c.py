@@ -73,8 +73,8 @@ def ensure_setup_if_needed(
 
     if framework is None:
         raise RuntimeError(
-            "No active framework configured. Run `python -m tools.setup <framework>` once "
-            "or pass `--framework`."
+            "No active framework configured. Run a t2c command with "
+            "`--framework <framework>` once (example: `python t2c.py validate --framework jax`)."
         )
 
     requested_differs = framework_overridden and framework != config.get("framework")
@@ -85,7 +85,8 @@ def ensure_setup_if_needed(
 
     if not allow_setup:
         raise RuntimeError(
-            f"Setup needed for framework '{framework}'. Run `python -m tools.setup {framework}` first."
+            f"Setup needed for framework '{framework}'. Re-run with setup enabled or run "
+            f"`python t2c.py validate --framework {framework}`."
         )
 
     run_cmd(

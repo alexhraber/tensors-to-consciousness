@@ -6,14 +6,12 @@ The repo is framework-track based.
 
 - Source implementations live in `scripts/<framework>/`
 - Operational commands are:
-  - `python -m tools.setup` (choose/install/validate once)
-  - `t2c.py` (run `validate` and research-module targets)
+  - `t2c.py` (single public entrypoint; setup is auto-triggered)
 
 ## Local workflow
 
 ```bash
-python -m tools.setup <framework>
-python t2c.py validate
+python t2c.py validate --framework <framework>
 python t2c.py all
 python -m tests
 ```
@@ -45,12 +43,12 @@ Requirements:
 
 When adding/changing frameworks:
 
-1. Update `python -m tools.setup` framework map (`deps`, `validate` script).
+1. Update `tools/setup.py` framework map (`deps`, `validate` script).
 2. Ensure `t2c.py` can resolve the framework name and scripts.
 3. Validate setup + run path:
 
 ```bash
-python -m tools.setup <framework>
+python t2c.py validate --framework <framework>
 python t2c.py validate
 python t2c.py 0
 ```
@@ -58,7 +56,8 @@ python t2c.py 0
 ## Documentation expectations
 
 - Keep `README.md` aligned with actual setup/run behavior.
-- Keep examples aligned with operational commands (`python -m tools.setup`, `t2c.py`).
+- Keep examples aligned with the operational command (`t2c.py`).
+- If visualization previews change, regenerate GIF assets with `python tools/generate_viz_assets.py`.
 
 ## Hygiene
 

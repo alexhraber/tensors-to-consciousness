@@ -27,14 +27,27 @@
 This project is intentionally CLI-native.
 
 - No notebook dependency for normal operation
-- Single setup command per framework
-- Single runtime command for validation, execution, and terminal visualization
+- Single public entrypoint (`t2c.py`)
+- Setup is inferred and executed automatically from config + CLI inputs
 
-Primary commands:
+Primary command:
 
 ```bash
-python -m tools.setup <framework>
 python t2c.py <target>
+```
+
+## Visualization Preview
+
+<p align="center">
+  <img src="assets/viz/optimization_flow.gif" alt="Optimization flow visualization" width="32%">
+  <img src="assets/viz/attention_dynamics.gif" alt="Attention dynamics visualization" width="32%">
+  <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
+</p>
+
+Maintainers can regenerate these GIFs with:
+
+```bash
+python tools/generate_viz_assets.py
 ```
 
 ## Overview
@@ -48,17 +61,15 @@ This repository contains 7 theory-first research modules implemented across peer
 - `keras`
 - `cupy`
 
-Top-level operational commands:
+Top-level operational command:
 
-- `python -m tools.setup <framework>`: install + validate selected framework and save active selection
-- `python t2c.py <target>`: run targets (`validate`, `viz`, `0..6`, `all`) for active framework and auto-setup if needed
+- `python t2c.py <target>`: run targets (`validate`, `viz`, `0..6`, `all`); setup auto-runs when required
 
 The standard workflow is:
 
-1. `python -m tools.setup <framework>`
-2. `python t2c.py validate`
-3. `python t2c.py viz`
-4. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
+1. `python t2c.py validate --framework jax` (first run sets/bootstraps framework)
+2. `python t2c.py viz`
+3. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
 
 ## Research Module Sequence
 
@@ -81,10 +92,10 @@ python -m venv env
 source env/bin/activate
 ```
 
-### 2) Setup framework (pick once)
+### 2) First run (framework selection + auto-setup)
 
 ```bash
-python -m tools.setup mlx
+python t2c.py validate --framework mlx
 # or: jax | pytorch | numpy | keras | cupy
 ```
 
@@ -103,42 +114,9 @@ python t2c.py all
 python -m tests
 ```
 
-## Primary Setup Script
-
-`python -m tools.setup` is the only setup entrypoint.
-
-```bash
-python -m tools.setup <framework>
-```
-
-Supported values:
-
-- `mlx`
-- `jax`
-- `pytorch`
-- `numpy`
-- `keras`
-- `cupy`
-- `all`
-
-What setup does:
-
-1. Creates/uses a virtual environment via `uv` (default: `.venv`)
-2. Installs dependencies with `uv pip install`
-3. Runs the corresponding validation script (`scripts/<framework>/test_setup.py`)
-4. Saves active selection to `.t2c/config.json`
-
-Useful options:
-
-```bash
-python -m tools.setup jax --venv .venv-jax
-python -m tools.setup cupy --skip-validate
-python -m tools.setup all
-```
-
 ## Runtime Entrypoint
 
-`t2c.py` is the single runtime entrypoint. It reads `.t2c/config.json`, and if the configured venv is missing, it runs `python -m tools.setup` automatically before executing your target.
+`t2c.py` is the single runtime entrypoint. It reads `.t2c/config.json`; if framework config or venv is missing, it bootstraps setup automatically based on your `--framework` input.
 
 ```bash
 python t2c.py 0
@@ -173,14 +151,14 @@ Framework scripts still exist and are used by `t2c.py` internally:
 
 All framework scripts live under `scripts/<framework>/`.
 
-| Framework | Setup | Validation | Research Modules |
+| Framework | First Run | Validation | Research Modules |
 |---|---|---|---|
-| MLX | `python -m tools.setup mlx` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| JAX | `python -m tools.setup jax` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| PyTorch | `python -m tools.setup pytorch` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| NumPy | `python -m tools.setup numpy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| Keras | `python -m tools.setup keras` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| CuPy | `python -m tools.setup cupy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| MLX | `python t2c.py validate --framework mlx` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| JAX | `python t2c.py validate --framework jax` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| PyTorch | `python t2c.py validate --framework pytorch` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| NumPy | `python t2c.py validate --framework numpy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| Keras | `python t2c.py validate --framework keras` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| CuPy | `python t2c.py validate --framework cupy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
 
 ## Terminal Visualization
 
