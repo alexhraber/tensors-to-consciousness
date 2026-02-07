@@ -19,7 +19,7 @@
 </p>
 
 <p><strong>Mathematical Foundations of AI/ML Across Frameworks</strong></p>
-<p>Main backend abstraction for MLX + dedicated full chapter tracks for JAX, PyTorch, NumPy, Keras, and CuPy.</p>
+<p>Canonical backend-selected chapter path + dedicated peer tracks for MLX, JAX, PyTorch, NumPy, Keras, and CuPy.</p>
 
 </div>
 
@@ -31,7 +31,7 @@
 - [Chapter Sequence](#chapter-sequence)
 - [Live Previews](#live-previews)
 - [Quickstart](#quickstart)
-- [Main Backend Path (MLX)](#main-backend-path-mlx)
+- [Canonical Path (Backend-Selected)](#canonical-path-backend-selected)
 - [Dedicated Framework Tracks](#dedicated-framework-tracks)
 - [Notes](#notes)
 - [Contributing](#contributing)
@@ -40,8 +40,9 @@
 
 This repository walks through 7 chapters of AI/ML theory with:
 
-- A backend-abstracted main path (`t2c.frameworks`, currently `mlx`)
+- A backend-abstracted canonical path (`t2c.frameworks`)
 - Dedicated framework replicas in `scripts/`:
+  - `mlx`
   - `jax`
   - `pytorch`
   - `numpy`
@@ -88,15 +89,16 @@ source env/bin/activate
 
 ### 2) Pick one path
 
-- Main MLX/backend path:
+- Canonical backend-selected path:
 
 ```bash
 pip install mlx
+export T2C_BACKEND=mlx
 python test_backend_setup.py
 python 0_computational_primitives.py
 ```
 
-- Dedicated track path (example: JAX):
+- Dedicated framework track path (example: JAX):
 
 ```bash
 pip install "jax[cpu]"
@@ -104,7 +106,7 @@ python scripts/jax/test_jax_setup.py
 python scripts/jax/0_computational_primitives.py
 ```
 
-## Main Backend Path (MLX)
+## Canonical Path (Backend-Selected)
 
 Main chapter scripts (`0_...py` to `6_...py`) import from `t2c.frameworks`:
 
@@ -115,22 +117,21 @@ mx = fw.mx
 nn = fw.nn
 ```
 
-Select backend via env var:
+Select backend via env var (`mlx` is currently available in the backend abstraction):
 
 ```bash
 export T2C_BACKEND=mlx
 ```
 
-Currently supported in `t2c.frameworks`: `mlx`.
-
 ### Setup
 
 ```bash
 pip install mlx
+export T2C_BACKEND=mlx
 python test_backend_setup.py
 ```
 
-Compatibility entrypoint:
+Compatibility entrypoint (legacy naming):
 
 ```bash
 python test_mlx_setup.py
@@ -154,6 +155,7 @@ All dedicated tracks live under `scripts/<framework>/`.
 
 | Framework | Install | Setup Test | Chapters |
 |---|---|---|---|
+| MLX | `pip install mlx` | `python scripts/mlx/test_mlx_setup.py` | `python scripts/mlx/0_computational_primitives.py` ... `python scripts/mlx/6_theoretical_limits.py` |
 | JAX | `pip install "jax[cpu]"` | `python scripts/jax/test_jax_setup.py` | `python scripts/jax/0_computational_primitives.py` ... `python scripts/jax/6_theoretical_limits.py` |
 | PyTorch | `pip install torch` | `python scripts/pytorch/test_pytorch_setup.py` | `python scripts/pytorch/0_computational_primitives.py` ... `python scripts/pytorch/6_theoretical_limits.py` |
 | NumPy | `pip install numpy` | `python scripts/numpy/test_numpy_setup.py` | `python scripts/numpy/0_computational_primitives.py` ... `python scripts/numpy/6_theoretical_limits.py` |
