@@ -123,14 +123,32 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Ensure ffmpeg is available
+      - name: Cache FFmpeg (static binary)
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/ffmpeg
+          key: ffmpeg-static-${{ runner.os }}-amd64-v7.1.1
+
+      - name: Install FFmpeg (static binary)
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: |
-          if command -v ffmpeg >/dev/null 2>&1; then
-            echo "ffmpeg already available"
-            exit 0
-          fi
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          set -euo pipefail
+          mkdir -p "$HOME/.local/ffmpeg/bin"
+          curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg.tar.xz
+          tar -xJf /tmp/ffmpeg.tar.xz -C /tmp
+          src_dir="$(find /tmp -maxdepth 1 -type d -name 'ffmpeg-*-amd64-static' | head -n 1)"
+          cp "$src_dir/ffmpeg" "$HOME/.local/ffmpeg/bin/ffmpeg"
+          cp "$src_dir/ffprobe" "$HOME/.local/ffmpeg/bin/ffprobe"
+          chmod +x "$HOME/.local/ffmpeg/bin/ffmpeg" "$HOME/.local/ffmpeg/bin/ffprobe"
+
+      - name: Add FFmpeg to PATH
+        run: |
+          echo "$HOME/.local/ffmpeg/bin" >> "$GITHUB_PATH"
+
+      - name: Verify FFmpeg
+        run: |
+          ffmpeg -version
 
       - name: Regenerate visualization assets
         run: |
