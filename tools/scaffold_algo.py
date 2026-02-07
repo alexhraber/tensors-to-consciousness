@@ -93,7 +93,7 @@ def run(*, params: dict[str, object]) -> object:
     for fw in FRAMEWORKS:
         print(f"- frameworks/{fw}/algorithms/{mod_prefix}.py")
 
-    print("\nRegistry snippet (append to algos/registry.py ALGORITHM_SPECS):")
+    print("\nTransform catalog snippet (append into algos/transforms.json -> transforms):")
     print(
         "AlgorithmSpec("
         f'"{args.key}", "{args.title}", "{args.description}", "{args.formula}", {args.complexity}, "{mod_prefix}", '

@@ -1,0 +1,283 @@
+{
+  "default": [
+    "tensor_ops",
+    "chain_rule",
+    "gradient_descent"
+  ],
+  "framework_interface": {
+    "utils_entrypoints": ["normal", "_to_numpy"],
+    "ops_adapter": ["add", "sub", "mul", "matmul", "transpose", "zeros_like", "normal_like"]
+  },
+  "transforms": [
+    {
+      "key": "tensor_ops",
+      "title": "Tensor Operations",
+      "description": "Elementwise and matrix operations over structured tensors.",
+      "formula": "C = A ⊙ B,  M = A @ B",
+      "complexity": 0,
+      "source_module": "computational_primitives",
+      "transform": "base_pos",
+      "preset": {"samples": 900, "freq": 1.4, "amplitude": 0.9, "damping": 0.05, "noise": 0.06, "phase": 0.2, "grid": 72}
+    },
+    {
+      "key": "norms",
+      "title": "Norm Geometry",
+      "description": "Magnitude and stability readout across tensor trajectories.",
+      "formula": "||x||₂ = sqrt(sum_i x_i²)",
+      "complexity": 0,
+      "source_module": "computational_primitives",
+      "transform": "quadratic",
+      "preset": {"samples": 980, "freq": 1.6, "amplitude": 1.0, "damping": 0.06, "noise": 0.05, "phase": 0.3, "grid": 76}
+    },
+    {
+      "key": "chain_rule",
+      "title": "Chain Rule Field",
+      "description": "Derivative amplification through nested nonlinearities.",
+      "formula": "d/dx sin(x²) = 2x cos(x²)",
+      "complexity": 1,
+      "source_module": "automatic_differentiation",
+      "transform": "quadratic",
+      "preset": {"samples": 1100, "freq": 1.9, "amplitude": 1.1, "damping": 0.08, "noise": 0.04, "phase": 0.55, "grid": 88}
+    },
+    {
+      "key": "jacobian",
+      "title": "Jacobian Sensitivity",
+      "description": "Multivariate gradient coupling across dimensions.",
+      "formula": "J_ij = ∂f_i/∂x_j",
+      "complexity": 1,
+      "source_module": "automatic_differentiation",
+      "transform": "base_pos",
+      "preset": {"samples": 1180, "freq": 2.05, "amplitude": 1.05, "damping": 0.09, "noise": 0.05, "phase": 0.7, "grid": 90}
+    },
+    {
+      "key": "gradient_descent",
+      "title": "Gradient Descent",
+      "description": "Iterative descent dynamics over a curved objective.",
+      "formula": "xₜ₊₁ = xₜ - η∇f(xₜ)",
+      "complexity": 2,
+      "source_module": "optimization_theory",
+      "transform": "base_neg",
+      "preset": {"samples": 1200, "freq": 2.2, "amplitude": 1.0, "damping": 0.13, "noise": 0.1, "phase": 0.9, "grid": 96}
+    },
+    {
+      "key": "momentum",
+      "title": "Momentum Descent",
+      "description": "Velocity-augmented traversal with inertia memory.",
+      "formula": "vₜ₊₁ = βvₜ + ∇f(xₜ),  xₜ₊₁ = xₜ - ηvₜ₊₁",
+      "complexity": 2,
+      "source_module": "optimization_theory",
+      "transform": "momentum",
+      "preset": {"samples": 1280, "freq": 2.35, "amplitude": 1.1, "damping": 0.11, "noise": 0.12, "phase": 1.05, "grid": 98}
+    },
+    {
+      "key": "adam",
+      "title": "Adam Dynamics",
+      "description": "Adaptive first/second moment optimization geometry.",
+      "formula": "xₜ₊₁ = xₜ - η m̂ₜ / (sqrt(v̂ₜ)+ε)",
+      "complexity": 2,
+      "source_module": "optimization_theory",
+      "transform": "adam",
+      "preset": {"samples": 1320, "freq": 2.5, "amplitude": 1.05, "damping": 0.12, "noise": 0.13, "phase": 1.15, "grid": 102}
+    },
+    {
+      "key": "forward_pass",
+      "title": "Forward Composition",
+      "description": "Layered nonlinear transformation and feature shaping.",
+      "formula": "y = σ(W₂ σ(W₁x + b₁) + b₂)",
+      "complexity": 3,
+      "source_module": "neural_theory",
+      "transform": "flow",
+      "preset": {"samples": 1300, "freq": 2.5, "amplitude": 1.2, "damping": 0.09, "noise": 0.12, "phase": 1.2, "grid": 104}
+    },
+    {
+      "key": "activation_flow",
+      "title": "Activation Flow",
+      "description": "Activation distribution drift across depth.",
+      "formula": "a_l = φ(W_l a_{l-1} + b_l)",
+      "complexity": 3,
+      "source_module": "neural_theory",
+      "transform": "flow",
+      "preset": {"samples": 1360, "freq": 2.7, "amplitude": 1.18, "damping": 0.1, "noise": 0.13, "phase": 1.35, "grid": 108}
+    },
+    {
+      "key": "manifold_field",
+      "title": "Manifold Field",
+      "description": "Curved latent field with coupled oscillatory terms.",
+      "formula": "z = exp(-λ||x||²) · sin(ωx) · cos(ωy)",
+      "complexity": 4,
+      "source_module": "advanced_theory",
+      "transform": "quadratic",
+      "preset": {"samples": 1450, "freq": 2.9, "amplitude": 1.25, "damping": 0.11, "noise": 0.14, "phase": 1.55, "grid": 116}
+    },
+    {
+      "key": "attention_surface",
+      "title": "Attention Surface",
+      "description": "Softmax geometry over query-key interactions.",
+      "formula": "Attn(Q,K,V) = softmax(QK^T/√d)V",
+      "complexity": 4,
+      "source_module": "advanced_theory",
+      "transform": "base_pos",
+      "preset": {"samples": 1500, "freq": 3.05, "amplitude": 1.2, "damping": 0.12, "noise": 0.15, "phase": 1.7, "grid": 120}
+    },
+    {
+      "key": "scaling_laws",
+      "title": "Scaling Laws",
+      "description": "Performance trends across model/data scale.",
+      "formula": "L(N,D) ≈ A N^-α + B D^-β + C",
+      "complexity": 5,
+      "source_module": "research_frontiers",
+      "transform": "flow",
+      "preset": {"samples": 1550, "freq": 3.2, "amplitude": 1.3, "damping": 0.15, "noise": 0.18, "phase": 1.9, "grid": 124}
+    },
+    {
+      "key": "grokking",
+      "title": "Grokking Transition",
+      "description": "Delayed generalization phase shift dynamics.",
+      "formula": "gen_gap(t) = L_test(t) - L_train(t)",
+      "complexity": 5,
+      "source_module": "research_frontiers",
+      "transform": "adam",
+      "preset": {"samples": 1620, "freq": 3.35, "amplitude": 1.28, "damping": 0.16, "noise": 0.2, "phase": 2.05, "grid": 128}
+    },
+    {
+      "key": "information_bound",
+      "title": "Information Bound",
+      "description": "Information transfer upper bounds under entropy constraints.",
+      "formula": "I(X;Y) ≤ min(H(X), H(Y))",
+      "complexity": 6,
+      "source_module": "theoretical_limits",
+      "transform": "base_neg",
+      "preset": {"samples": 1700, "freq": 3.6, "amplitude": 1.35, "damping": 0.17, "noise": 0.2, "phase": 2.2, "grid": 132}
+    },
+    {
+      "key": "thermo_learning",
+      "title": "Thermodynamics of Learning",
+      "description": "Energy/work dynamics across optimization states.",
+      "formula": "ΔE = W - Q",
+      "complexity": 6,
+      "source_module": "theoretical_limits",
+      "transform": "momentum",
+      "preset": {"samples": 1760, "freq": 3.75, "amplitude": 1.32, "damping": 0.18, "noise": 0.22, "phase": 2.35, "grid": 136}
+    },
+    {
+      "key": "laplacian_diffusion",
+      "title": "Laplacian Diffusion",
+      "description": "Spatial smoothing and denoising through Laplacian-like flow.",
+      "formula": "X_{t+1} = X_t + αΔX_t",
+      "complexity": 3,
+      "source_module": "field_dynamics",
+      "transform": "laplacian_diffusion",
+      "preset": {"samples": 1220, "freq": 2.15, "amplitude": 1.02, "damping": 0.1, "noise": 0.07, "phase": 1.0, "grid": 96}
+    },
+    {
+      "key": "advection_transport",
+      "title": "Advection Transport",
+      "description": "Directional tensor transport under a velocity-like drift field.",
+      "formula": "X_{t+1} = X_t - dt(v · ∇X_t)",
+      "complexity": 3,
+      "source_module": "field_dynamics",
+      "transform": "advection_transport",
+      "preset": {"samples": 1260, "freq": 2.25, "amplitude": 1.08, "damping": 0.11, "noise": 0.08, "phase": 1.08, "grid": 98}
+    },
+    {
+      "key": "reaction_diffusion",
+      "title": "Reaction Diffusion",
+      "description": "Coupled field reaction and diffusion for pattern emergence.",
+      "formula": "∂u/∂t = D∇²u + R(u,v)",
+      "complexity": 4,
+      "source_module": "field_dynamics",
+      "transform": "reaction_diffusion",
+      "preset": {"samples": 1320, "freq": 2.35, "amplitude": 1.16, "damping": 0.11, "noise": 0.09, "phase": 1.2, "grid": 104}
+    },
+    {
+      "key": "spectral_filter",
+      "title": "Spectral Filter",
+      "description": "Frequency-selective mutation over tensor energy bands.",
+      "formula": "X' = F^{-1}(H(ω) ⊙ F(X))",
+      "complexity": 4,
+      "source_module": "spectral_methods",
+      "transform": "spectral_filter",
+      "preset": {"samples": 1340, "freq": 2.45, "amplitude": 1.05, "damping": 0.1, "noise": 0.08, "phase": 1.28, "grid": 106}
+    },
+    {
+      "key": "wave_propagation",
+      "title": "Wave Propagation",
+      "description": "Second-order wave-like propagation through the tensor field.",
+      "formula": "∂²X/∂t² = c²∇²X",
+      "complexity": 4,
+      "source_module": "field_dynamics",
+      "transform": "wave_propagation",
+      "preset": {"samples": 1380, "freq": 2.55, "amplitude": 1.14, "damping": 0.1, "noise": 0.1, "phase": 1.36, "grid": 110}
+    },
+    {
+      "key": "hamiltonian_step",
+      "title": "Hamiltonian Step",
+      "description": "Energy-conserving-style state updates over position and momentum.",
+      "formula": "q_{t+1}=q_t+∂H/∂p,  p_{t+1}=p_t-∂H/∂q",
+      "complexity": 5,
+      "source_module": "geometric_learning",
+      "transform": "hamiltonian_step",
+      "preset": {"samples": 1440, "freq": 2.7, "amplitude": 1.2, "damping": 0.09, "noise": 0.09, "phase": 1.52, "grid": 114}
+    },
+    {
+      "key": "attention_message_passing",
+      "title": "Attention Message Passing",
+      "description": "Nonlocal coupling via affinity-driven message aggregation.",
+      "formula": "M = softmax(QK^T)V",
+      "complexity": 5,
+      "source_module": "graph_dynamics",
+      "transform": "attention_message_passing",
+      "preset": {"samples": 1480, "freq": 2.8, "amplitude": 1.18, "damping": 0.1, "noise": 0.11, "phase": 1.66, "grid": 118}
+    },
+    {
+      "key": "tensor_decomposition",
+      "title": "Tensor Decomposition",
+      "description": "Factorized tensor reconstruction and rank-structured mutation.",
+      "formula": "X ≈ Σ_r a_r ⊗ b_r ⊗ c_r",
+      "complexity": 5,
+      "source_module": "geometric_learning",
+      "transform": "tensor_decomposition",
+      "preset": {"samples": 1520, "freq": 2.92, "amplitude": 1.22, "damping": 0.11, "noise": 0.11, "phase": 1.78, "grid": 122}
+    },
+    {
+      "key": "topology_regularization",
+      "title": "Topology Regularization",
+      "description": "Shape-aware smoothing that penalizes unstable curvature.",
+      "formula": "L = L_task + λL_topo",
+      "complexity": 6,
+      "source_module": "constraint_systems",
+      "transform": "topology_regularization",
+      "preset": {"samples": 1580, "freq": 3.05, "amplitude": 1.24, "damping": 0.12, "noise": 0.12, "phase": 1.92, "grid": 126}
+    },
+    {
+      "key": "entropy_flow",
+      "title": "Entropy Flow",
+      "description": "Entropy-constrained dynamics balancing collapse and exploration.",
+      "formula": "X_{t+1} = X_t - η∇(E - τH)",
+      "complexity": 6,
+      "source_module": "stochastic_dynamics",
+      "transform": "entropy_flow",
+      "preset": {"samples": 1620, "freq": 3.18, "amplitude": 1.26, "damping": 0.13, "noise": 0.14, "phase": 2.06, "grid": 130}
+    },
+    {
+      "key": "stochastic_process",
+      "title": "Stochastic Process",
+      "description": "Noise-driven updates with drift and mean reversion behavior.",
+      "formula": "dX_t = θ(μ-X_t)dt + σdW_t",
+      "complexity": 6,
+      "source_module": "stochastic_dynamics",
+      "transform": "stochastic_process",
+      "preset": {"samples": 1660, "freq": 3.28, "amplitude": 1.2, "damping": 0.14, "noise": 0.16, "phase": 2.18, "grid": 132}
+    },
+    {
+      "key": "constraint_projection",
+      "title": "Constraint Projection",
+      "description": "Projection-like correction onto structured admissible states.",
+      "formula": "X_{t+1} = Π_C(X_t)",
+      "complexity": 6,
+      "source_module": "constraint_systems",
+      "transform": "constraint_projection",
+      "preset": {"samples": 1700, "freq": 3.38, "amplitude": 1.18, "damping": 0.14, "noise": 0.15, "phase": 2.3, "grid": 134}
+    }
+  ]
+}

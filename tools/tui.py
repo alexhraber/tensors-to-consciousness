@@ -68,8 +68,12 @@ def parse_args() -> argparse.Namespace:
         help="JSON file path or inline JSON to seed the parameter state.",
     )
     parser.add_argument(
+        "--transforms",
+        help="Comma-separated transform keys, or 'default'/'all' (preferred).",
+    )
+    parser.add_argument(
         "--algos",
-        help="Comma-separated algorithm keys, or 'default'/'all' (default: all).",
+        help="Deprecated alias for --transforms.",
     )
     parser.add_argument(
         "--algorithm",
@@ -220,7 +224,7 @@ def _command_console(
         if cmd in {"help", "h", "?"}:
             print(
                 "Commands: help, show, view <simplified|advanced|ultra>, "
-                "set <k=v>, run <validate|algo1,algo2,...>, back, quit"
+                "set <k=v>, run <validate|transform1,transform2,...>, back, quit"
             )
             continue
         if cmd == "show":
@@ -280,7 +284,7 @@ def _command_console(
                     "run",
                     "--framework",
                     framework,
-                    "--algos",
+                    "--transforms",
                     target,
                     "--inputs",
                     shinkei.state_json(state),
@@ -802,7 +806,7 @@ def main() -> int:
         view=getattr(args, "view", "advanced"),
         inputs=getattr(args, "inputs", None),
     )
-    algos_selector = getattr(args, "algos", None)
+    algos_selector = getattr(args, "transforms", None) or getattr(args, "algos", None)
     algo_selector = getattr(args, "algorithm", None)
     try:
         algo_keys = resolve_algorithm_keys("all" if algos_selector is None else algos_selector)

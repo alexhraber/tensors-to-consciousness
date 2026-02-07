@@ -14,7 +14,7 @@ The repo is sandbox/playground based.
 
 ```bash
 python main.py
-python main.py run --algos default
+python main.py run --transforms default
 python -m tests
 ```
 
@@ -48,7 +48,7 @@ When adding/changing frameworks:
 ```bash
 python main.py
 python main.py validate
-python main.py run --algos default
+python main.py run --transforms default
 ```
 
 ## Documentation expectations

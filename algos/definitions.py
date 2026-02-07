@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from algos.catalog import catalog_transforms
 from algos.contracts import AlgorithmDefinition
 from algos.contracts import TensorField
 
@@ -216,40 +217,50 @@ def _constraint_projection(field: TensorField, ops, params: dict[str, float]) ->
 COMMON = {"alpha": 0.004, "beta": 0.95, "gamma": 0.03}
 
 
-ALGORITHM_DEFINITIONS: dict[str, AlgorithmDefinition] = {
-    "tensor_ops": AlgorithmDefinition("tensor_ops", COMMON, lambda f, o, p: _base(f, o, p, sign=1.0)),
-    "jacobian": AlgorithmDefinition("jacobian", COMMON, lambda f, o, p: _base(f, o, p, sign=1.0)),
-    "attention_surface": AlgorithmDefinition("attention_surface", COMMON, lambda f, o, p: _base(f, o, p, sign=1.0)),
-    "gradient_descent": AlgorithmDefinition("gradient_descent", COMMON, lambda f, o, p: _base(f, o, p, sign=-1.0)),
-    "information_bound": AlgorithmDefinition("information_bound", COMMON, lambda f, o, p: _base(f, o, p, sign=-1.0)),
-    "momentum": AlgorithmDefinition("momentum", COMMON, _momentum),
-    "thermo_learning": AlgorithmDefinition("thermo_learning", COMMON, _momentum),
-    "adam": AlgorithmDefinition("adam", COMMON, _adam),
-    "grokking": AlgorithmDefinition("grokking", COMMON, _adam),
-    "forward_pass": AlgorithmDefinition("forward_pass", COMMON, _flow),
-    "activation_flow": AlgorithmDefinition("activation_flow", COMMON, _flow),
-    "scaling_laws": AlgorithmDefinition("scaling_laws", COMMON, _flow),
-    "chain_rule": AlgorithmDefinition("chain_rule", COMMON, _quadratic),
-    "norms": AlgorithmDefinition("norms", COMMON, _quadratic),
-    "manifold_field": AlgorithmDefinition("manifold_field", COMMON, _quadratic),
-    "laplacian_diffusion": AlgorithmDefinition("laplacian_diffusion", COMMON, _laplacian_diffusion),
-    "advection_transport": AlgorithmDefinition("advection_transport", COMMON, _advection_transport),
-    "reaction_diffusion": AlgorithmDefinition("reaction_diffusion", COMMON, _reaction_diffusion),
-    "spectral_filter": AlgorithmDefinition("spectral_filter", COMMON, _spectral_filter),
-    "wave_propagation": AlgorithmDefinition("wave_propagation", COMMON, _wave_propagation),
-    "hamiltonian_step": AlgorithmDefinition("hamiltonian_step", COMMON, _hamiltonian_step),
-    "attention_message_passing": AlgorithmDefinition(
-        "attention_message_passing", COMMON, _attention_message_passing
-    ),
-    "tensor_decomposition": AlgorithmDefinition("tensor_decomposition", COMMON, _tensor_decomposition),
-    "topology_regularization": AlgorithmDefinition("topology_regularization", COMMON, _topology_regularization),
-    "entropy_flow": AlgorithmDefinition("entropy_flow", COMMON, _entropy_flow),
-    "stochastic_process": AlgorithmDefinition("stochastic_process", COMMON, _stochastic_process),
-    "constraint_projection": AlgorithmDefinition("constraint_projection", COMMON, _constraint_projection),
+TRANSFORM_IMPLS = {
+    "base_pos": lambda f, o, p: _base(f, o, p, sign=1.0),
+    "base_neg": lambda f, o, p: _base(f, o, p, sign=-1.0),
+    "quadratic": _quadratic,
+    "momentum": _momentum,
+    "adam": _adam,
+    "flow": _flow,
+    "laplacian_diffusion": _laplacian_diffusion,
+    "advection_transport": _advection_transport,
+    "reaction_diffusion": _reaction_diffusion,
+    "spectral_filter": _spectral_filter,
+    "wave_propagation": _wave_propagation,
+    "hamiltonian_step": _hamiltonian_step,
+    "attention_message_passing": _attention_message_passing,
+    "tensor_decomposition": _tensor_decomposition,
+    "topology_regularization": _topology_regularization,
+    "entropy_flow": _entropy_flow,
+    "stochastic_process": _stochastic_process,
+    "constraint_projection": _constraint_projection,
 }
 
 
+def _definition_for_entry(entry: dict[str, object]) -> AlgorithmDefinition:
+    key = str(entry["key"])
+    transform_name = str(entry.get("transform", ""))
+    transform = TRANSFORM_IMPLS.get(transform_name)
+    if transform is None:
+        raise KeyError(f"Unknown transform implementation '{transform_name}' for key '{key}'")
+    return AlgorithmDefinition(key, COMMON, transform)
+
+
+TRANSFORM_DEFINITIONS: dict[str, AlgorithmDefinition] = {
+    str(entry["key"]): _definition_for_entry(entry) for entry in catalog_transforms()
+}
+
+# Backward-compatible alias.
+ALGORITHM_DEFINITIONS = TRANSFORM_DEFINITIONS
+
+
+def get_transform_definition(key: str) -> AlgorithmDefinition:
+    if key not in TRANSFORM_DEFINITIONS:
+        raise KeyError(f"Transform definition not found: {key}")
+    return TRANSFORM_DEFINITIONS[key]
+
+
 def get_algorithm_definition(key: str) -> AlgorithmDefinition:
-    if key not in ALGORITHM_DEFINITIONS:
-        raise KeyError(f"Algorithm definition not found: {key}")
-    return ALGORITHM_DEFINITIONS[key]
+    return get_transform_definition(key)

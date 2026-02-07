@@ -115,8 +115,8 @@ def main() -> int:
         print("Use these commands:")
         print("  python main.py validate")
         print("  python main.py viz")
-        print("  python main.py run --algos default")
-        print("  python main.py --list-algos")
+        print("  python main.py run --transforms default")
+        print("  python main.py --list-transforms")
 
     print("\nSetup complete.")
     return 0

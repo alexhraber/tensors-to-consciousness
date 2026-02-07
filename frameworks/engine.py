@@ -5,17 +5,23 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any
 
+from algos.catalog import catalog_framework_interface
 from algos.contracts import TensorField
-from algos.definitions import get_algorithm_definition
-from algos.registry import ALGO_MAP
+from algos.definitions import get_transform_definition
+from algos.registry import TRANSFORM_MAP
 
 
 @dataclass
 class PipelineResult:
     framework: str
-    algo_keys: tuple[str, ...]
+    transform_keys: tuple[str, ...]
     final_tensor: Any
     trace: list[dict[str, object]]
+
+    @property
+    def algo_keys(self) -> tuple[str, ...]:
+        # Compatibility alias for older call sites.
+        return self.transform_keys
 
 
 def _to_numpy_fallback(value: Any) -> Any | None:
@@ -37,6 +43,16 @@ class FrameworkEngine:
     def __init__(self, framework: str) -> None:
         self.framework = framework
         self.utils: ModuleType = importlib.import_module(f"frameworks.{framework}.utils")
+        self._interface = catalog_framework_interface()
+        self._validate_framework_interface()
+
+    def _validate_framework_interface(self) -> None:
+        for name in self._interface["utils_entrypoints"]:
+            fn = getattr(self.utils, name, None)
+            if not callable(fn):
+                raise RuntimeError(
+                    f"Framework '{self.framework}' missing required utils entrypoint '{name}'."
+                )
 
     def to_numpy(self, value: Any) -> Any | None:
         fn = getattr(self.utils, "_to_numpy", None)
@@ -85,8 +101,14 @@ class FrameworkEngine:
         def normal_like(self, a: Any) -> Any:
             return self.engine._normal(tuple(a.shape))
 
+    def _validate_ops_adapter(self, ops: "FrameworkEngine._Ops") -> None:
+        for name in self._interface["ops_adapter"]:
+            fn = getattr(ops, name, None)
+            if not callable(fn):
+                raise RuntimeError(f"Ops adapter missing required op '{name}'.")
+
     def _params_for(self, key: str) -> dict[str, float]:
-        spec = ALGO_MAP[key]
+        spec = TRANSFORM_MAP[key]
         p = spec.preset
         return {
             "alpha": 0.0015 * float(p.freq),
@@ -98,17 +120,19 @@ class FrameworkEngine:
         n = max(24, min(320, int(size)))
         field = TensorField(tensor=self._normal((n, n)))
         ops = self._Ops(self)
+        self._validate_ops_adapter(ops)
         trace: list[dict[str, object]] = []
 
         for _ in range(max(1, int(steps))):
             for key in algo_keys:
-                definition = get_algorithm_definition(key)
+                definition = get_transform_definition(key)
                 params = {**definition.defaults, **self._params_for(key)}
                 field = definition.transform(field, ops, params)
                 arr = self.to_numpy(field.tensor)
                 if arr is not None:
                     trace.append(
                         {
+                            "transform": key,
                             "algo": key,
                             "shape": tuple(arr.shape),
                             "mean": float(arr.mean()),
@@ -117,7 +141,18 @@ class FrameworkEngine:
                     )
                 else:
                     trace.append(
-                        {"algo": key, "shape": tuple(getattr(field.tensor, "shape", ())), "mean": 0.0, "std": 0.0}
+                        {
+                            "transform": key,
+                            "algo": key,
+                            "shape": tuple(getattr(field.tensor, "shape", ())),
+                            "mean": 0.0,
+                            "std": 0.0,
+                        }
                     )
 
-        return PipelineResult(framework=self.framework, algo_keys=algo_keys, final_tensor=field.tensor, trace=trace)
+        return PipelineResult(
+            framework=self.framework,
+            transform_keys=algo_keys,
+            final_tensor=field.tensor,
+            trace=trace,
+        )

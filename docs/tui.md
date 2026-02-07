@@ -32,10 +32,10 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 ## Start with a Specific Algo Set
 
 ```bash
-python main.py viz --algos gradient_descent,momentum,adam --algorithm momentum
+python main.py viz --transforms gradient_descent,momentum,adam --algorithm momentum
 ```
 
-- `--algos`: comma-separated algorithm keys, or `default`/`all`
+- `--transforms`: comma-separated transform keys, or `default`/`all`
 - `--algorithm`: key/title to focus initially
 
 For non-interactive command usage, see `docs/cli.md`.

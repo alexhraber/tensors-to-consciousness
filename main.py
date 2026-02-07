@@ -9,8 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from algos.registry import list_algorithm_keys
-from algos.registry import resolve_algorithm_keys
+from algos.registry import list_transform_keys
+from algos.registry import resolve_transform_keys
 from tools.runtime import SUPPORTED_FRAMEWORKS, load_config, python_in_venv
 
 DEFAULT_FRAMEWORK = "numpy"
@@ -23,7 +23,7 @@ def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run T2C interactive studio or sandbox algorithm targets for a selected framework."
+        description="Run T2C interactive studio or sandbox transform targets for a selected framework."
     )
     parser.add_argument(
         "target",
@@ -49,17 +49,26 @@ def parse_args() -> argparse.Namespace:
         help="Path to input-override JSON (or raw JSON string) used by playground runs.",
     )
     parser.add_argument(
+        "--transforms",
+        help="Comma-separated transform keys, or 'default'/'all' (preferred).",
+    )
+    parser.add_argument(
         "--algos",
-        help="Comma-separated algorithm keys, or 'default'/'all' (default: default).",
+        help="Deprecated alias for --transforms.",
     )
     parser.add_argument(
         "--algorithm",
         help="Initial algorithm selector for TUI (key or title fragment).",
     )
     parser.add_argument(
+        "--list-transforms",
+        action="store_true",
+        help="Print available transform keys and exit.",
+    )
+    parser.add_argument(
         "--list-algos",
         action="store_true",
-        help="Print available algorithm keys and exit.",
+        help="Deprecated alias for --list-transforms.",
     )
     parser.add_argument(
         "-c",
@@ -137,9 +146,9 @@ def ensure_setup_if_needed(
 
 def main() -> int:
     args = parse_args()
-    if getattr(args, "list_algos", False):
-        print("Available algos:")
-        for key in list_algorithm_keys():
+    if getattr(args, "list_transforms", False) or getattr(args, "list_algos", False):
+        print("Available transforms:")
+        for key in list_transform_keys():
             print(f"- {key}")
         return 0
 
@@ -148,7 +157,7 @@ def main() -> int:
     env = os.environ.copy()
     inputs = getattr(args, "inputs", None)
     algorithm_selector = getattr(args, "algorithm", None)
-    algo_selector = getattr(args, "algos", None)
+    algo_selector = getattr(args, "transforms", None) or getattr(args, "algos", None)
 
     existing_framework = None
     try:
@@ -185,13 +194,13 @@ def main() -> int:
         if setup_ran:
             run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         if force_cli:
-            cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--algos", algo_selector or "default", "--viz"]
+            cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--transforms", algo_selector or "default", "--viz"]
             run_cmd(cmd, env=env)
             return 0
         else:
             cmd = [str(py), "-m", "tools.tui", "--framework", framework]
             if algo_selector:
-                cmd.extend(["--algos", algo_selector])
+                cmd.extend(["--transforms", algo_selector])
             if algorithm_selector:
                 cmd.extend(["--algorithm", algorithm_selector])
             run_cmd(cmd, env=env)
@@ -202,18 +211,18 @@ def main() -> int:
     elif args.target == "viz":
         cmd = [str(py), "-m", "tools.tui", "--framework", framework]
         if algo_selector:
-            cmd.extend(["--algos", algo_selector])
+            cmd.extend(["--transforms", algo_selector])
         if algorithm_selector:
             cmd.extend(["--algorithm", algorithm_selector])
         run_cmd(cmd, env=env)
         return 0
     elif args.target == "run":
         try:
-            _ = resolve_algorithm_keys(algo_selector)
+            _ = resolve_transform_keys(algo_selector)
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1
-        cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--algos", algo_selector or "default", "--viz"]
+        cmd = [str(py), "-m", "tools.playground", "--framework", framework, "--transforms", algo_selector or "default", "--viz"]
         run_cmd(cmd, env=env)
         return 0
     else:

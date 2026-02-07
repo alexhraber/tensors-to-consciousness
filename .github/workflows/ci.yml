@@ -295,8 +295,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  algorithm-contract:
-    name: Algorithm Contract
+  transform-contract:
+    name: Transform Contract
     needs: changes
     if: needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
@@ -310,28 +310,41 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Validate registry/definition contract
+      - name: Validate transform catalog/registry/definition contract
         run: |
           set -euo pipefail
           python - <<'PY'
-          from algos.definitions import ALGORITHM_DEFINITIONS
-          from algos.registry import ALGO_MAP
+          from algos.catalog import catalog_framework_interface
+          from algos.definitions import TRANSFORM_DEFINITIONS
+          from algos.registry import TRANSFORM_MAP
           import sys
 
-          registry_keys = set(ALGO_MAP.keys())
-          definition_keys = set(ALGORITHM_DEFINITIONS.keys())
+          registry_keys = set(TRANSFORM_MAP.keys())
+          definition_keys = set(TRANSFORM_DEFINITIONS.keys())
 
           missing_defs = sorted(registry_keys - definition_keys)
           extra_defs = sorted(definition_keys - registry_keys)
 
+          contract = catalog_framework_interface()
+          missing_contract = []
+          if not contract.get("utils_entrypoints"):
+              missing_contract.append("utils_entrypoints")
+          if not contract.get("ops_adapter"):
+              missing_contract.append("ops_adapter")
+
           if missing_defs or extra_defs:
-              print("Algorithm contract violations:")
+              print("Transform contract violations:")
               if missing_defs:
                   print(f" - missing definitions: {missing_defs}")
               if extra_defs:
                   print(f" - unregistered definitions: {extra_defs}")
               sys.exit(1)
-          print("Algorithm contract checks passed.")
+          if missing_contract:
+              print("Transform interface contract is incomplete:")
+              for key in missing_contract:
+                  print(f" - missing: {key}")
+              sys.exit(1)
+          print("Transform contract checks passed.")
           PY
 
   framework-contract:

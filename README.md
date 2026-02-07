@@ -72,6 +72,7 @@ The entire research track is implemented in each of the following frameworks:
 Algorithm definitions and math contracts live under `algos/` (framework-agnostic).
 Framework backends live under `frameworks/<framework>/` and provide reusable ops/models utilities.
 Algorithm ordering, complexity ranking, defaults, and execution mapping are centralized in `algos/registry.py`.
+The canonical transform catalog is `algos/transforms.json`, including a `framework_interface` contract that defines required backend `utils` entrypoints and engine ops-adapter primitives.
 
 ### Expanded Transformation Library
 
@@ -99,10 +100,10 @@ python tools/scaffold_algo.py --complexity 2 --key rk4_solver --title "RK4 Solve
 Sandbox-style runs use algorithm combinations instead of fixed `0..6` level targets:
 
 ```bash
-python main.py run --framework jax --algos chain_rule,gradient_descent,adam
-python main.py viz --framework jax --algos all
-python main.py --list-algos
-python -m tools.playground --framework jax --algos chain_rule,adam --viz
+python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
+python main.py viz --framework jax --transforms all
+python main.py --list-transforms
+python -m tools.playground --framework jax --transforms chain_rule,adam --viz
 ```
 
 ## Notes
