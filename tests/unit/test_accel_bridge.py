@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 
-class RustCoreBridgeTests(unittest.TestCase):
+class AccelBridgeTests(unittest.TestCase):
     def _np(self):
         shinkei = importlib.import_module("tools.shinkei")
         try:
@@ -16,21 +16,21 @@ class RustCoreBridgeTests(unittest.TestCase):
             raise
         return shinkei, np
 
-    def test_ascii_heatmap_prefers_rust_core_when_available(self) -> None:
+    def test_ascii_heatmap_prefers_accel_when_available(self) -> None:
         shinkei, np = self._np()
         arr = np.arange(64, dtype=np.float32).reshape(8, 8)
 
-        with patch.object(shinkei.rust_core, "ascii_heatmap", return_value="RUST_ASCII") as rust_mock:
+        with patch.object(shinkei.accel, "ascii_heatmap", return_value="RUST_ASCII") as rust_mock:
             out = shinkei._ascii_heatmap(arr, width=8, height=4)
 
         self.assertEqual(out, "RUST_ASCII")
         rust_mock.assert_called_once()
 
-    def test_pixel_heatmap_prefers_rust_core_when_available(self) -> None:
+    def test_pixel_heatmap_prefers_accel_when_available(self) -> None:
         shinkei, np = self._np()
         arr = np.ones((8, 8), dtype=np.float32)
 
-        with patch.object(shinkei.rust_core, "pixel_heatmap", return_value="RUST_PIXEL") as rust_mock:
+        with patch.object(shinkei.accel, "pixel_heatmap", return_value="RUST_PIXEL") as rust_mock:
             out = shinkei._pixel_heatmap(arr, width=8, height=4)
 
         self.assertEqual(out, "RUST_PIXEL")

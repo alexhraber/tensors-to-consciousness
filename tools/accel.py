@@ -7,7 +7,7 @@ from typing import Any
 
 
 def _disabled() -> bool:
-    return os.environ.get("TTC_DISABLE_RUST_CORE", "").strip().lower() in {
+    return os.environ.get("EXPLORER_DISABLE_ACCEL", "").strip().lower() in {
         "1",
         "true",
         "yes",
@@ -16,18 +16,18 @@ def _disabled() -> bool:
 
 
 @lru_cache(maxsize=1)
-def load_rust_core() -> ModuleType | None:
+def load_accel() -> ModuleType | None:
     if _disabled():
         return None
     try:
-        import ttc_rust_core as core
+        import explorer_accel as core
     except Exception:
         return None
     return core
 
 
 def ascii_heatmap(arr: Any, *, width: int, height: int) -> str | None:
-    core = load_rust_core()
+    core = load_accel()
     if core is None:
         return None
     try:
@@ -37,7 +37,7 @@ def ascii_heatmap(arr: Any, *, width: int, height: int) -> str | None:
 
 
 def pixel_heatmap(arr: Any, *, width: int, height: int) -> str | None:
-    core = load_rust_core()
+    core = load_accel()
     if core is None:
         return None
     try:
@@ -47,7 +47,7 @@ def pixel_heatmap(arr: Any, *, width: int, height: int) -> str | None:
 
 
 def parse_assignment(expr: str) -> tuple[str, str] | None:
-    core = load_rust_core()
+    core = load_accel()
     if core is None:
         return None
     try:
@@ -60,7 +60,7 @@ def parse_assignment(expr: str) -> tuple[str, str] | None:
 
 
 def normalize_platform(value: str | None, *, default: str) -> str | None:
-    core = load_rust_core()
+    core = load_accel()
     if core is None:
         return None
     try:
@@ -71,7 +71,7 @@ def normalize_platform(value: str | None, *, default: str) -> str | None:
 
 
 def default_venv(framework: str) -> str | None:
-    core = load_rust_core()
+    core = load_accel()
     if core is None:
         return None
     try:
@@ -82,7 +82,7 @@ def default_venv(framework: str) -> str | None:
 
 
 def frame_patch(prev: str, next_: str) -> str | None:
-    core = load_rust_core()
+    core = load_accel()
     if core is None:
         return None
     try:

@@ -13,7 +13,7 @@ services:
       COLORTERM: ${COLORTERM:-truecolor}
     volumes:
       - ./:/workspace
-      - t2c_config:/workspace/.config
+      - explorer_config:/workspace/.explorer
 
   explorer-nvidia:
     profiles: ["gpu", "nvidia"]
@@ -38,7 +38,7 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,graphics}
     volumes:
       - ./:/workspace
-      - t2c_config:/workspace/.config
+      - explorer_config:/workspace/.explorer
 
   explorer-amd:
     profiles: ["gpu", "amd"]
@@ -62,7 +62,7 @@ services:
       HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION:-}
     volumes:
       - ./:/workspace
-      - t2c_config:/workspace/.config
+      - explorer_config:/workspace/.explorer
 
   explorer-intel:
     profiles: ["gpu", "intel"]
@@ -84,7 +84,7 @@ services:
       COLORTERM: ${COLORTERM:-truecolor}
     volumes:
       - ./:/workspace
-      - t2c_config:/workspace/.config
+      - explorer_config:/workspace/.explorer
 
   explorer-apple:
     profiles: ["apple"]
@@ -102,7 +102,7 @@ services:
       COLORTERM: ${COLORTERM:-truecolor}
     volumes:
       - ./:/workspace
-      - t2c_config:/workspace/.config
+      - explorer_config:/workspace/.explorer
 
 volumes:
-  t2c_config:
+  explorer_config:

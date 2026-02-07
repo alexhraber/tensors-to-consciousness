@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CACHE_FILE = ROOT / ".git" / "t2c-cache" / "act-gate.json"
+CACHE_FILE = ROOT / ".git" / "explorer-cache" / "act-gate.json"
 
 
 def _git_output(*args: str) -> str:
@@ -71,9 +71,15 @@ def select_act_tasks(paths: list[str]) -> list[str]:
         return []
 
     # Mirror CI workflow path filters by job scope.
-    test_inputs = _has_exact(paths, "explorer.py", ".python-version", "mise.toml", ".github/workflows/ci.yml") or _has_prefix(
-        paths, "transforms/", "frameworks/", "tools/", "tests/"
-    )
+    test_inputs = _has_exact(
+        paths,
+        "explorer.py",
+        ".python-version",
+        "mise.toml",
+        "Cargo.toml",
+        "Cargo.lock",
+        ".github/workflows/ci.yml",
+    ) or _has_prefix(paths, "transforms/", "frameworks/", "tools/", "tests/", "crates/")
     test_inputs = test_inputs or _has_exact(paths, ".github/ci/requirements-test.txt", "tools/pre_push_gate.py")
 
     transform_contract_inputs = _has_prefix(paths, "transforms/") or _has_exact(

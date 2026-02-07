@@ -77,7 +77,7 @@ def capture_command_gif(
     height: int = 720,
     fps: int = 18,
     duration_s: float = 8.0,
-    title: str = "ttc-headless-capture",
+    title: str = "explorer-headless-capture",
     key_script: list[tuple[float, str]] | None = None,
     hold: bool = True,
 ) -> None:
@@ -199,7 +199,7 @@ def capture_tui_session_gif(
         height=height,
         fps=fps,
         duration_s=duration_s,
-        title="ttc-tui-capture",
+        title="explorer-tui-capture",
         key_script=[
             (0.8, "Return"),
             (0.8, "n"),
@@ -224,7 +224,7 @@ def capture_transform_progression_gif(
     height: int = 720,
     fps: int = 16,
     duration_s: float = 7.5,
-    title: str = "ttc-progression-capture",
+    title: str = "explorer-progression-capture",
 ) -> None:
     cmd_parts = [
         "export TERM=xterm-256color COLORTERM=truecolor PYTHONUNBUFFERED=1;",

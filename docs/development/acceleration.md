@@ -1,7 +1,7 @@
-# Rust Core
+# Acceleration
 
 Rust is the product surface (`explorer`).
-Python executes transform and framework math. Rust provides optional compute/render acceleration via `ttc_rust_core`.
+Python executes transform and framework math. Rust provides optional compute/render acceleration via `explorer_accel`.
 
 ## Scope
 
@@ -16,31 +16,31 @@ Current Rust-accelerated paths:
 Fallback behavior:
 
 - If the extension is unavailable, Python implementations are used automatically.
-- Set `TTC_DISABLE_RUST_CORE=1` to force Python fallback.
+- Set `EXPLORER_DISABLE_ACCEL=1` to force Python fallback.
 
 ## Build
 
 ```bash
-./tools/build_rust_core.sh
+./tools/build_accel.sh
 ```
 
 Equivalent manual command:
 
 ```bash
-uvx maturin develop --release -m rust_core/Cargo.toml
+uvx maturin develop --release -m crates/accel/Cargo.toml
 ```
 
 ## Verify
 
 ```bash
 python - <<'PY'
-from tools import rust_core
-print("loaded:", rust_core.load_rust_core() is not None)
+from tools import accel
+print("loaded:", accel.load_accel() is not None)
 PY
 ```
 
 ## Notes
 
-- Rust crate location: `rust_core/`
-- Python bridge: `tools/rust_core.py`
+- Rust crate location: `crates/accel/`
+- Python bridge: `tools/accel.py`
 - Runtime integration points: `tools/shinkei.py`

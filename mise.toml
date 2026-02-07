@@ -62,7 +62,7 @@ python -m tools.tui --help
 
 [tasks.rust-build]
 description = "Build the Rust explorer binary."
-run = "cargo build -p tensors-explorer"
+run = "cargo build -p explorer"
 
 [tasks.docs-generate]
 description = "Generate reference docs."

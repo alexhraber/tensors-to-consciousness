@@ -1,7 +1,6 @@
 [workspace]
 members = [
-  "rust_core",
-  "rust_explorer",
+  "crates/accel",
+  "crates/explorer",
 ]
 resolver = "2"
-

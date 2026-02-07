@@ -26,9 +26,24 @@ pub fn repo_root() -> Result<PathBuf> {
 }
 
 pub fn load_active_config(root: &Path) -> Option<ActiveConfig> {
-    let p = root.join(".t2c").join("config.json");
-    let raw = fs::read_to_string(p).ok()?;
-    serde_json::from_str(&raw).ok()
+    let new_p = root.join(".explorer").join("config.json");
+    if let Ok(raw) = fs::read_to_string(&new_p) {
+        if let Ok(cfg) = serde_json::from_str::<ActiveConfig>(&raw) {
+            return Some(cfg);
+        }
+    }
+    // Legacy fallbacks
+    for p in [
+        root.join(".config").join("config.json"),
+        root.join(".t2c").join("config.json"),
+    ] {
+        if let Ok(raw) = fs::read_to_string(&p) {
+            if let Ok(cfg) = serde_json::from_str::<ActiveConfig>(&raw) {
+                return Some(cfg);
+            }
+        }
+    }
+    None
 }
 
 pub fn venv_python(venv_dir: &Path) -> PathBuf {

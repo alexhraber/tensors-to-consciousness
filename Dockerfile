@@ -2,10 +2,9 @@ FROM rust:slim AS rust-builder
 
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
-COPY rust_explorer ./rust_explorer
-COPY rust_core ./rust_core
+COPY crates ./crates
 
-RUN cargo build -p tensors-explorer --release
+RUN cargo build -p explorer --release
 
 FROM python:3.14-slim AS runtime
 

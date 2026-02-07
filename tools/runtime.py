@@ -6,9 +6,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from tools import rust_core
+from tools import accel
 
-CONFIG_FILE = Path(".config/config.json")
+DEFAULT_CONFIG_FILE = Path(".explorer/config.json")
+DEFAULT_LEGACY_CONFIG_FILES = (
+    Path(".config/config.json"),
+    Path(".t2c/config.json"),
+)
+
+# Patchable in tests.
+CONFIG_FILE = DEFAULT_CONFIG_FILE
 SUPPORTED_FRAMEWORKS = ("mlx", "jax", "pytorch", "numpy", "keras", "cupy")
 DEFAULT_PLATFORM = "gpu"
 DEFAULT_LOG_LEVEL = "INFO"
@@ -32,14 +39,14 @@ def with_config_defaults(config: dict[str, Any] | None = None) -> dict[str, Any]
     raw = config if isinstance(config, dict) else {}
     framework = str(raw.get("framework") or DEFAULT_FRAMEWORK)
     venv = str(raw.get("venv") or f".venv-{framework}")
-    rust_venv = rust_core.default_venv(framework)
-    if "venv" not in raw and rust_venv:
-        venv = rust_venv
+    accel_venv = accel.default_venv(framework)
+    if "venv" not in raw and accel_venv:
+        venv = accel_venv
 
     platform = str(raw.get("platform") or DEFAULT_PLATFORM).lower()
-    rust_platform = rust_core.normalize_platform(platform, default=DEFAULT_PLATFORM)
-    if rust_platform:
-        platform = rust_platform
+    accel_platform = accel.normalize_platform(platform, default=DEFAULT_PLATFORM)
+    if accel_platform:
+        platform = accel_platform
 
     out: dict[str, Any] = {
         "framework": framework,
@@ -74,19 +81,38 @@ def save_config(config: dict[str, Any]) -> None:
     CONFIG_FILE.write_text(json.dumps(with_config_defaults(config), indent=2) + "\n", encoding="utf-8")
 
 
+def _load_raw_config_from_disk() -> dict[str, Any]:
+    if CONFIG_FILE.exists():
+        return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+    # Only consult legacy locations when using the default config path. This keeps
+    # unit tests (which patch CONFIG_FILE) isolated and deterministic.
+    if CONFIG_FILE == DEFAULT_CONFIG_FILE:
+        for p in DEFAULT_LEGACY_CONFIG_FILES:
+            if p.exists():
+                return json.loads(p.read_text(encoding="utf-8"))
+    raise FileNotFoundError
+
+
 def load_config() -> dict[str, Any]:
-    if not CONFIG_FILE.exists():
+    try:
+        raw = _load_raw_config_from_disk()
+    except FileNotFoundError:
         raise RuntimeError(
             "No active framework config found. Run `python -m tools.setup <framework>` first."
         )
-    return with_config_defaults(json.loads(CONFIG_FILE.read_text(encoding="utf-8")))
+    cfg = with_config_defaults(raw if isinstance(raw, dict) else {})
+    # Migration: persist to the new location once we successfully load.
+    if not CONFIG_FILE.exists():
+        try:
+            save_config(cfg)
+        except Exception:
+            pass
+    return cfg
 
 
 def load_config_optional() -> dict[str, object]:
-    if not CONFIG_FILE.exists():
-        return with_config_defaults({})
     try:
-        raw = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+        raw = _load_raw_config_from_disk()
     except Exception:
         return with_config_defaults({})
     return with_config_defaults(raw if isinstance(raw, dict) else {})

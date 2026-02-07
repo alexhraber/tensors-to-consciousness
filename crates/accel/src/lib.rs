@@ -310,7 +310,7 @@ fn frame_patch(prev: &str, next: &str) -> PyResult<String> {
 }
 
 #[pymodule]
-fn ttc_rust_core(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn explorer_accel(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(ascii_heatmap, m)?)?;
     m.add_function(wrap_pyfunction!(pixel_heatmap, m)?)?;
     m.add_function(wrap_pyfunction!(parse_assignment, m)?)?;

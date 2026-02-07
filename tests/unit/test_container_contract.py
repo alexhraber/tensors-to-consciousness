@@ -19,6 +19,7 @@ class ContainerContractTests(unittest.TestCase):
             "stdin_open: true",
             "tty: true",
             'command: ["explorer"]',
+            "explorer_config:",
         ]
         for fragment in required_fragments:
             with self.subTest(fragment=fragment):

@@ -1,12 +1,12 @@
 [package]
-name = "ttc-rust-core"
+name = "explorer-accel"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "Rust compute/render core for tensors-to-consciousness"
+description = "Optional accelerated kernels for explorer (compute/render helpers)."
 
 [lib]
-name = "ttc_rust_core"
+name = "explorer_accel"
 crate-type = ["cdylib"]
 
 [dependencies]

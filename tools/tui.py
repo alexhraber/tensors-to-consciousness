@@ -20,7 +20,7 @@ from transforms.registry import resolve_transform_keys
 from frameworks.engine import FrameworkEngine
 from tools import diagnostics
 from tools import runtime
-from tools import rust_core
+from tools import accel
 from tools import shinkei
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
@@ -163,7 +163,7 @@ def _quick_edit_state(fd: int, state: shinkei.RenderState, old: list[int]) -> No
         line = input("Quick edit key=value (blank to cancel): ").strip()
     finally:
         tty.setcbreak(fd)
-    parsed = rust_core.parse_assignment(line)
+    parsed = accel.parse_assignment(line)
     if parsed is not None:
         key, value = parsed
     else:
@@ -229,7 +229,7 @@ def _command_console(
             continue
         if cmd == "set":
             expr = raw[len("set") :].strip()
-            parsed = rust_core.parse_assignment(expr)
+            parsed = accel.parse_assignment(expr)
             if parsed is not None:
                 key, value = parsed
             else:
@@ -503,7 +503,7 @@ def _header_block(
 
 
 def _draw_text_frame(frame_text: str, prev_frame_text: str | None, telemetry: dict[str, int] | None = None) -> str:
-    patch = rust_core.frame_patch(prev_frame_text or "", frame_text)
+    patch = accel.frame_patch(prev_frame_text or "", frame_text)
     if patch is not None:
         if telemetry is not None:
             telemetry["rust_attempts"] = telemetry.get("rust_attempts", 0) + 1

@@ -59,7 +59,7 @@ Pre-push behavior:
 - selects only relevant `act` jobs
 - runs selected `act` jobs in parallel across local CPU cores by default (`CI_GATE_JOBS=nproc`)
 - each selected workflow job executes `mise run ...` tasks inside the workflow
-- caches successful local gate runs in `.git/t2c-cache/act-gate.json` to speed repeated loops on unchanged signatures
+- caches successful local gate runs in `.git/explorer-cache/act-gate.json` to speed repeated loops on unchanged signatures
 
 Pre-commit behavior:
 
