@@ -1,6 +1,13 @@
 import numpy as np
 import cupy as cp
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 from tools.common_viz import viz_stage as _common_viz_stage
+
 
 DTYPE = cp.float32
 RNG = cp.random.RandomState(0)
