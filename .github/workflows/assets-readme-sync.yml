@@ -4,17 +4,16 @@ on:
   pull_request:
     branches: ["main"]
     paths:
-      - "explorer.py"
       - "transforms/**"
       - "frameworks/**"
       - "tools/shinkei.py"
-      - "tools/tui.py"
-      - "tools/headless_capture.py"
+      - "tools/input_controls.py"
       - "tools/generate_render_assets.py"
+      - "examples/inputs.framework_matrix.json"
+      - "examples/inputs.spectral_sweep.json"
       - ".python-version"
       - "mise.toml"
       - ".github/ci/requirements-test.txt"
-      - ".github/workflows/ci.yml"
       - ".github/workflows/assets-readme-sync.yml"
   workflow_dispatch:
 

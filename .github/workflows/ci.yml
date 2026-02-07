@@ -95,16 +95,17 @@ jobs:
               - "mise.toml"
               - ".github/workflows/ci.yml"
             render_assets:
-              - "explorer.py"
               - "transforms/**"
               - "frameworks/**"
               - "tools/shinkei.py"
-              - "tools/tui.py"
-              - "tools/headless_capture.py"
               - "tools/generate_render_assets.py"
+              - "tools/input_controls.py"
+              - "examples/inputs.framework_matrix.json"
+              - "examples/inputs.spectral_sweep.json"
               - ".github/workflows/assets-readme-sync.yml"
               - ".github/workflows/ci.yml"
               - "mise.toml"
+              - ".python-version"
               - ".github/ci/requirements-test.txt"
 
   test:
