@@ -24,7 +24,7 @@
 
 ## Overview
 
-This repository contains 7 theory-first chapters implemented across peer framework tracks:
+This repository contains 7 theory-first research modules implemented across peer framework tracks:
 
 - `mlx`
 - `jax`
@@ -44,9 +44,9 @@ The standard workflow is:
 2. `python t2c.py validate`
 3. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
 
-## Chapter Sequence
+## Research Module Sequence
 
-| # | Chapter | Focus |
+| # | Research Module | Focus |
 |---|---|---|
 | 0 | Computational Primitives | Tensors, operations, reductions |
 | 1 | Automatic Differentiation | Chain rule, gradients, backpropagation theory |
@@ -155,7 +155,7 @@ Framework scripts still exist and are used by `t2c.py` internally:
 
 All framework scripts live under `scripts/<framework>/`.
 
-| Framework | Setup | Validation | Chapters |
+| Framework | Setup | Validation | Research Modules |
 |---|---|---|---|
 | MLX | `python -m tools.setup mlx` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
 | JAX | `python -m tools.setup jax` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |

@@ -7,7 +7,7 @@ The repo is framework-track based.
 - Source implementations live in `scripts/<framework>/`
 - Operational commands are:
   - `python -m tools.setup` (choose/install/validate once)
-  - `t2c.py` (run `validate` and chapter targets)
+  - `t2c.py` (run `validate` and research-module targets)
 
 ## Local workflow
 
@@ -36,7 +36,7 @@ A framework track should include:
 
 Requirements:
 
-- Keep chapter names and sequence identical.
+- Keep research-module names and sequence identical.
 - Keep conceptual behavior aligned across frameworks.
 - Prefer framework-native autodiff where available.
 - If numerical gradients are required, document it in `README.md`.

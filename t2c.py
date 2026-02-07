@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Primary execution entrypoint for configured framework chapters."""
+"""Primary execution entrypoint for configured framework research modules."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run chapter/validation targets for a selected framework."
+        description="Run research-module/validation targets for a selected framework."
     )
     parser.add_argument(
         "target",
