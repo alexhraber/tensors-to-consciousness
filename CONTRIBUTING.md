@@ -15,10 +15,10 @@ The repo is framework-track based.
 python -m tools.setup <framework>
 python t2c.py validate
 python t2c.py all
-python test.py
+python -m tests
 ```
 
-`python test.py` runs top-level operational tests (setup/runner/config behavior) and intentionally avoids framework-specific math validation.
+`python -m tests` runs top-level operational tests (setup/runner/config behavior) and intentionally avoids framework-specific math validation.
 
 ## Add or update a framework track
 

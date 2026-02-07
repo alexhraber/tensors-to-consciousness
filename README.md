@@ -83,7 +83,7 @@ python t2c.py all
 ### 4) Run top-level operational tests
 
 ```bash
-python test.py
+python -m tests
 ```
 
 ## Primary Setup Script
@@ -169,7 +169,7 @@ All framework scripts live under `scripts/<framework>/`.
 - `numpy` and `cupy` use finite-difference gradients in autodiff-heavy sections.
 - `keras` mixes gradient tape and numerical approximations in selected sections.
 - CuPy install in setup defaults to `cupy-cuda12x`; use a wheel matching your CUDA runtime.
-- `python test.py` validates setup/runtime orchestration and CLI behavior (not framework theory correctness).
+- `python -m tests` validates setup/runtime orchestration and CLI behavior (not framework theory correctness).
 
 ## Contributing
 

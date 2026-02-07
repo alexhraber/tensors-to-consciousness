@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-"""Top-level operational test runner."""
-
 from __future__ import annotations
 
-import sys
 import unittest
 
 
