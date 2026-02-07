@@ -5,14 +5,14 @@ from pathlib import Path
 
 
 class CiContractTests(unittest.TestCase):
-    def test_ci_workflow_calls_mise_render_tasks(self) -> None:
+    def test_ci_workflow_runs_render_smoke_checks_in_container(self) -> None:
         ci = Path('.github/workflows/ci.yml')
         self.assertTrue(ci.exists())
         text = ci.read_text(encoding='utf-8')
         for fragment in (
-            'Headless TUI capture smoke check',
-            'mise run install-render-system-deps',
-            'mise run render-smoke-tui',
+            'Build render image',
+            'target: render',
+            'Render smoke checks (container)',
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, text)

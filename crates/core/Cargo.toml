@@ -1,14 +1,16 @@
 [package]
-name = "explorer-accel"
+name = "explorer-core"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Optional accelerated kernels for explorer (compute/render helpers)."
 
 [lib]
-name = "explorer_accel"
+# Keep the Rust crate name distinct from `core` (Rust stdlib crate).
+name = "explorer_core"
 crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.27", features = ["extension-module"] }
 numpy = "0.27"
+

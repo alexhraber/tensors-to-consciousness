@@ -297,7 +297,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "explorer-accel"
+name = "explorer-core"
 version = "0.1.0"
 dependencies = [
  "numpy",

@@ -47,8 +47,8 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse(cfg["diagnostics"]["debug"])
 
     def test_with_config_defaults_uses_rust_helpers_when_available(self) -> None:
-        with patch.object(runtime.accel, "default_venv", return_value=".venv-rust"):
-            with patch.object(runtime.accel, "normalize_platform", return_value="cpu"):
+        with patch.object(runtime.core, "default_venv", return_value=".venv-rust"):
+            with patch.object(runtime.core, "normalize_platform", return_value="cpu"):
                 cfg = runtime.with_config_defaults({"framework": "jax"})
                 self.assertEqual(cfg["venv"], ".venv-rust")
                 self.assertEqual(cfg["platform"], "cpu")

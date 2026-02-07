@@ -26,6 +26,7 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
 
 env:
   CI_BUDGET_TEST_WARN_SEC: 120
@@ -114,9 +115,53 @@ jobs:
               - ".python-version"
               - ".github/ci/requirements-test.txt"
 
+  image:
+    name: Container Image (ci)
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.test == 'true' || needs.changes.outputs.transform_contract == 'true' || needs.changes.outputs.framework_contract == 'true' || needs.changes.outputs.docs_sync == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      local_tag: ${{ steps.meta.outputs.local_tag }}
+      ghcr_tag: ${{ steps.meta.outputs.ghcr_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tags
+        id: meta
+        run: |
+          echo "local_tag=explorer-ci:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "ghcr_tag=ghcr.io/${{ github.repository }}/ci:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: ${{ env.ACT != 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ci image (push for same-repo PRs)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: ci
+          tags: |
+            ${{ steps.meta.outputs.local_tag }}
+            ${{ steps.meta.outputs.ghcr_tag }}
+          load: true
+          push: ${{ env.ACT != 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   test:
     name: Test (Python 3.14)
-    needs: changes
+    needs: [changes, image]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.test == 'true'
     runs-on: ubuntu-latest
 
@@ -127,39 +172,26 @@ jobs:
       - name: Mark job start
         run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
 
-      - name: Setup mise
-        uses: jdx/mise-action@v2
-        with:
-          cache: true
-          install: true
+      - name: Pull image (GitHub only)
+        if: ${{ env.ACT != 'true' }}
+        run: docker pull ${{ needs.image.outputs.ghcr_tag }}
 
-      - name: Select Python version
+      - name: Unit + integration tests (container)
         run: |
-          mise use -g python@3.14
-
-      - name: Toolchain versions
-        run: |
-          mise --version
-          mise current
-          python --version
-
-      - name: Install test dependencies
-        run: mise run install-test-deps
-
-      - name: Bytecode compilation check
-        run: mise run py-compile
-
-      - name: Unit tests with coverage
-        run: mise run cov-unit
-
-      - name: Integration tests with coverage
-        run: mise run cov-integration
-
-      - name: Coverage gate
-        run: mise run cov-report
-
-      - name: CLI smoke checks
-        run: mise run cli-smoke
+          IMAGE="${{ needs.image.outputs.local_tag }}"
+          if [ "${ACT:-}" = "" ] && [ "${LOCAL_ACT:-}" != "true" ]; then
+            IMAGE="${{ needs.image.outputs.ghcr_tag }}"
+          fi
+          docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" bash -lc '\
+            python -m py_compile $(git ls-files "*.py") && \
+            python -m coverage erase && \
+            python -m coverage run -m tests --suite unit && \
+            python -m coverage run --append -m tests --suite integration && \
+            python -m coverage report --show-missing --fail-under=69 && \
+            python -m coverage xml -o coverage.xml && \
+            explorer --help >/dev/null && \
+            explorer list-transforms >/dev/null \
+          '
 
       - name: Record timing metrics
         if: always()
@@ -217,7 +249,7 @@ jobs:
 
   docs-sync:
     name: Docs Sync
-    needs: changes
+    needs: [changes, image]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs_sync == 'true'
     runs-on: ubuntu-latest
 
@@ -225,21 +257,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup mise
-        uses: jdx/mise-action@v2
-        with:
-          cache: true
-          install: true
+      - name: Pull image (GitHub only)
+        if: ${{ env.ACT != 'true' }}
+        run: docker pull ${{ needs.image.outputs.ghcr_tag }}
 
-      - name: Generate catalog docs
-        run: mise run docs-generate
-
-      - name: Verify generated docs are committed
-        run: mise run docs-verify
+      - name: Generate and verify docs (container)
+        run: |
+          IMAGE="${{ needs.image.outputs.local_tag }}"
+          if [ "${ACT:-}" = "" ] && [ "${LOCAL_ACT:-}" != "true" ]; then
+            IMAGE="${{ needs.image.outputs.ghcr_tag }}"
+          fi
+          docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" bash -lc '\
+            python tools/generate_catalog_docs.py && \
+            git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md \
+          '
 
   transform-contract:
     name: Transform Contract
-    needs: changes
+    needs: [changes, image]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.transform_contract == 'true'
     runs-on: ubuntu-latest
 
@@ -247,18 +282,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup mise
-        uses: jdx/mise-action@v2
-        with:
-          cache: true
-          install: true
-
       - name: Validate transform catalog/registry/definition contract
-        run: mise run contract-transforms
+        run: |
+          IMAGE="${{ needs.image.outputs.local_tag }}"
+          if [ "${ACT:-}" = "" ] && [ "${LOCAL_ACT:-}" != "true" ]; then
+            docker pull ${{ needs.image.outputs.ghcr_tag }}
+            IMAGE="${{ needs.image.outputs.ghcr_tag }}"
+          fi
+          docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" bash -lc 'python - <<\"PY\"\nfrom transforms.catalog import catalog_framework_interface\nfrom transforms.definitions import TRANSFORM_DEFINITIONS\nfrom transforms.registry import TRANSFORM_MAP\nimport sys\n\nregistry_keys = set(TRANSFORM_MAP.keys())\ndefinition_keys = set(TRANSFORM_DEFINITIONS.keys())\n\nmissing_defs = sorted(registry_keys - definition_keys)\nextra_defs = sorted(definition_keys - registry_keys)\n\ncontract = catalog_framework_interface()\nmissing_contract = []\nif not contract.get(\"utils_entrypoints\"):\n    missing_contract.append(\"utils_entrypoints\")\nif not contract.get(\"ops_adapter\"):\n    missing_contract.append(\"ops_adapter\")\n\nif missing_defs or extra_defs:\n    print(\"Transform contract violations:\")\n    if missing_defs:\n        print(f\" - missing definitions: {missing_defs}\")\n    if extra_defs:\n        print(f\" - unregistered definitions: {extra_defs}\")\n    sys.exit(1)\nif missing_contract:\n    print(\"Transform interface contract is incomplete:\")\n    for key in missing_contract:\n        print(f\" - missing: {key}\")\n    sys.exit(1)\nprint(\"Transform contract checks passed.\")\nPY'
 
   framework-contract:
     name: Framework Contract (${{ matrix.framework }})
-    needs: changes
+    needs: [changes, image]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.framework_contract == 'true'
     runs-on: ubuntu-latest
     strategy:
@@ -270,16 +305,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup mise
-        uses: jdx/mise-action@v2
-        with:
-          cache: true
-          install: true
-
       - name: Verify framework backend contract
         env:
           FRAMEWORK: ${{ matrix.framework }}
-        run: mise run contract-framework
+        run: |
+          IMAGE="${{ needs.image.outputs.local_tag }}"
+          if [ "${ACT:-}" = "" ] && [ "${LOCAL_ACT:-}" != "true" ]; then
+            docker pull ${{ needs.image.outputs.ghcr_tag }}
+            IMAGE="${{ needs.image.outputs.ghcr_tag }}"
+          fi
+          docker run --rm -v "$PWD:/workspace" -w /workspace -e FRAMEWORK="$FRAMEWORK" "$IMAGE" bash -lc 'python - <<\"PY\"\nimport os\nimport pathlib\nimport sys\n\nfw = os.environ[\"FRAMEWORK\"]\nroot = pathlib.Path(\"frameworks\") / fw\nif not root.exists():\n    print(f\"Missing framework directory: {root}\")\n    sys.exit(1)\n\nrequired = [\"utils.py\", \"test_setup.py\"]\nmissing = [name for name in required if not (root / name).exists()]\nif missing:\n    print(f\"{fw}: missing required files:\")\n    for name in missing:\n        print(f\" - {root / name}\")\n    sys.exit(1)\n\ntransforms_backend = root / \"transforms\"\nif not transforms_backend.exists():\n    print(f\"{fw}: missing transforms adapter directory: {transforms_backend}\")\n    sys.exit(1)\n\nprint(f\"{fw}: framework contract passed.\")\nPY'
 
   render-assets:
     name: Render Assets Integrity
@@ -294,29 +329,35 @@ jobs:
       - name: Mark job start
         run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
 
-      - name: Setup mise
-        uses: jdx/mise-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build render image
+        uses: docker/build-push-action@v6
         with:
-          cache: true
-          install: true
+          context: .
+          file: Dockerfile
+          target: render
+          tags: explorer-render:${{ github.sha }}
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Install render dependencies
-        run: mise run install-test-deps
-
-      - name: Install headless capture system deps
-        run: mise run install-render-system-deps
-
-      - name: Verify FFmpeg
-        run: ffmpeg -version
-
-      - name: Validate committed GIF assets
-        run: mise run render-verify-assets
-
-      - name: Headless progression capture smoke check
-        run: mise run render-smoke-progressions
-
-      - name: Headless TUI capture smoke check
-        run: mise run render-smoke-tui
+      - name: Render smoke checks (container)
+        run: |
+          docker run --rm -v "$PWD:/workspace" -w /workspace explorer-render:${{ github.sha }} bash -lc '\
+            ffmpeg -version && \
+            for f in assets/render/*.gif; do ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$f"; done && \
+            rm -rf /tmp/render-progressions && \
+            python tools/generate_render_assets.py --output-dir /tmp/render-progressions --frames 24 --fps 12 --width 320 --height 180 --only optimization_flow attention_dynamics phase_portraits --framework numpy && \
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/optimization_flow.gif && \
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/attention_dynamics.gif && \
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/phase_portraits.gif && \
+            mkdir -p /tmp/render-headless && \
+            python tools/generate_render_assets.py --output-dir /tmp/render-headless --only tui_explorer --frames 36 --fps 12 --width 320 --height 180 --framework numpy --tui-capture headless && \
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-headless/tui_explorer.gif \
+          '
 
       - name: Record timing metrics
         if: always()

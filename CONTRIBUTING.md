@@ -8,7 +8,7 @@ This project is maintained as an architecture-first exploration platform. Contri
 - `frameworks/<framework>/`: backend execution adapters.
 - `tools/`: runtime, diagnostics, rendering, and TUI surfaces.
 - `explorer.py`: primary user-facing entrypoint.
-- `crates/accel/`: optional acceleration kernels consumed by Python bridges.
+- `crates/core/`: optional acceleration kernels consumed by Python bridges.
 
 ## Local Workflow
 
@@ -42,7 +42,7 @@ mise run test-all
 - Pre-commit hook: lightweight bootstrap only
 - Catalog docs generator: `mise run docs-generate`
 - Render asset generator: `mise run assets-regenerate`
-- Accel build: `./tools/build_accel.sh`
+- Core build: `./tools/build_core.sh`
 - Local Actions simulation with `act` (workflow-driven, executes `mise` tasks): `mise run act-ci`
 - Full pre-push gate (single validation choke point: hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
 - PR submission helper: `mise run submit-pr` (pushes current feature branch and opens/reuses a PR via GitHub API with DNS override fallback)

@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 
-class AccelBridgeTests(unittest.TestCase):
+class CoreBridgeTests(unittest.TestCase):
     def _np(self):
         shinkei = importlib.import_module("tools.shinkei")
         try:
@@ -20,7 +20,7 @@ class AccelBridgeTests(unittest.TestCase):
         shinkei, np = self._np()
         arr = np.arange(64, dtype=np.float32).reshape(8, 8)
 
-        with patch.object(shinkei.accel, "ascii_heatmap", return_value="RUST_ASCII") as rust_mock:
+        with patch.object(shinkei.core, "ascii_heatmap", return_value="RUST_ASCII") as rust_mock:
             out = shinkei._ascii_heatmap(arr, width=8, height=4)
 
         self.assertEqual(out, "RUST_ASCII")
@@ -30,7 +30,7 @@ class AccelBridgeTests(unittest.TestCase):
         shinkei, np = self._np()
         arr = np.ones((8, 8), dtype=np.float32)
 
-        with patch.object(shinkei.accel, "pixel_heatmap", return_value="RUST_PIXEL") as rust_mock:
+        with patch.object(shinkei.core, "pixel_heatmap", return_value="RUST_PIXEL") as rust_mock:
             out = shinkei._pixel_heatmap(arr, width=8, height=4)
 
         self.assertEqual(out, "RUST_PIXEL")

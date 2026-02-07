@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from tools import accel
+from tools import core
 
 DEFAULT_CONFIG_FILE = Path(".explorer/config.json")
 DEFAULT_LEGACY_CONFIG_FILES = (
@@ -39,14 +39,14 @@ def with_config_defaults(config: dict[str, Any] | None = None) -> dict[str, Any]
     raw = config if isinstance(config, dict) else {}
     framework = str(raw.get("framework") or DEFAULT_FRAMEWORK)
     venv = str(raw.get("venv") or f".venv-{framework}")
-    accel_venv = accel.default_venv(framework)
-    if "venv" not in raw and accel_venv:
-        venv = accel_venv
+    core_venv = core.default_venv(framework)
+    if "venv" not in raw and core_venv:
+        venv = core_venv
 
     platform = str(raw.get("platform") or DEFAULT_PLATFORM).lower()
-    accel_platform = accel.normalize_platform(platform, default=DEFAULT_PLATFORM)
-    if accel_platform:
-        platform = accel_platform
+    core_platform = core.normalize_platform(platform, default=DEFAULT_PLATFORM)
+    if core_platform:
+        platform = core_platform
 
     out: dict[str, Any] = {
         "framework": framework,

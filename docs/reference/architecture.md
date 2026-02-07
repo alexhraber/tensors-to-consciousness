@@ -6,7 +6,7 @@
 2. Framework engines (`frameworks/`): backend-specific execution surfaces.
 3. Runtime and orchestration (`explorer` (Rust), `tools/runtime.py` (Python)): environment, setup, and dispatch.
 4. Interaction and rendering (`explorer` (Rust) TUI host, `tools/shinkei.py` (Python)): operator control plane and terminal output.
-5. Optional acceleration module (`crates/accel/`): accelerated compute/render kernels behind Python bridges.
+5. Optional core module (`crates/core/`): accelerated compute/render kernels behind Python bridges.
 
 ## Execution Model
 
