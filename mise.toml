@@ -64,6 +64,10 @@ python -m tools.tui --help
 description = "Build the Rust explorer binary."
 run = "cargo build -p explorer"
 
+[tasks.image]
+description = "Build the local CI container image once (reused by pre-push gate)."
+run = "docker build --target ci -t explorer-ci:local ."
+
 [tasks.docs-generate]
 description = "Generate reference docs."
 run = "python tools/generate_catalog_docs.py"
@@ -250,6 +254,7 @@ run = "act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync
 description = "Pre-push quality gate with path-based job selection (Docker-first)."
 run = '''
 mise run build
+mise run image
 ./target/debug/explorer ops pre-push-gate --jobs nproc
 '''
 

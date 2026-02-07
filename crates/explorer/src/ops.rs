@@ -686,6 +686,24 @@ fn ensure_docker_available() -> Result<()> {
 }
 
 fn ensure_ci_image(tag: &str) -> Result<()> {
+    // Allow callers (mise, workflows) to build once and reuse.
+    if std::env::var("CI_GATE_REBUILD_IMAGE")
+        .ok()
+        .as_deref()
+        .unwrap_or("")
+        != "1"
+    {
+        let status = Command::new("docker")
+            .args(["image", "inspect", tag])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .context("docker image inspect")?;
+        if status.success() {
+            return Ok(());
+        }
+    }
+
     // Rely on the Docker layer cache. The pre-push cache decides whether we need to run at all.
     let status = Command::new("docker")
         .args(["build", "--target", "ci", "-t", tag, "."])
@@ -880,8 +898,9 @@ fn pre_push_gate(mode: &str, no_cache: bool, jobs: Option<&str>) -> Result<()> {
     }
 
     ensure_docker_available()?;
-    let image = "explorer-ci:local";
-    ensure_ci_image(image)?;
+    let image =
+        std::env::var("EXPLORER_CI_IMAGE").unwrap_or_else(|_| "explorer-ci:local".to_string());
+    ensure_ci_image(&image)?;
 
     let workers = resolve_workers(jobs, runnable.len());
     eprintln!(
@@ -894,7 +913,7 @@ fn pre_push_gate(mode: &str, no_cache: bool, jobs: Option<&str>) -> Result<()> {
     for _ in 0..workers {
         let queue = Arc::clone(&queue);
         let tx = tx.clone();
-        let image = image.to_string();
+        let image = image.clone();
         std::thread::spawn(move || loop {
             let next = {
                 let mut q = queue.lock().unwrap();
