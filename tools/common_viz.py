@@ -36,16 +36,15 @@ def _supports_kitty_graphics() -> bool:
 
 def _supports_inline_image_graphics() -> bool:
     # Currently backed by kitty-compatible graphics protocol.
-    # Over SSH, TERM/TERM_PROGRAM may be lossy; allow a pragmatic heuristic.
+    # Over SSH, TERM/TERM_PROGRAM may be lossy; keep this permissive.
+    if os.environ.get("T2C_VIZ_DISABLE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return False
     if _supports_kitty_graphics():
         return True
-    if not sys.stdout.isatty():
-        return False
     if os.environ.get("T2C_VIZ_FORCE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return True
-    if os.environ.get("SSH_TTY") and _supports_graphical_terminal():
-        return True
-    return False
+    # If we're on a real color TTY, try inline protocol first.
+    return _supports_graphical_terminal()
 
 
 def _viridis(v: float) -> tuple[int, int, int]:
@@ -144,10 +143,7 @@ def _braille_heatmap(arr: np.ndarray, width: int = 72, height: int = 24) -> str:
 
     px_h = max(4, height * 4)
     px_w = max(2, width * 2)
-    h, w = arr.shape
-    ys = np.linspace(0, h - 1, num=min(px_h, h), dtype=int)
-    xs = np.linspace(0, w - 1, num=min(px_w, w), dtype=int)
-    sampled = arr[np.ix_(ys, xs)]
+    sampled = _upsample_interp(arr, out_h=px_h, out_w=px_w)
     if sampled.shape[0] < 4:
         sampled = np.vstack([sampled] * (4 // sampled.shape[0] + 1))[:4, :]
     if sampled.shape[1] < 2:
@@ -213,10 +209,7 @@ def _pixel_heatmap(arr: np.ndarray, width: int = 48, height: int = 20) -> str:
 
     # We need an even number of rows because each terminal row shows two pixels.
     px_h = max(2, height * 2)
-    h, w = arr.shape
-    ys = np.linspace(0, h - 1, num=min(px_h, h), dtype=int)
-    xs = np.linspace(0, w - 1, num=min(width, w), dtype=int)
-    sampled = arr[np.ix_(ys, xs)]
+    sampled = _upsample_interp(arr, out_h=px_h, out_w=max(2, width))
     if sampled.shape[0] == 1:
         sampled = np.vstack([sampled, sampled])
     elif sampled.shape[0] % 2 == 1:
@@ -407,16 +400,16 @@ def viz_stage(
 
     # Prefer larger tensors to show the most informative surfaces.
     candidates.sort(key=lambda item: item[1].size, reverse=True)
-    style = os.environ.get("T2C_VIZ_STYLE", "gpu-render").strip().lower()
+    style = os.environ.get("T2C_VIZ_STYLE", "fluid-render").strip().lower()
     use_graphics = style != "ascii" and _supports_graphical_terminal()
     kitty_ok = _supports_kitty_graphics()
     inline_image_ok = _supports_inline_image_graphics()
     chosen = "ascii"
-    if style in {"gpu-render", "gpu", "braille", "auto", "fluid"}:
+    if style in {"fluid-render", "fluid-image", "auto", "fluid"}:
         # Ordered fallback chain:
         # 1) fluid-render (inline raster image)
         # 2) gpu-render (braille truecolor)
-        # 3) kitty protocol image (if supported and explicitly chosen)
+        # 3) kitty protocol image
         # 4) half-cubes (truecolor)
         # 5) full-cubes (truecolor)
         # 6) ascii
@@ -430,20 +423,14 @@ def viz_stage(
             chosen = "half-cubes"
         else:
             chosen = "ascii"
-    elif style in {"fluid-render", "fluid-image"}:
-        if inline_image_ok:
-            chosen = "fluid-render"
-        elif use_graphics:
-            chosen = "half-cubes"
-        elif sys.stdout.isatty():
-            chosen = "full-cubes"
-    elif style in {"kitty", "image"}:
-        if kitty_ok:
+    elif style in {"gpu-render", "gpu", "braille"}:
+        # Skip fluid render in this explicit mode.
+        if use_graphics:
+            chosen = "gpu-render"
+        elif kitty_ok:
             chosen = "kitty"
-        elif use_graphics:
-            chosen = "half-cubes"
         elif sys.stdout.isatty():
-            chosen = "full-cubes"
+            chosen = "half-cubes"
         else:
             chosen = "ascii"
     elif style in {"half-cubes", "half", "pixel"}:
@@ -455,6 +442,17 @@ def viz_stage(
             chosen = "ascii"
     elif style in {"full-cubes", "full", "ansi"}:
         if use_graphics:
+            chosen = "full-cubes"
+        else:
+            chosen = "ascii"
+    elif style in {"ascii", "text"}:
+        chosen = "ascii"
+    elif style in {"kitty", "image"}:
+        if kitty_ok:
+            chosen = "kitty"
+        elif use_graphics:
+            chosen = "half-cubes"
+        elif sys.stdout.isatty():
             chosen = "full-cubes"
         else:
             chosen = "ascii"
