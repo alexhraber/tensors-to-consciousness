@@ -23,6 +23,7 @@ ULTRA_TRANSFORMS = (
     "spectral lift",
     "phase sweep",
 )
+ULTRA_REFRESH_SECONDS = 0.45
 VIEW_ORDER = ("simplified", "advanced", "ultra")
 SCRIPT_PROFILES = (
     {
@@ -226,6 +227,21 @@ def _clear_screen() -> None:
     # Stable redraw without hard screen flash.
     sys.stdout.write("\x1b[H\x1b[J")
     sys.stdout.flush()
+
+
+def _cursor_up(lines: int) -> None:
+    if lines > 0:
+        sys.stdout.write(f"\x1b[{lines}A")
+
+
+def _clear_to_end() -> None:
+    sys.stdout.write("\x1b[J")
+
+
+def _line_count(text: str) -> int:
+    if not text:
+        return 1
+    return text.count("\n") + 1
 
 
 def _enter_alt() -> None:
@@ -679,16 +695,15 @@ def _render_interactive(
     module_selector: str | None = None,
     algo_selector: str | None = None,
 ) -> int:
-    common_viz = shinkei.load_common_viz()
     if not sys.stdin.isatty():
         return shinkei.render_static(np=np, state=state, framework=framework, width=96, height=28)
 
-    use_plots = common_viz._supports_kitty_graphics()
-    use_heatmap = common_viz._supports_graphical_terminal()
+    use_plots = shinkei._supports_kitty_graphics()
+    use_heatmap = shinkei._supports_graphical_terminal()
     fd = sys.stdin.fileno()
     active_framework = framework
     active_platform = _load_platform()
-    motion_enabled = True
+    motion_enabled = state.view != "ultra"
     motion_tick = 0
     script_index = _resolve_script_index(module_selector)
     algo_index = _resolve_algo_index(script_index, algo_selector)
@@ -698,10 +713,11 @@ def _render_interactive(
     _enter_alt()
     tty.setcbreak(fd)
     needs_render = True
+    tick_refresh = False
+    dynamic_lines = 0
     try:
         while True:
             if needs_render:
-                _clear_screen()
                 profile = SCRIPT_PROFILES[script_index]
                 algo = profile["algorithms"][algo_index]
                 render_state = (
@@ -716,141 +732,168 @@ def _render_interactive(
                 arr_f = np.asarray(arr, dtype=np.float32)
                 renderer = shinkei.renderer_name(use_plots, use_heatmap)
                 layout = _layout_for_view(state.view)
-                _render_header(
-                    framework=active_framework,
-                    platform=active_platform,
-                    state=state,
-                    renderer=renderer,
-                    width=layout["header_w"],
-                )
-                print()
-                print(f"module [{profile['id']}] {profile['title']} · algorithm [{algo['key']}] {algo['title']}")
-                print(f"formula: {algo['formula']}")
-                print(f"description: {algo['description']}")
-                print()
-                if state.view == "ultra":
-                    live = "live" if motion_enabled else "paused"
-                    print(f"ultra-motion: {live} · transform={transform_label}")
-                    print()
 
                 if use_plots:
-                    png = common_viz._matplotlib_plot_png(arr_f, stage=stage, tensor_name=active_framework)
+                    png = shinkei._matplotlib_plot_png(arr_f, stage=stage, tensor_name=active_framework)
                     if png:
-                        print(
-                            common_viz._kitty_from_png_bytes(
-                                png,
-                                cells_w=layout["plot_w"],
-                                cells_h=layout["plot_h"],
-                            )
+                        viz = shinkei._kitty_from_png_bytes(
+                            png,
+                            cells_w=layout["plot_w"],
+                            cells_h=layout["plot_h"],
                         )
                     elif use_heatmap:
-                        print(
-                            common_viz._pixel_heatmap(
-                                arr_f,
-                                width=layout["plot_w"],
-                                height=layout["plot_h"],
-                            )
-                        )
-                    else:
-                        print(
-                            common_viz._ascii_heatmap(
-                                arr_f,
-                                width=layout["ascii_w"],
-                                height=layout["ascii_h"],
-                            )
-                        )
-                elif use_heatmap:
-                    print(
-                        common_viz._pixel_heatmap(
+                        viz = shinkei._pixel_heatmap(
                             arr_f,
                             width=layout["plot_w"],
                             height=layout["plot_h"],
                         )
-                    )
-                else:
-                    print(
-                        common_viz._ascii_heatmap(
+                    else:
+                        viz = shinkei._ascii_heatmap(
                             arr_f,
                             width=layout["ascii_w"],
                             height=layout["ascii_h"],
                         )
+                elif use_heatmap:
+                    viz = shinkei._pixel_heatmap(
+                        arr_f,
+                        width=layout["plot_w"],
+                        height=layout["plot_h"],
                     )
-
-                print()
-                print(common_viz._format_caption(caption))
-                print(
+                else:
+                    viz = shinkei._ascii_heatmap(
+                        arr_f,
+                        width=layout["ascii_w"],
+                        height=layout["ascii_h"],
+                    )
+                caption_line = shinkei._format_caption(caption)
+                controls_line = (
                     "Controls: [m] mode cycle  [n]/[b] module next/back  [a]/[A] algorithm next/back  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
                 )
-                sys.stdout.flush()
-                needs_render = False
 
-            timeout = 0.22 if state.view == "ultra" and motion_enabled else 5.0
+                partial_viz_only = (
+                    tick_refresh and state.view == "ultra" and motion_enabled and dynamic_lines > 0
+                )
+                if partial_viz_only:
+                    _cursor_up(dynamic_lines)
+                    _clear_to_end()
+                else:
+                    _clear_screen()
+                    _render_header(
+                        framework=active_framework,
+                        platform=active_platform,
+                        state=state,
+                        renderer=renderer,
+                        width=layout["header_w"],
+                    )
+                    print()
+                    print(f"module [{profile['id']}] {profile['title']} · algorithm [{algo['key']}] {algo['title']}")
+                    print(f"formula: {algo['formula']}")
+                    print(f"description: {algo['description']}")
+                    print()
+                    if state.view == "ultra":
+                        live = "live" if motion_enabled else "paused"
+                        print(f"ultra-motion: {live} · transform={transform_label}")
+                        print()
+
+                print(viz)
+                if use_plots:
+                    # Keep cursor below kitty image payload before footer text.
+                    sys.stdout.write("\n")
+                print()
+                print(caption_line)
+                print(controls_line)
+                sys.stdout.flush()
+                dynamic_lines = _line_count(viz) + 1 + _line_count(caption_line) + 1
+                if use_plots:
+                    dynamic_lines += 1
+                needs_render = False
+                tick_refresh = False
+
+            timeout = ULTRA_REFRESH_SECONDS if state.view == "ultra" and motion_enabled else 5.0
             ch = _read_char(fd, timeout_s=timeout)
             if not ch:
                 if state.view == "ultra" and motion_enabled:
                     motion_tick += 1
                     needs_render = True
+                    tick_refresh = True
                 continue
             if ch == "q":
                 break
             if ch == "m":
                 state.view = _next_view(state.view, direction=1)
+                if state.view == "ultra":
+                    motion_enabled = False
                 needs_render = True
+                tick_refresh = False
             elif ch == "M":
                 state.view = _next_view(state.view, direction=-1)
+                if state.view == "ultra":
+                    motion_enabled = False
                 needs_render = True
+                tick_refresh = False
             elif ch == "n":
                 script_index = _next_script_index(script_index, direction=1)
                 algo_index = 0
                 if state.view in {"advanced", "ultra"}:
                     _apply_profile_to_state(state, script_index, algo_index)
                 needs_render = True
+                tick_refresh = False
             elif ch == "b":
                 script_index = _next_script_index(script_index, direction=-1)
                 algo_index = 0
                 if state.view in {"advanced", "ultra"}:
                     _apply_profile_to_state(state, script_index, algo_index)
                 needs_render = True
+                tick_refresh = False
             elif ch == "a":
                 algo_index = _next_algo_index(script_index, algo_index, direction=1)
                 if state.view in {"advanced", "ultra"}:
                     _apply_profile_to_state(state, script_index, algo_index)
                 needs_render = True
+                tick_refresh = False
             elif ch == "A":
                 algo_index = _next_algo_index(script_index, algo_index, direction=-1)
                 if state.view in {"advanced", "ultra"}:
                     _apply_profile_to_state(state, script_index, algo_index)
                 needs_render = True
+                tick_refresh = False
             elif ch == "r":
                 state.seed = (state.seed + 1) % 2_000_000_000
                 needs_render = True
+                tick_refresh = False
             elif ch == " ":
                 motion_enabled = not motion_enabled
                 needs_render = True
+                tick_refresh = False
             elif ch == "i":
                 if state.view != "simplified":
                     _guided_edit_state(fd, state, old)
                 needs_render = True
+                tick_refresh = False
             elif ch == "f":
                 chosen = _framework_selector(fd, active_framework)
                 if chosen and chosen != active_framework:
                     active_framework = chosen
                     _persist_framework(active_framework)
                 needs_render = True
+                tick_refresh = False
             elif ch == "p":
                 chosen_platform = _platform_selector(fd, active_platform)
                 if chosen_platform and chosen_platform != active_platform:
                     active_platform = chosen_platform
                     _persist_platform(active_platform)
                 needs_render = True
+                tick_refresh = False
             elif ch == "e":
                 if state.view != "simplified":
                     _quick_edit_state(fd, state, old)
                 needs_render = True
+                tick_refresh = False
             elif ch == ":":
                 if not _command_console(fd, old, state, active_framework, active_platform):
                     break
                 needs_render = True
+                tick_refresh = False
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
         _leave_alt()
@@ -906,7 +949,7 @@ def main() -> int:
         )
         if ascii_plot:
             print(ascii_plot)
-            print(shinkei.load_common_viz()._format_caption(caption))
+            print(shinkei._format_caption(caption))
             return 0
         return shinkei.render_static(
             np=np,

@@ -122,7 +122,7 @@ class T2CFlowIntegrationTests(unittest.TestCase):
         cmd = run_cmd_mock.call_args[0][0]
         self.assertEqual(cmd, [".venv-jax/bin/python", "-m", "tools.tui", "--framework", "jax"])
 
-    def test_t2c_main_onboarding_prompts_then_runs_validate_and_viz(self) -> None:
+    def test_t2c_main_onboarding_uses_default_framework_then_runs_validate_and_viz(self) -> None:
         args = argparse.Namespace(
             target=None,
             framework=None,
@@ -133,24 +133,22 @@ class T2CFlowIntegrationTests(unittest.TestCase):
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
-                with patch.object(t2c.sys.stdin, "isatty", return_value=True):
-                    with patch.object(t2c, "prompt_framework_choice", return_value="jax"):
-                        with patch.object(t2c, "prompt_inputs_override", return_value=None):
-                            with patch.object(
-                                t2c,
-                                "ensure_setup_if_needed",
-                                return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
-                            ):
-                                with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
-                                    with patch.object(t2c, "run_cmd") as run_cmd_mock:
-                                        rc = t2c.main()
+                with patch.object(
+                    t2c,
+                    "ensure_setup_if_needed",
+                    return_value=({"framework": "numpy", "venv": ".venv-np"}, True),
+                ) as ensure_setup_mock:
+                    with patch.object(t2c, "python_in_venv", return_value=Path(".venv-np/bin/python")):
+                        with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                            rc = t2c.main()
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
-        self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
-        self.assertEqual(calls[1], [".venv-jax/bin/python", "-m", "tools.tui", "--framework", "jax"])
+        self.assertEqual(calls[0], [".venv-np/bin/python", "-m", "tools.validate", "--framework", "numpy"])
+        self.assertEqual(calls[1], [".venv-np/bin/python", "-m", "tools.tui", "--framework", "numpy"])
         self.assertEqual(len(calls), 2)
+        self.assertEqual(ensure_setup_mock.call_args.kwargs["framework"], t2c.DEFAULT_FRAMEWORK)
 
-    def test_t2c_main_onboarding_cli_flag_runs_modules(self) -> None:
+    def test_t2c_main_onboarding_cli_flag_runs_modules_without_prompting(self) -> None:
         args = argparse.Namespace(
             target=None,
             framework=None,
@@ -161,21 +159,19 @@ class T2CFlowIntegrationTests(unittest.TestCase):
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
-                with patch.object(t2c.sys.stdin, "isatty", return_value=True):
-                    with patch.object(t2c, "prompt_framework_choice", return_value="jax"):
-                        with patch.object(t2c, "prompt_inputs_override", return_value=None):
-                            with patch.object(
-                                t2c,
-                                "ensure_setup_if_needed",
-                                return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
-                            ):
-                                with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
-                                    with patch.object(t2c, "run_cmd") as run_cmd_mock:
-                                        rc = t2c.main()
+                with patch.object(
+                    t2c,
+                    "ensure_setup_if_needed",
+                    return_value=({"framework": "numpy", "venv": ".venv-np"}, True),
+                ) as ensure_setup_mock:
+                    with patch.object(t2c, "python_in_venv", return_value=Path(".venv-np/bin/python")):
+                        with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                            rc = t2c.main()
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
-        self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
+        self.assertEqual(calls[0], [".venv-np/bin/python", "-m", "tools.validate", "--framework", "numpy"])
         self.assertEqual(len(calls), 8)
+        self.assertEqual(ensure_setup_mock.call_args.kwargs["framework"], t2c.DEFAULT_FRAMEWORK)
 
     def test_t2c_main_passes_inputs_env(self) -> None:
         args = argparse.Namespace(

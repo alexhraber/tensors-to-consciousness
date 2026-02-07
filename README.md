@@ -44,11 +44,10 @@ python main.py
 On first run it will:
 
 1. Detect framework config
-2. Prompt user for framework if missing
-3. Prompt for optional input overrides (JSON path or inline JSON)
-4. Auto-setup environment + latest available dependencies
-5. Validate the framework track
-6. Launch the interactive visualization studio
+2. Use default framework `numpy` if missing
+3. Auto-setup environment + latest available dependencies
+4. Validate the framework track
+5. Launch the interactive visualization studio
 
 Detailed usage lives in:
 

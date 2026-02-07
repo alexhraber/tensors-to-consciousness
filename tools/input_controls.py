@@ -185,7 +185,7 @@ def metadata_for_scope(framework: str, scope: dict[str, Any]) -> dict[str, str]:
     explicit = scope.get("VIZ_META")
     if not isinstance(explicit, dict):
         raise ValueError(
-            "common_viz contract violation: module must define `VIZ_META = {}` "
+            "shinkei viz contract violation: module must define `VIZ_META = {}` "
             "before calling viz_stage()."
         )
     for k, v in explicit.items():

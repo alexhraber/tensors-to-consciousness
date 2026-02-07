@@ -20,6 +20,7 @@ MODULE_FILES = [
     "5_research_frontiers.py",
     "6_theoretical_limits.py",
 ]
+DEFAULT_FRAMEWORK = "numpy"
 
 
 def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
@@ -154,23 +155,8 @@ def main() -> int:
     onboarding_mode = args.target is None
     framework = args.framework
     if onboarding_mode and framework is None and existing_framework is None:
-        if not sys.stdin.isatty():
-            print(
-                "No framework configured. Re-run with --framework <framework> "
-                "(example: python main.py --framework jax).",
-                file=sys.stderr,
-            )
-            return 1
-        framework = prompt_framework_choice()
+        framework = DEFAULT_FRAMEWORK
 
-    # On default interactive flow, allow input tuning without extra flags.
-    if (
-        hasattr(args, "inputs")
-        and inputs is None
-        and onboarding_mode
-        and sys.stdin.isatty()
-    ):
-        inputs = prompt_inputs_override()
     if inputs:
         env["T2C_INPUTS"] = inputs
 

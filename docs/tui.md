@@ -7,6 +7,7 @@ python main.py
 ```
 
 `main.py` auto-detects setup, validates, and launches the TUI.
+If no framework config exists yet, it defaults to `numpy` (no onboarding prompt).
 
 ## Controls
 
@@ -38,4 +39,3 @@ python main.py viz --module 2 --algorithm momentum
 - `--algorithm`: algorithm key or title fragment in selected module
 
 For non-interactive command usage, see `docs/cli.md`.
-
