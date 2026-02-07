@@ -32,6 +32,7 @@
 - [Live Previews](#live-previews)
 - [Quickstart](#quickstart)
 - [Primary Setup Script](#primary-setup-script)
+- [Universal Runner](#universal-runner)
 - [Canonical Path (Backend-Selected)](#canonical-path-backend-selected)
 - [Dedicated Framework Tracks](#dedicated-framework-tracks)
 - [Notes](#notes)
@@ -90,46 +91,27 @@ source env/bin/activate
 
 ### 2) Pick a framework track
 
-#### MLX
+```bash
+python setup_framework.py <framework>
+```
+
+Examples:
 
 ```bash
 python setup_framework.py mlx
-python scripts/mlx/0_computational_primitives.py
-```
-
-#### JAX
-
-```bash
 python setup_framework.py jax
-python scripts/jax/0_computational_primitives.py
-```
-
-#### PyTorch
-
-```bash
 python setup_framework.py pytorch
-python scripts/pytorch/0_computational_primitives.py
-```
-
-#### NumPy
-
-```bash
 python setup_framework.py numpy
-python scripts/numpy/0_computational_primitives.py
-```
-
-#### Keras
-
-```bash
 python setup_framework.py keras
-python scripts/keras/0_computational_primitives.py
+python setup_framework.py cupy
 ```
 
-#### CuPy
+### 3) Use universal commands (no framework re-entry)
 
 ```bash
-python setup_framework.py cupy
-python scripts/cupy/0_computational_primitives.py
+python run.py validate
+python run.py 0
+python run.py all
 ```
 
 ## Primary Setup Script
@@ -155,6 +137,7 @@ What it does:
 1. Creates/uses a virtual environment via `uv` (default: `.venv`).
 2. Installs framework dependencies with `uv pip install`.
 3. Runs the corresponding validation script (`test_*_setup.py`).
+4. Saves the selected active framework to `.t2c/config.json`.
 
 Useful options:
 
@@ -162,6 +145,29 @@ Useful options:
 python setup_framework.py jax --venv .venv-jax
 python setup_framework.py cupy --skip-validate
 python setup_framework.py all
+```
+
+## Universal Runner
+
+After selecting a framework once with `setup_framework.py`, use `run.py` for all routine commands:
+
+```bash
+python run.py validate   # run framework validation script
+python run.py 0          # run chapter 0
+python run.py 1          # run chapter 1
+python run.py 2
+python run.py 3
+python run.py 4
+python run.py 5
+python run.py 6
+python run.py all        # run chapters 0..6 in sequence
+```
+
+Optional overrides:
+
+```bash
+python run.py 0 --framework jax
+python run.py all --venv .venv-jax
 ```
 
 ## Canonical Path (Backend-Selected)
@@ -185,6 +191,8 @@ export T2C_BACKEND=mlx
 
 ```bash
 python setup_framework.py mlx
+python run.py validate
+python run.py all
 ```
 
 Validation scripts (legacy-compatible naming):
@@ -212,12 +220,12 @@ All dedicated tracks live under `scripts/<framework>/`.
 
 | Framework | Install | Setup Test | Chapters |
 |---|---|---|---|
-| MLX | `python setup_framework.py mlx` | `python scripts/mlx/test_mlx_setup.py` | `python scripts/mlx/0_computational_primitives.py` ... `python scripts/mlx/6_theoretical_limits.py` |
-| JAX | `python setup_framework.py jax` | `python scripts/jax/test_jax_setup.py` | `python scripts/jax/0_computational_primitives.py` ... `python scripts/jax/6_theoretical_limits.py` |
-| PyTorch | `python setup_framework.py pytorch` | `python scripts/pytorch/test_pytorch_setup.py` | `python scripts/pytorch/0_computational_primitives.py` ... `python scripts/pytorch/6_theoretical_limits.py` |
-| NumPy | `python setup_framework.py numpy` | `python scripts/numpy/test_numpy_setup.py` | `python scripts/numpy/0_computational_primitives.py` ... `python scripts/numpy/6_theoretical_limits.py` |
-| Keras | `python setup_framework.py keras` | `python scripts/keras/test_keras_setup.py` | `python scripts/keras/0_computational_primitives.py` ... `python scripts/keras/6_theoretical_limits.py` |
-| CuPy | `python setup_framework.py cupy` | `python scripts/cupy/test_cupy_setup.py` | `python scripts/cupy/0_computational_primitives.py` ... `python scripts/cupy/6_theoretical_limits.py` |
+| MLX | `python setup_framework.py mlx` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
+| JAX | `python setup_framework.py jax` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
+| PyTorch | `python setup_framework.py pytorch` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
+| NumPy | `python setup_framework.py numpy` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
+| Keras | `python setup_framework.py keras` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
+| CuPy | `python setup_framework.py cupy` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
 
 > CuPy: choose the wheel that matches your CUDA version.
 > The setup script uses `cupy-cuda12x` by default.
@@ -228,6 +236,7 @@ All dedicated tracks live under `scripts/<framework>/`.
 - `keras` track mixes gradient tape with numerical approximations in selected sections.
 - Missing dependencies will surface as `ModuleNotFoundError` in setup tests.
 - `test_*_setup.py` scripts are validation scripts and are run by `setup_framework.py`.
+- `setup_framework.py` selects and stores active framework once; `run.py` is the universal runner afterward.
 
 ## Contributing
 

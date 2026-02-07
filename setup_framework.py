@@ -8,6 +8,7 @@ then runs the corresponding validation script.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -40,11 +41,22 @@ FRAMEWORK_CONFIG = {
         "validate": "scripts/cupy/test_cupy_setup.py",
     },
 }
+CONFIG_DIR = Path(".t2c")
+CONFIG_FILE = CONFIG_DIR / "config.json"
 
 
 def run_cmd(cmd: list[str], env: dict[str, str] | None = None) -> None:
     print(f"+ {' '.join(cmd)}")
     subprocess.run(cmd, check=True, env=env)
+
+
+def write_active_config(framework: str, venv_dir: Path) -> None:
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    config = {
+        "framework": framework,
+        "venv": str(venv_dir),
+    }
+    CONFIG_FILE.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
 
 def python_in_venv(venv_dir: Path) -> Path:
@@ -108,6 +120,14 @@ def main() -> int:
     for fw in frameworks:
         print(f"\n=== Setting up {fw} ===")
         setup_one(fw, venv_dir, args.skip_validate)
+
+    if args.framework != "all":
+        write_active_config(args.framework, venv_dir)
+        print(f"\nActive framework set to: {args.framework}")
+        print("Use universal commands:")
+        print("  python run.py validate")
+        print("  python run.py 0")
+        print("  python run.py all")
 
     print("\nSetup complete.")
     return 0
