@@ -74,22 +74,15 @@ Framework backends live under `frameworks/<framework>/` and provide reusable ops
 Algorithm ordering, complexity ranking, defaults, and execution mapping are centralized in `algos/registry.py`.
 The canonical transform catalog is `algos/transforms.json`, including a `framework_interface` contract that defines required backend `utils` entrypoints and engine ops-adapter primitives.
 
-### Expanded Transformation Library
+### Top 5 Core Transforms
 
-The sandbox now includes additional tensor-field mutation families:
+- `tensor_ops`
+- `chain_rule`
+- `gradient_descent`
+- `momentum`
+- `adam`
 
-- `laplacian_diffusion`
-- `advection_transport`
-- `reaction_diffusion`
-- `spectral_filter`
-- `wave_propagation`
-- `hamiltonian_step`
-- `attention_message_passing`
-- `tensor_decomposition`
-- `topology_regularization`
-- `entropy_flow`
-- `stochastic_process`
-- `constraint_projection`
+Use `python main.py --list-transforms` for the full catalog.
 
 To scaffold a new abstract algorithm + backend adapters:
 

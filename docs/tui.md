@@ -35,6 +35,13 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 python main.py viz --transforms gradient_descent,momentum,adam --algorithm momentum
 ```
 
+Top 5 core transforms:
+- `tensor_ops`
+- `chain_rule`
+- `gradient_descent`
+- `momentum`
+- `adam`
+
 - `--transforms`: comma-separated transform keys, or `default`/`all`
 - `--algorithm`: key/title to focus initially
 

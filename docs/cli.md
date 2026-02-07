@@ -15,6 +15,13 @@ python -m tools.playground --framework jax --transforms chain_rule,adam --viz
 python main.py --list-transforms
 ```
 
+Top 5 core transforms:
+- `tensor_ops`
+- `chain_rule`
+- `gradient_descent`
+- `momentum`
+- `adam`
+
 ## Direct Visualization Fetch
 
 ```bash
