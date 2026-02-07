@@ -530,18 +530,6 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
             &["tools/setup.py", "tools/runtime.py", "mise.toml", ".github/workflows/ci.yml"],
         );
 
-    let docs_sync_inputs = has_prefix(paths, &["docs/"])
-        || has_exact(
-            paths,
-            &[
-                "transforms/transforms.json",
-                "tools/generate_catalog_docs.py",
-                "tools/runtime.py",
-                "mise.toml",
-                ".github/workflows/ci.yml",
-            ],
-        );
-
     let mut tasks: Vec<String> = vec![];
     if test_inputs {
         tasks.push("ci-test".to_string());
@@ -551,9 +539,6 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
     }
     if framework_contract_inputs {
         tasks.push("ci-framework-contract-jax".to_string());
-    }
-    if docs_sync_inputs && !is_lightweight_docs_only(paths) {
-        tasks.push("ci-docs-sync".to_string());
     }
     tasks
 }
@@ -651,7 +636,8 @@ fn ensure_ci_image(tag: &str) -> Result<()> {
 fn run_ci_task(task: &str, image: &str) -> Result<()> {
     let script = match task {
         "ci-test" => {
-            r#"python -m py_compile $(git ls-files "*.py") && \
+            r#"git config --global --add safe.directory /workspace && \
+python -m py_compile $(git ls-files "*.py") && \
 python -m coverage erase && \
 python -m coverage run -m tests --suite unit && \
 python -m coverage run --append -m tests --suite integration && \
@@ -660,7 +646,7 @@ python -m coverage xml -o coverage.xml && \
 explorer --help >/dev/null && \
 explorer list-transforms >/dev/null"#
         }
-        "ci-docs-sync" => r#"python tools/generate_catalog_docs.py && git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md"#,
+        "ci-docs-sync" => r#"git config --global --add safe.directory /workspace && python tools/generate_catalog_docs.py && git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md"#,
         "ci-transform-contract" => r#"python - <<'PY'
 from transforms.catalog import catalog_framework_interface
 from transforms.definitions import TRANSFORM_DEFINITIONS
