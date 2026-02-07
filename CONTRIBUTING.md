@@ -15,7 +15,7 @@ This project is maintained as an architecture-first exploration platform. Contri
 ```bash
 mise install
 mise run install-test-deps
-mise run rust-build
+mise run build
 ./target/debug/explorer ops bootstrap
 ./target/debug/explorer
 ./target/debug/explorer run --framework jax --transforms default

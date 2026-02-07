@@ -36,7 +36,7 @@ enum Screen {
 struct App {
     screen: Screen,
     should_quit: bool,
-    bootstrap_python: String,
+    bootstrap: String,
     root: std::path::PathBuf,
     rt: runtime::ResolvedRuntime,
     setup_in_flight: bool,
@@ -82,17 +82,17 @@ enum EngineResponse {
 }
 
 pub fn run_tui(
-    bootstrap_python: &str,
+    bootstrap: &str,
     framework_override: Option<&str>,
     venv_override: Option<&str>,
     transforms: Option<&str>,
 ) -> Result<()> {
     let root = runtime::repo_root()?;
     let rt = runtime::resolve_runtime(&root, framework_override, venv_override);
-    runtime::ensure_setup(bootstrap_python, &rt)?;
+    runtime::ensure_setup(bootstrap, &rt)?;
 
     // List transforms using the active engine python (ensures optional deps can import cleanly later).
-    let mut engine_for_list = PyEngine::spawn(rt.engine_python.to_string_lossy().as_ref())?;
+    let mut engine_for_list = PyEngine::spawn(rt.engine.to_string_lossy().as_ref())?;
     let transform_keys = {
         let resp = engine_for_list.call("list_transforms", None)?;
         resp.result
@@ -175,7 +175,7 @@ pub fn run_tui(
     let mut app = App {
         screen: Screen::Landing,
         should_quit: false,
-        bootstrap_python: bootstrap_python.to_string(),
+        bootstrap: bootstrap.to_string(),
         root: root.clone(),
         rt: rt.clone(),
         setup_in_flight: false,
@@ -481,10 +481,10 @@ fn maybe_force_compute(
         app.last_request_sig = Some(sig);
     }
     // Ensure the selected framework environment exists before attempting to compute.
-    if !app.rt.engine_python.exists() && !app.setup_in_flight {
+    if !app.rt.engine.exists() && !app.setup_in_flight {
         app.setup_in_flight = true;
         app.render.status = format!("Installing {}...", app.framework);
-        let bootstrap = app.bootstrap_python.clone();
+        let bootstrap = app.bootstrap.clone();
         let rt = app.rt.clone();
         let setup_tx = setup_tx.clone();
         thread::spawn(move || {
@@ -495,7 +495,7 @@ fn maybe_force_compute(
     }
 
     req_tx.send(EngineRequest {
-        python: app.rt.engine_python.to_string_lossy().to_string(),
+        python: app.rt.engine.to_string_lossy().to_string(),
         framework: app.framework.clone(),
         transforms: app.selected.clone(),
     })?;

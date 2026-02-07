@@ -37,7 +37,7 @@ Local:
 ```bash
 mise install
 mise run install-test-deps
-mise run rust-build
+mise run build
 ./target/debug/explorer
 ```
 

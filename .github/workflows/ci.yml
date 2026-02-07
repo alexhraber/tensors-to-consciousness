@@ -57,8 +57,10 @@ jobs:
             echo "test=true"
             echo "transform_contract=true"
             echo "framework_contract=true"
-            echo "docs_sync=true"
-            echo "render_assets=true"
+            # Keep local `act` runs tight: artifacts/assets/images are handled in GitHub,
+            # not by local simulation.
+            echo "docs_sync=false"
+            echo "render_assets=false"
           } >> "$GITHUB_OUTPUT"
 
       - name: Filter changed paths
@@ -183,6 +185,7 @@ jobs:
             IMAGE="${{ needs.image.outputs.ghcr_tag }}"
           fi
           docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" bash -lc '\
+            git config --global --add safe.directory /workspace && \
             python -m py_compile $(git ls-files "*.py") && \
             python -m coverage erase && \
             python -m coverage run -m tests --suite unit && \
@@ -268,6 +271,7 @@ jobs:
             IMAGE="${{ needs.image.outputs.ghcr_tag }}"
           fi
           docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" bash -lc '\
+            git config --global --add safe.directory /workspace && \
             python tools/generate_catalog_docs.py && \
             git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md \
           '

@@ -16,7 +16,7 @@ mod tui;
 struct Cli {
     /// Python interpreter used to bootstrap setup if a framework venv is missing.
     #[arg(long, default_value = "python")]
-    bootstrap_python: String,
+    bootstrap: String,
 
     #[command(subcommand)]
     cmd: Option<Command>,
@@ -167,7 +167,7 @@ fn main() -> Result<()> {
     }) {
         Command::ListTransforms => {
             // Listing transforms does not require a configured venv; it only reads the registry.
-            let mut engine = py_rpc::PyEngine::spawn(&cli.bootstrap_python)?;
+            let mut engine = py_rpc::PyEngine::spawn(&cli.bootstrap)?;
             let resp = engine.call("list_transforms", None)?;
             let keys = resp
                 .result
@@ -186,7 +186,7 @@ fn main() -> Result<()> {
             transforms,
         } => {
             tui::run_tui(
-                &cli.bootstrap_python,
+                &cli.bootstrap,
                 framework.as_deref(),
                 venv.as_deref(),
                 transforms.as_deref(),
@@ -201,8 +201,8 @@ fn main() -> Result<()> {
             inputs,
         } => {
             let rt = runtime::resolve_runtime(&root, Some(&framework), venv.as_deref());
-            runtime::ensure_setup(&cli.bootstrap_python, &rt)?;
-            let mut engine = py_rpc::PyEngine::spawn(rt.engine_python.to_string_lossy().as_ref())?;
+            runtime::ensure_setup(&cli.bootstrap, &rt)?;
+            let mut engine = py_rpc::PyEngine::spawn(rt.engine.to_string_lossy().as_ref())?;
             let params = json!({
                 "framework": rt.framework,
                 "transforms": transforms,
@@ -239,8 +239,8 @@ fn main() -> Result<()> {
         }
         Command::Validate { framework, venv } => {
             let rt = runtime::resolve_runtime(&root, framework.as_deref(), venv.as_deref());
-            runtime::ensure_setup(&cli.bootstrap_python, &rt)?;
-            let status = std::process::Command::new(&rt.engine_python)
+            runtime::ensure_setup(&cli.bootstrap, &rt)?;
+            let status = std::process::Command::new(&rt.engine)
                 .args([format!("frameworks/{}/test_setup.py", rt.framework)])
                 .status()
                 .context("run framework test_setup")?;

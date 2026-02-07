@@ -15,7 +15,7 @@ mise run install-test-deps
 
 ```bash
 mise tasks ls
-mise run py-compile
+mise run compile
 mise run test-unit
 mise run test-integration
 mise run test-all

@@ -59,7 +59,7 @@ pub fn default_venv_for_framework(framework: &str) -> PathBuf {
 pub struct ResolvedRuntime {
     pub framework: String,
     pub venv_dir: PathBuf,
-    pub engine_python: PathBuf,
+    pub engine: PathBuf,
 }
 
 pub fn resolve_runtime(
@@ -85,16 +85,16 @@ pub fn resolve_runtime(
         default_venv_for_framework(&framework)
     };
 
-    let engine_python = venv_python(&venv_dir);
+    let engine = venv_python(&venv_dir);
     ResolvedRuntime {
         framework,
         venv_dir,
-        engine_python,
+        engine,
     }
 }
 
-pub fn ensure_setup(bootstrap_python: &str, rt: &ResolvedRuntime) -> Result<()> {
-    if rt.engine_python.exists() {
+pub fn ensure_setup(bootstrap: &str, rt: &ResolvedRuntime) -> Result<()> {
+    if rt.engine.exists() {
         return Ok(());
     }
     if Command::new("uv").args(["--version"]).output().is_err() {
@@ -134,7 +134,7 @@ pub fn ensure_setup(bootstrap_python: &str, rt: &ResolvedRuntime) -> Result<()> 
         "pip".to_string(),
         "install".to_string(),
         "--python".to_string(),
-        rt.engine_python.to_string_lossy().to_string(),
+        rt.engine.to_string_lossy().to_string(),
         "--upgrade".to_string(),
     ];
     args.extend(common_deps.iter().map(|s| s.to_string()));
@@ -145,21 +145,27 @@ pub fn ensure_setup(bootstrap_python: &str, rt: &ResolvedRuntime) -> Result<()> 
         .status()
         .with_context(|| format!("failed to install deps for framework {}", rt.framework))?;
     if !status.success() {
-        return Err(anyhow!("dependency install failed for framework {}", rt.framework));
+        return Err(anyhow!(
+            "dependency install failed for framework {}",
+            rt.framework
+        ));
     }
 
     // Record active config.
-    save_active_config(&repo_root()?, &ActiveConfig {
-        framework: rt.framework.clone(),
-        venv: rt.venv_dir.to_string_lossy().to_string(),
-    })?;
+    save_active_config(
+        &repo_root()?,
+        &ActiveConfig {
+            framework: rt.framework.clone(),
+            venv: rt.venv_dir.to_string_lossy().to_string(),
+        },
+    )?;
 
     // Optional validation (best-effort): we keep it cheap for auto-setup.
-    let _ = Command::new(&rt.engine_python)
+    let _ = Command::new(&rt.engine)
         .arg(format!("frameworks/{}/test_setup.py", rt.framework))
         .status();
 
-    let _ = bootstrap_python; // reserved for future: alternate setup strategies
+    let _ = bootstrap; // reserved for future: alternate setup strategies
     Ok(())
 }
 

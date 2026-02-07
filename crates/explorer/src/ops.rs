@@ -165,7 +165,11 @@ fn git_policy(hook: &str) -> Result<()> {
         }
     }
 
-    if branch != "HEAD" && branch != "main" && branch != "master" && !branch_pattern.is_match(&branch) {
+    if branch != "HEAD"
+        && branch != "main"
+        && branch != "master"
+        && !branch_pattern.is_match(&branch)
+    {
         return Err(anyhow!(
             "Branch name must match 'type/scope-short-topic' with lowercase kebab-case.\nAllowed types: {}\nExamples: fix/ci-act-container-collision, docs/readme-minimal-refresh",
             allowed_types.join(", ")
@@ -264,7 +268,9 @@ fn parse_repo_from_origin(remote_url: &str) -> Result<RepoRef> {
     }
     let parts: Vec<&str> = s.split('/').collect();
     if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
-        return Err(anyhow!("could not parse owner/repo from origin URL: {remote_url}"));
+        return Err(anyhow!(
+            "could not parse owner/repo from origin URL: {remote_url}"
+        ));
     }
     Ok(RepoRef {
         owner: parts[0].to_string(),
@@ -321,7 +327,12 @@ fn gh_token() -> Result<String> {
     Ok(token)
 }
 
-fn curl_api(method: &str, path: &str, token: &str, data: Option<serde_json::Value>) -> Result<serde_json::Value> {
+fn curl_api(
+    method: &str,
+    path: &str,
+    token: &str,
+    data: Option<serde_json::Value>,
+) -> Result<serde_json::Value> {
     let headers = [
         "-H",
         &format!("Authorization: Bearer {token}"),
@@ -350,7 +361,8 @@ fn curl_api(method: &str, path: &str, token: &str, data: Option<serde_json::Valu
         let out = cmd.output().context("failed to run curl")?;
         if out.status.success() {
             let raw = String::from_utf8_lossy(&out.stdout);
-            let v: serde_json::Value = serde_json::from_str(raw.trim()).unwrap_or_else(|_| json!({}));
+            let v: serde_json::Value =
+                serde_json::from_str(raw.trim()).unwrap_or_else(|_| json!({}));
             return Ok(v);
         }
         last_err = Some(String::from_utf8_lossy(&out.stderr).trim().to_string());
@@ -367,14 +379,22 @@ fn submit_pr(base: &str, skip_push: bool) -> Result<()> {
         return Err(anyhow!("Cannot determine current branch (detached HEAD)."));
     }
     if branch == "main" || branch == "master" {
-        return Err(anyhow!("Refusing to open PR from protected branch '{branch}'"));
+        return Err(anyhow!(
+            "Refusing to open PR from protected branch '{branch}'"
+        ));
     }
     if !skip_push {
         let mut cmd = Command::new("git");
         cmd.args(["push", "-u", "origin", &branch]);
         // Optional DNS/IP override for SSH pushes when the local resolver is flaky.
         // If the user already set GIT_SSH_COMMAND, respect it.
-        if std::env::var("GIT_SSH_COMMAND").ok().as_deref().unwrap_or("").trim().is_empty() {
+        if std::env::var("GIT_SSH_COMMAND")
+            .ok()
+            .as_deref()
+            .unwrap_or("")
+            .trim()
+            .is_empty()
+        {
             if let Ok(ip) = std::env::var("GH_SSH_HOST_IP") {
                 let ip = ip.trim();
                 if !ip.is_empty() {
@@ -414,7 +434,8 @@ fn submit_pr(base: &str, skip_push: bool) -> Result<()> {
         return Ok(());
     }
 
-    let subject = run_output(&["git", "log", "-1", "--pretty=%s"]).unwrap_or_else(|_| branch.clone());
+    let subject =
+        run_output(&["git", "log", "-1", "--pretty=%s"]).unwrap_or_else(|_| branch.clone());
     let body = json!({
       "title": subject,
       "head": branch,
@@ -441,7 +462,9 @@ fn submit_pr(base: &str, skip_push: bool) -> Result<()> {
 // --------------------------
 
 fn cache_file(root: &Path) -> PathBuf {
-    root.join(".git").join("explorer-cache").join("ci-gate.json")
+    root.join(".git")
+        .join("explorer-cache")
+        .join("ci-gate.json")
 }
 
 fn best_base_ref() -> String {
@@ -465,16 +488,38 @@ fn best_base_ref() -> String {
 }
 
 fn changed_files_pre_push(base_ref: &str) -> Vec<String> {
-    let diff = run_output(&["git", "diff", "--name-only", "--diff-filter=ACMR", &format!("{base_ref}...HEAD")]);
+    let diff = run_output(&[
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACMR",
+        &format!("{base_ref}...HEAD"),
+    ]);
     diff.ok()
-        .map(|s| s.lines().filter(|l| !l.trim().is_empty()).map(|l| l.to_string()).collect())
+        .map(|s| {
+            s.lines()
+                .filter(|l| !l.trim().is_empty())
+                .map(|l| l.to_string())
+                .collect()
+        })
         .unwrap_or_default()
 }
 
 fn changed_files_pre_commit() -> Vec<String> {
-    let diff = run_output(&["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"]);
+    let diff = run_output(&[
+        "git",
+        "diff",
+        "--cached",
+        "--name-only",
+        "--diff-filter=ACMR",
+    ]);
     diff.ok()
-        .map(|s| s.lines().filter(|l| !l.trim().is_empty()).map(|l| l.to_string()).collect())
+        .map(|s| {
+            s.lines()
+                .filter(|l| !l.trim().is_empty())
+                .map(|l| l.to_string())
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -482,11 +527,15 @@ fn is_lightweight_docs_only(paths: &[String]) -> bool {
     if paths.is_empty() {
         return false;
     }
-    paths.iter().all(|p| p.ends_with(".md") || p.starts_with("docs/"))
+    paths
+        .iter()
+        .all(|p| p.ends_with(".md") || p.starts_with("docs/"))
 }
 
 fn has_prefix(paths: &[String], prefixes: &[&str]) -> bool {
-    paths.iter().any(|p| prefixes.iter().any(|pre| p.starts_with(pre)))
+    paths
+        .iter()
+        .any(|p| prefixes.iter().any(|pre| p.starts_with(pre)))
 }
 
 fn has_exact(paths: &[String], names: &[&str]) -> bool {
@@ -510,7 +559,10 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
             ".github/workflows/ci.yml",
             ".github/ci/requirements-test.txt",
         ],
-    ) || has_prefix(paths, &["transforms/", "frameworks/", "tools/", "tests/", "crates/"]);
+    ) || has_prefix(
+        paths,
+        &["transforms/", "frameworks/", "tools/", "tests/", "crates/"],
+    );
 
     let transform_contract_inputs = has_prefix(paths, &["transforms/"])
         || has_exact(
@@ -527,7 +579,12 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
     let framework_contract_inputs = has_prefix(paths, &["frameworks/"])
         || has_exact(
             paths,
-            &["tools/setup.py", "tools/runtime.py", "mise.toml", ".github/workflows/ci.yml"],
+            &[
+                "tools/setup.py",
+                "tools/runtime.py",
+                "mise.toml",
+                ".github/workflows/ci.yml",
+            ],
         );
 
     let mut tasks: Vec<String> = vec![];
@@ -572,7 +629,9 @@ fn now_ts() -> f64 {
 
 fn load_cache(p: &Path) -> BTreeMap<String, f64> {
     let raw = fs::read_to_string(p).ok();
-    let Some(raw) = raw else { return BTreeMap::new(); };
+    let Some(raw) = raw else {
+        return BTreeMap::new();
+    };
     let Ok(v) = serde_json::from_str::<serde_json::Value>(&raw) else {
         return BTreeMap::new();
     };
@@ -605,7 +664,12 @@ fn parse_jobs_value(raw: Option<&str>) -> Option<usize> {
         return None;
     }
     if matches!(raw.as_str(), "nproc" | "cpu" | "cpus" | "max") {
-        return Some(std::thread::available_parallelism().ok().map(|n| n.get()).unwrap_or(2));
+        return Some(
+            std::thread::available_parallelism()
+                .ok()
+                .map(|n| n.get())
+                .unwrap_or(2),
+        );
     }
     raw.parse::<usize>().ok()
 }
@@ -646,8 +710,11 @@ python -m coverage xml -o coverage.xml && \
 explorer --help >/dev/null && \
 explorer list-transforms >/dev/null"#
         }
-        "ci-docs-sync" => r#"git config --global --add safe.directory /workspace && python tools/generate_catalog_docs.py && git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md"#,
-        "ci-transform-contract" => r#"python - <<'PY'
+        "ci-docs-sync" => {
+            r#"git config --global --add safe.directory /workspace && python tools/generate_catalog_docs.py && git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md"#
+        }
+        "ci-transform-contract" => {
+            r#"python - <<'PY'
 from transforms.catalog import catalog_framework_interface
 from transforms.definitions import TRANSFORM_DEFINITIONS
 from transforms.registry import TRANSFORM_MAP
@@ -679,8 +746,10 @@ if missing_contract:
         print(f" - missing: {key}")
     sys.exit(1)
 print("Transform contract checks passed.")
-PY"#,
-        "ci-framework-contract-jax" => r#"FRAMEWORK=jax python - <<'PY'
+PY"#
+        }
+        "ci-framework-contract-jax" => {
+            r#"FRAMEWORK=jax python - <<'PY'
 import os
 import pathlib
 import sys
@@ -705,14 +774,21 @@ if not transforms_backend.exists():
     sys.exit(1)
 
 print(f"{fw}: framework contract passed.")
-PY"#,
+PY"#
+        }
         other => return Err(anyhow!("unknown ci task: {other}")),
     };
 
     // Git doesn't expand $PWD inside args; rely on the shell and keep the workdir stable.
     // We execute docker from the repo root (callers should chdir there already).
     let status = Command::new("bash")
-        .args(["-lc", &format!("docker run --rm -v \"$PWD:/workspace\" -w /workspace {image} bash -lc {q}", q = shell_quote(script))])
+        .args([
+            "-lc",
+            &format!(
+                "docker run --rm -v \"$PWD:/workspace\" -w /workspace {image} bash -lc {q}",
+                q = shell_quote(script)
+            ),
+        ])
         .status()
         .with_context(|| format!("run ci task: {task}"))?;
     if !status.success() {
@@ -740,8 +816,14 @@ fn resolve_workers(jobs: Option<&str>, task_count: usize) -> usize {
     if task_count <= 1 {
         return 1;
     }
-    let parsed = parse_jobs_value(jobs).or_else(|| parse_jobs_value(std::env::var("CI_GATE_JOBS").ok().as_deref()));
-    let n = parsed.unwrap_or_else(|| std::thread::available_parallelism().ok().map(|n| n.get()).unwrap_or(2));
+    let parsed = parse_jobs_value(jobs)
+        .or_else(|| parse_jobs_value(std::env::var("CI_GATE_JOBS").ok().as_deref()));
+    let n = parsed.unwrap_or_else(|| {
+        std::thread::available_parallelism()
+            .ok()
+            .map(|n| n.get())
+            .unwrap_or(2)
+    });
     n.clamp(1, task_count)
 }
 
@@ -767,9 +849,17 @@ fn pre_push_gate(mode: &str, no_cache: bool, jobs: Option<&str>) -> Result<()> {
 
     let signature = cache_signature(mode, &paths)?;
     let cache_path = cache_file(&root);
-    let mut cache_entries = if cache_disabled { BTreeMap::new() } else { load_cache(&cache_path) };
+    let mut cache_entries = if cache_disabled {
+        BTreeMap::new()
+    } else {
+        load_cache(&cache_path)
+    };
 
-    let prefix = if mode == "pre-commit" { "pre-commit" } else { "pre-push" };
+    let prefix = if mode == "pre-commit" {
+        "pre-commit"
+    } else {
+        "pre-push"
+    };
     if mode == "pre-push" {
         eprintln!("[{prefix}] Base ref: {base_ref}");
     }
