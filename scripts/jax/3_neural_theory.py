@@ -4,6 +4,8 @@ import jax.numpy as jnp
 
 from utils import DTYPE, gelu, init_linear, linear, normal, relu, sigmoid, tree_l2_norm, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🧠 NEURAL NETWORK THEORY (JAX)")
 print("=" * 50)
 

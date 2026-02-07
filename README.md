@@ -53,6 +53,25 @@ For manual/advanced control:
 python main.py --help
 ```
 
+### Input Tuning (Universal)
+
+Default behavior stays random, but you can override generated inputs per framework/script/call:
+
+```bash
+python main.py all --framework jax --inputs inputs.example.json
+```
+
+You can also pass raw JSON via `--inputs`.
+
+Config keys:
+
+- `seed`: global seed
+- `frameworks.<name>.seed`: framework seed override
+- `normal` / `uniform`: framework-wide distribution tuning
+- `frameworks.<name>.scripts.<script>.calls.<label|line>`: per-call overrides
+
+See `inputs.example.json` for a working template.
+
 ## Frameworks
 
 The entire research track is implemented in each of the following frameworks:

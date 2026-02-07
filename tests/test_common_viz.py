@@ -79,6 +79,22 @@ class CommonVizTests(unittest.TestCase):
                 common_viz.viz_stage("stage_off", scope, lambda x: x, framework="numpy")
         self.assertEqual(buf.getvalue(), "")
 
+    def test_viz_stage_renders_metadata_line(self) -> None:
+        common_viz = _load_common_viz()
+        np = common_viz.np
+        scope = {"x": np.arange(16, dtype=np.float32).reshape(4, 4)}
+        buf = io.StringIO()
+        with patch.object(common_viz, "_supports_graphical_terminal", return_value=False):
+            with redirect_stdout(buf):
+                common_viz.viz_stage(
+                    "stage_meta",
+                    scope,
+                    lambda x: x,
+                    framework="numpy",
+                    metadata={"x": "Generated via test metadata."},
+                )
+        self.assertIn("Generated via test metadata.", buf.getvalue())
+
     def test_viz_stage_plots_falls_back_to_heatmap(self) -> None:
         common_viz = _load_common_viz()
         np = common_viz.np

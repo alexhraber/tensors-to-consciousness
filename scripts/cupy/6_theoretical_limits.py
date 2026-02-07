@@ -3,6 +3,8 @@ import cupy as cp
 
 from utils import DTYPE, finite_diff_grad_dict, init_linear, linear, normal, scalar, softmax, viz_stage
 
+VIZ_META = {}
+
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES (CuPy)")
 print("=" * 50)
 

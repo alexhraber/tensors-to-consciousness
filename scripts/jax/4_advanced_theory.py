@@ -4,6 +4,8 @@ import jax.numpy as jnp
 
 from utils import DTYPE, init_linear, linear, normal, softmax, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🔬 ADVANCED COMPUTATIONAL THEORY (JAX)")
 print("=" * 50)
 

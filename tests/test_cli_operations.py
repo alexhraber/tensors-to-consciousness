@@ -198,6 +198,25 @@ class T2CTests(unittest.TestCase):
         self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
         self.assertEqual(len(calls), 8)
 
+    def test_t2c_main_passes_inputs_env(self) -> None:
+        args = argparse.Namespace(
+            target="0",
+            framework="jax",
+            venv=".venv-jax",
+            no_setup=True,
+            inputs="inputs.example.json",
+        )
+        with patch.object(t2c, "parse_args", return_value=args):
+            with patch.object(
+                t2c, "ensure_setup_if_needed", return_value=({"framework": "jax", "venv": ".venv-jax"}, False)
+            ):
+                with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
+                    with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                        rc = t2c.main()
+        self.assertEqual(rc, 0)
+        env = run_cmd_mock.call_args.kwargs["env"]
+        self.assertEqual(env.get("T2C_INPUTS"), "inputs.example.json")
+
 
 if __name__ == "__main__":
     unittest.main()

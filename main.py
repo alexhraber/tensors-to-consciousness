@@ -50,6 +50,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not auto-run setup when config/venv is missing.",
     )
+    parser.add_argument(
+        "--inputs",
+        help="Path to input-override JSON (or raw JSON string) used by all scripts.",
+    )
     return parser.parse_args()
 
 
@@ -117,6 +121,9 @@ def main() -> int:
     repo_root = Path(__file__).resolve().parent
     os.chdir(repo_root)
     env = os.environ.copy()
+    inputs = getattr(args, "inputs", None)
+    if inputs:
+        env["T2C_INPUTS"] = inputs
 
     existing_framework = None
     try:

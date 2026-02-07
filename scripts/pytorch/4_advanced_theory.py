@@ -4,6 +4,8 @@ import torch.nn as nn
 
 from utils import DTYPE, normal, scalar, softmax, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🔬 ADVANCED COMPUTATIONAL THEORY (PyTorch)")
 print("=" * 50)
 

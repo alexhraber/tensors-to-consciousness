@@ -9,10 +9,11 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.common_viz import viz_stage as _common_viz_stage
+from tools.input_controls import annotate, metadata_for_scope, resolve_seed, tune_normal, tune_uniform
 
 
 DTYPE = jnp.float32
-_key = jax.random.PRNGKey(0)
+_key = jax.random.PRNGKey(resolve_seed("jax", 0))
 
 
 def next_key():
@@ -22,11 +23,20 @@ def next_key():
 
 
 def normal(shape, dtype=DTYPE):
-    return jax.random.normal(next_key(), shape, dtype=dtype)
+    cfg = tune_normal("jax", shape)
+    sample = jax.random.normal(next_key(), cfg["shape"], dtype=dtype)
+    return sample * cfg["std"] + cfg["mean"]
 
 
 def uniform(low, high, shape, dtype=DTYPE):
-    return jax.random.uniform(next_key(), shape, minval=low, maxval=high, dtype=dtype)
+    cfg = tune_uniform("jax", low, high, shape)
+    return jax.random.uniform(
+        next_key(),
+        cfg["shape"],
+        minval=cfg["low"],
+        maxval=cfg["high"],
+        dtype=dtype,
+    )
 
 
 def init_linear(in_dim, out_dim, dtype=DTYPE):
@@ -71,4 +81,10 @@ def _to_numpy(value):
 
 
 def viz_stage(stage, scope):
-    _common_viz_stage(stage, scope, _to_numpy, framework="jax")
+    _common_viz_stage(
+        stage,
+        scope,
+        _to_numpy,
+        framework="jax",
+        metadata=metadata_for_scope("jax", scope),
+    )

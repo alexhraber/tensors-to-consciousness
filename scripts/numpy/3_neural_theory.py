@@ -3,6 +3,8 @@ import numpy as np
 
 from utils import DTYPE, finite_diff_grad_dict, gelu, init_linear, linear, normal, relu, sigmoid, tree_l2_norm, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🧠 NEURAL NETWORK THEORY (NumPy)")
 print("=" * 50)
 

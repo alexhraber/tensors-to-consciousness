@@ -8,18 +8,21 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.common_viz import viz_stage as _common_viz_stage
+from tools.input_controls import annotate, metadata_for_scope, resolve_seed, tune_normal, tune_uniform
 
 
 DTYPE = np.float32
-RNG = np.random.default_rng(0)
+RNG = np.random.default_rng(resolve_seed("numpy", 0))
 
 
 def normal(shape, dtype=DTYPE):
-    return RNG.normal(size=shape).astype(dtype)
+    cfg = tune_normal("numpy", shape)
+    return RNG.normal(loc=cfg["mean"], scale=cfg["std"], size=cfg["shape"]).astype(dtype)
 
 
 def uniform(low, high, shape, dtype=DTYPE):
-    return RNG.uniform(low, high, size=shape).astype(dtype)
+    cfg = tune_uniform("numpy", low, high, shape)
+    return RNG.uniform(cfg["low"], cfg["high"], size=cfg["shape"]).astype(dtype)
 
 
 def init_linear(in_dim, out_dim, dtype=DTYPE):
@@ -114,4 +117,10 @@ def _to_numpy(value):
 
 
 def viz_stage(stage, scope):
-    _common_viz_stage(stage, scope, _to_numpy, framework="numpy")
+    _common_viz_stage(
+        stage,
+        scope,
+        _to_numpy,
+        framework="numpy",
+        metadata=metadata_for_scope("numpy", scope),
+    )

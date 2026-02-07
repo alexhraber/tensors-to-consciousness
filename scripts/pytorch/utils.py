@@ -8,18 +8,26 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.common_viz import viz_stage as _common_viz_stage
+from tools.input_controls import annotate, metadata_for_scope, resolve_seed, tune_normal, tune_uniform
 
 
 DTYPE = torch.float32
-GENERATOR = torch.Generator().manual_seed(0)
+GENERATOR = torch.Generator().manual_seed(resolve_seed("pytorch", 0))
 
 
 def normal(shape, dtype=DTYPE):
-    return torch.randn(shape, generator=GENERATOR, dtype=dtype)
+    cfg = tune_normal("pytorch", shape)
+    sample = torch.randn(cfg["shape"], generator=GENERATOR, dtype=dtype)
+    return sample * cfg["std"] + cfg["mean"]
 
 
 def uniform(low, high, shape, dtype=DTYPE):
-    return low + (high - low) * torch.rand(shape, generator=GENERATOR, dtype=dtype)
+    cfg = tune_uniform("pytorch", low, high, shape)
+    return cfg["low"] + (cfg["high"] - cfg["low"]) * torch.rand(
+        cfg["shape"],
+        generator=GENERATOR,
+        dtype=dtype,
+    )
 
 
 def init_linear(in_dim, out_dim, dtype=DTYPE):
@@ -80,4 +88,10 @@ def _to_numpy(value):
 
 
 def viz_stage(stage, scope):
-    _common_viz_stage(stage, scope, _to_numpy, framework="pytorch")
+    _common_viz_stage(
+        stage,
+        scope,
+        _to_numpy,
+        framework="pytorch",
+        metadata=metadata_for_scope("pytorch", scope),
+    )

@@ -1,7 +1,9 @@
 # 5_research_frontiers.py
 import mlx.core as mx
 import mlx.nn as nn
-from utils import viz_stage
+from utils import normal, viz_stage
+
+VIZ_META = {}
 
 print("🚀 RESEARCH FRONTIERS")
 print("=" * 50)
@@ -31,8 +33,8 @@ class SimpleMetaLearner(nn.Module):
 
 # Demonstrate meta-learning concept
 meta_model = SimpleMetaLearner(10)
-x = mx.random.normal((5, 10), dtype=DTYPE)
-adaptation_signal = mx.random.normal((5, 10), dtype=DTYPE)
+x = normal((5, 10), dtype=DTYPE)
+adaptation_signal = normal((5, 10), dtype=DTYPE)
 
 base_output = meta_model(x)
 adapted_output = meta_model.meta_forward(x, adaptation_signal)
@@ -133,13 +135,13 @@ def simulate_grokking_dynamics(steps=1000):
         if step < memorization_phase:
             # Memorization: train loss decreases, test loss stays high
             train_loss = 2.0 * mx.exp(mx.array(-step / 100, dtype=DTYPE))
-            test_loss = mx.array(2.0, dtype=DTYPE) + 0.1 * mx.random.normal((), dtype=DTYPE)
+            test_loss = mx.array(2.0, dtype=DTYPE) + 0.1 * normal((), dtype=DTYPE)
         elif step < generalization_phase:
             # Transition phase: both losses high but unstable  
             prev_train = train_losses[-1] if train_losses else mx.array(0.5, dtype=DTYPE)
             prev_test = test_losses[-1] if test_losses else mx.array(2.0, dtype=DTYPE)
-            train_loss = prev_train + 0.1 * mx.random.normal((), dtype=DTYPE)
-            test_loss = prev_test + 0.2 * mx.random.normal((), dtype=DTYPE)
+            train_loss = prev_train + 0.1 * normal((), dtype=DTYPE)
+            test_loss = prev_test + 0.2 * normal((), dtype=DTYPE)
         else:
             # Grokking: sudden generalization
             progress = (step - generalization_phase) / (steps - generalization_phase)

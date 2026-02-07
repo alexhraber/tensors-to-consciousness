@@ -4,6 +4,8 @@ import jax.numpy as jnp
 
 from utils import DTYPE, init_linear, linear, normal, softmax, viz_stage
 
+VIZ_META = {}
+
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES (JAX)")
 print("=" * 50)
 

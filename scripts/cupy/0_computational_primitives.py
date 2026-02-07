@@ -3,6 +3,8 @@ import cupy as cp
 
 from utils import DTYPE, normal, viz_stage
 
+VIZ_META = {}
+
 print("🧮 COMPUTATIONAL PRIMITIVES (CuPy)")
 print("=" * 50)
 

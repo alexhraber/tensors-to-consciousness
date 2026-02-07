@@ -4,6 +4,8 @@ import jax.numpy as jnp
 
 from utils import DTYPE, viz_stage
 
+VIZ_META = {}
+
 print("🎯 OPTIMIZATION THEORY (JAX)")
 print("=" * 50)
 

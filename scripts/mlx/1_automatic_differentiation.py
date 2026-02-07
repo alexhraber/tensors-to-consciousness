@@ -2,6 +2,8 @@
 import mlx.core as mx
 from utils import viz_stage
 
+VIZ_META = {}
+
 print("∇ AUTOMATIC DIFFERENTIATION THEORY")
 print("=" * 50)
 

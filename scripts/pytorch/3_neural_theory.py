@@ -4,6 +4,8 @@ import torch.nn as nn
 
 from utils import DTYPE, gelu, normal, scalar, sigmoid, tree_l2_norm, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🧠 NEURAL NETWORK THEORY (PyTorch)")
 print("=" * 50)
 

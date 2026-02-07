@@ -1,7 +1,9 @@
 # 3_neural_theory.py
 import mlx.core as mx
 import mlx.nn as nn
-from utils import viz_stage
+from utils import normal, uniform, viz_stage
+
+VIZ_META = {}
 
 print("🧠 NEURAL NETWORK THEORY")
 print("=" * 50)
@@ -61,7 +63,7 @@ def analyze_layer_activations(model, x):
 
 # Test information flow
 model = UniversalApproximator(32)
-test_input = mx.random.normal((10, 1), dtype=DTYPE)
+test_input = normal((10, 1), dtype=DTYPE)
 activations = analyze_layer_activations(model, test_input)
 
 # 3. GRADIENT FLOW: How learning propagates
@@ -74,7 +76,7 @@ def loss_function(model, x, y):
     return mx.mean((predictions - y)**2)
 
 # Generate training data
-x_train = mx.random.uniform(-1, 1, (100, 1), dtype=DTYPE)
+x_train = uniform(-1, 1, (100, 1), dtype=DTYPE)
 y_train = target_function(x_train)
 
 # Compute gradients
@@ -105,7 +107,7 @@ def compare_activations(x):
         std_val = mx.std(activation)
         print(f"{name:>8}: mean={mean_val:.4f}, std={std_val:.4f}")
 
-test_x = mx.random.normal((1000,), dtype=DTYPE)
+test_x = normal((1000,), dtype=DTYPE)
 compare_activations(test_x)
 
 viz_stage("stage_final", locals())

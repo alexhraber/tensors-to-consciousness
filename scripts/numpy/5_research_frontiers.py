@@ -3,6 +3,8 @@ import numpy as np
 
 from utils import DTYPE, init_linear, linear, normal, viz_stage
 
+VIZ_META = {}
+
 print("🚀 RESEARCH FRONTIERS (NumPy)")
 print("=" * 50)
 

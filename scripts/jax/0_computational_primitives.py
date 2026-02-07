@@ -3,6 +3,8 @@ import jax.numpy as jnp
 
 from utils import DTYPE, normal, viz_stage
 
+VIZ_META = {}
+
 print("🧮 COMPUTATIONAL PRIMITIVES (JAX)")
 print("=" * 50)
 

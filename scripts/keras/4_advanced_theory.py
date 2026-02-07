@@ -5,6 +5,8 @@ from keras import ops
 
 from utils import DTYPE, finite_diff_grad_vector, normal, scalar, softmax, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🔬 ADVANCED COMPUTATIONAL THEORY (Keras)")
 print("=" * 50)
 

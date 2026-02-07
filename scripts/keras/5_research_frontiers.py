@@ -5,6 +5,8 @@ from keras import ops
 
 from utils import DTYPE, normal, scalar, viz_stage
 
+VIZ_META = {}
+
 print("🚀 RESEARCH FRONTIERS (Keras)")
 print("=" * 50)
 
@@ -106,12 +108,12 @@ def simulate_grokking_dynamics(steps=1000):
     for step in range(steps):
         if step < memorization_phase:
             train_loss = 2.0 * np.exp(-step / 100)
-            test_loss = 2.0 + 0.1 * np.random.randn()
+            test_loss = 2.0 + 0.1 * scalar(normal((), dtype=DTYPE))
         elif step < generalization_phase:
             prev_train = train_losses[-1] if train_losses else 0.5
             prev_test = test_losses[-1] if test_losses else 2.0
-            train_loss = prev_train + 0.1 * np.random.randn()
-            test_loss = prev_test + 0.2 * np.random.randn()
+            train_loss = prev_train + 0.1 * scalar(normal((), dtype=DTYPE))
+            test_loss = prev_test + 0.2 * scalar(normal((), dtype=DTYPE))
         else:
             progress = (step - generalization_phase) / (steps - generalization_phase)
             train_loss = 0.1 + 0.05 * np.exp(-progress * 5)

@@ -3,6 +3,8 @@ import torch
 
 from utils import DTYPE, scalar, viz_stage
 
+VIZ_META = {}
+
 print("🎯 OPTIMIZATION THEORY (PyTorch)")
 print("=" * 50)
 

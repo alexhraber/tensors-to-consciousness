@@ -1,7 +1,9 @@
 # 4_advanced_theory.py
 import mlx.core as mx
 import mlx.nn as nn
-from utils import viz_stage
+from utils import normal, uniform, viz_stage
+
+VIZ_META = {}
 
 print("🔬 ADVANCED COMPUTATIONAL THEORY")
 print("=" * 50)
@@ -14,8 +16,8 @@ print("\n--- Manifold Learning Theory ---")
 
 def generate_swiss_roll(n_samples):
     """Generate Swiss roll manifold - 2D surface embedded in 3D"""
-    t = mx.random.uniform(0, 4*mx.pi, (n_samples,), dtype=DTYPE)
-    height = mx.random.uniform(-10, 10, (n_samples,), dtype=DTYPE)
+    t = uniform(0, 4*mx.pi, (n_samples,), dtype=DTYPE)
+    height = uniform(-10, 10, (n_samples,), dtype=DTYPE)
     
     x = t * mx.cos(t)
     y = height  
@@ -57,7 +59,7 @@ models = {
     "low_capacity": InformationBottleneck(10, 2, 5)
 }
 
-test_data = mx.random.normal((100, 10), dtype=DTYPE)
+test_data = normal((100, 10), dtype=DTYPE)
 for name, model in models.items():
     output, bottleneck = model(test_data)
     compression_ratio = 10 / model.bottleneck_dim
@@ -86,9 +88,9 @@ def attention_mechanism(queries, keys, values, temperature=1.0):
     return output, attention_weights
 
 # Example: 3 queries attending to 4 keys/values
-queries = mx.random.normal((3, 64), dtype=DTYPE)
-keys = mx.random.normal((4, 64), dtype=DTYPE)  
-values = mx.random.normal((4, 64), dtype=DTYPE)
+queries = normal((3, 64), dtype=DTYPE)
+keys = normal((4, 64), dtype=DTYPE)  
+values = normal((4, 64), dtype=DTYPE)
 
 attended_output, weights = attention_mechanism(queries, keys, values)
 
@@ -124,7 +126,7 @@ def sphere_objective(x):
     target = mx.array([1.0, 0.0, 0.0], dtype=DTYPE)  # Want to reach north pole
     return mx.sum((x - target)**2)
 
-x = project_to_sphere(mx.random.normal((3,), dtype=DTYPE))  # Start on sphere
+x = project_to_sphere(normal((3,), dtype=DTYPE))  # Start on sphere
 print(f"Optimizing on sphere manifold:")
 print(f"Initial: obj={sphere_objective(x):.6f}, ||x||={mx.sqrt(mx.sum(x**2)):.6f}")
 

@@ -3,6 +3,8 @@ from keras import ops
 
 from utils import DTYPE, normal, scalar, viz_stage
 
+VIZ_META = {}
+
 print("🧮 COMPUTATIONAL PRIMITIVES (Keras)")
 print("=" * 50)
 

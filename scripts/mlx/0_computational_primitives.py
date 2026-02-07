@@ -1,6 +1,8 @@
 # 0_computational_primitives.py
 import mlx.core as mx
-from utils import viz_stage
+from utils import normal, viz_stage
+
+VIZ_META = {}
 
 print("🧮 COMPUTATIONAL PRIMITIVES")
 print("=" * 50)
@@ -12,7 +14,7 @@ print("\n--- Tensors as Computational Objects ---")
 scalar = mx.array(42, dtype=mx.float32)           # 0D tensor (point)
 vector = mx.array([1, 2, 3], dtype=mx.float32)      # 1D tensor (line)  
 matrix = mx.array([[1, 2], [3, 4]], dtype=mx.float32) # 2D tensor (plane)
-tensor_3d = mx.random.normal((2, 3, 4)) # 3D tensor (volume)
+tensor_3d = normal((2, 3, 4)) # 3D tensor (volume)
 
 print(f"Scalar (0D): {scalar} - represents a single value")
 print(f"Vector (1D): {vector} - represents direction & magnitude")
@@ -44,7 +46,7 @@ print(f"Matrix mult:\n{A} @\n{B} =\n{C}")
 # 3. REDUCTION OPERATIONS: From many to few
 viz_stage("stage_2", locals())
 print("\n--- Reduction Operations ---")
-data = mx.random.normal((1000,))
+data = normal((1000,))
 
 # These operations compress information
 mean = mx.mean(data)

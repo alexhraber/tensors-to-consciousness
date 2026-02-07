@@ -7,7 +7,25 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.common_viz import viz_stage as _common_viz_stage
+from tools.input_controls import annotate, metadata_for_scope, resolve_seed, tune_normal, tune_uniform
 
+
+DTYPE = mx.float32
+try:
+    mx.random.seed(resolve_seed("mlx", 0))
+except Exception:
+    pass
+
+
+def normal(shape, dtype=DTYPE):
+    cfg = tune_normal("mlx", shape)
+    sample = mx.random.normal(cfg["shape"], dtype=dtype)
+    return sample * cfg["std"] + cfg["mean"]
+
+
+def uniform(low, high, shape, dtype=DTYPE):
+    cfg = tune_uniform("mlx", low, high, shape)
+    return mx.random.uniform(cfg["low"], cfg["high"], cfg["shape"], dtype=dtype)
 
 
 def _to_numpy(value):
@@ -26,4 +44,10 @@ def _to_numpy(value):
 
 
 def viz_stage(stage, scope):
-    _common_viz_stage(stage, scope, _to_numpy, framework="mlx")
+    _common_viz_stage(
+        stage,
+        scope,
+        _to_numpy,
+        framework="mlx",
+        metadata=metadata_for_scope("mlx", scope),
+    )

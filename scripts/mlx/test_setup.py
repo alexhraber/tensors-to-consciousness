@@ -1,6 +1,7 @@
 import time
 
 import mlx.core as mx
+from utils import normal
 
 
 print("MLX Setup Test")
@@ -18,8 +19,8 @@ print(f"x + y = {x + y}")
 print(f"x * y = {x * y}")
 
 print("\n--- Matrix Operations ---")
-a = mx.random.normal((100, 100))
-b = mx.random.normal((100, 100))
+a = normal((100, 100))
+b = normal((100, 100))
 
 start = time.time()
 c = mx.matmul(a, b)

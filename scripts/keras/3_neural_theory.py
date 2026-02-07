@@ -6,6 +6,8 @@ from keras import ops
 
 from utils import DTYPE, gelu, normal, relu, scalar, sigmoid, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🧠 NEURAL NETWORK THEORY (Keras)")
 print("=" * 50)
 

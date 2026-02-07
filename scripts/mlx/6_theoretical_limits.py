@@ -1,7 +1,9 @@
 # 6_theoretical_limits_fixed.py
 import mlx.core as mx
 import mlx.nn as nn
-from utils import viz_stage
+from utils import normal, viz_stage
+
+VIZ_META = {}
 
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES")
 print("=" * 50)
@@ -41,7 +43,7 @@ def fisher_information_matrix(model, x):
 
 # Test information geometry
 simple_model = nn.Linear(5, 3)
-test_data = mx.random.normal((10, 5), dtype=DTYPE)
+test_data = normal((10, 5), dtype=DTYPE)
 
 fisher_matrix = fisher_information_matrix(simple_model, test_data)
 if fisher_matrix is not None:
@@ -105,7 +107,7 @@ def estimate_kolmogorov_complexity(data):
     return complexities
 
 # Test on different data types
-random_data = mx.random.normal((100,), dtype=DTYPE)
+random_data = normal((100,), dtype=DTYPE)
 structured_data = mx.sin(mx.arange(0, 4*mx.pi, 4*mx.pi/100, dtype=DTYPE))
 
 random_complexity = estimate_kolmogorov_complexity(random_data)
@@ -125,8 +127,8 @@ def quantum_superposition_layer(x, n_qubits=4):
     batch_size, input_dim = x.shape
     
     # Create complex-valued amplitudes
-    real_amplitudes = mx.random.normal((batch_size, n_qubits), dtype=DTYPE)
-    imag_amplitudes = mx.random.normal((batch_size, n_qubits), dtype=DTYPE)
+    real_amplitudes = normal((batch_size, n_qubits), dtype=DTYPE)
+    imag_amplitudes = normal((batch_size, n_qubits), dtype=DTYPE)
     
     # Normalize for probability conservation
     amplitude_norms = mx.sqrt(real_amplitudes**2 + imag_amplitudes**2)
@@ -142,7 +144,7 @@ def quantum_superposition_layer(x, n_qubits=4):
     
     return classical_output, probabilities
 
-quantum_input = mx.random.normal((5, 8), dtype=DTYPE)
+quantum_input = normal((5, 8), dtype=DTYPE)
 quantum_output, quantum_probs = quantum_superposition_layer(quantum_input)
 
 print(f"Quantum output shape: {quantum_output.shape}")
@@ -175,10 +177,10 @@ def compute_phi(network_state, connectivity_matrix):
     return float(phi), float(connectivity_strength)
 
 # Test consciousness measures
-connected_state = mx.softmax(mx.random.normal((6,), dtype=DTYPE), axis=0)
-connected_matrix = mx.random.normal((6, 6), dtype=DTYPE) * 0.8
+connected_state = mx.softmax(normal((6,), dtype=DTYPE), axis=0)
+connected_matrix = normal((6, 6), dtype=DTYPE) * 0.8
 
-disconnected_state = mx.softmax(mx.random.normal((6,), dtype=DTYPE), axis=0) 
+disconnected_state = mx.softmax(normal((6,), dtype=DTYPE), axis=0) 
 disconnected_matrix = mx.eye(6, dtype=DTYPE) * 0.1
 
 phi_connected, conn_connected = compute_phi(connected_state, connected_matrix)
@@ -270,7 +272,7 @@ def compute_learning_thermodynamics(model, data, learning_rate):
     }
 
 thermo_model = nn.Linear(10, 5)
-thermo_data = mx.random.normal((20, 10), dtype=DTYPE)
+thermo_data = normal((20, 10), dtype=DTYPE)
 
 thermodynamics = compute_learning_thermodynamics(thermo_model, thermo_data, 0.01)
 

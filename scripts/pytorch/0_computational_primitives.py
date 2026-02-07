@@ -3,6 +3,8 @@ import torch
 
 from utils import DTYPE, normal, scalar, viz_stage
 
+VIZ_META = {}
+
 print("🧮 COMPUTATIONAL PRIMITIVES (PyTorch)")
 print("=" * 50)
 

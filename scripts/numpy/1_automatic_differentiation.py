@@ -3,6 +3,8 @@ import numpy as np
 
 from utils import DTYPE, finite_diff_grad_scalar, finite_diff_grad_vector, viz_stage
 
+VIZ_META = {}
+
 print("∇ AUTOMATIC DIFFERENTIATION THEORY (NumPy via finite differences)")
 print("=" * 50)
 

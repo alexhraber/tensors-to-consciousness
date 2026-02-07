@@ -3,6 +3,8 @@ import cupy as cp
 
 from utils import DTYPE, finite_diff_grad_scalar, viz_stage
 
+VIZ_META = {}
+
 print("🎯 OPTIMIZATION THEORY (CuPy)")
 print("=" * 50)
 

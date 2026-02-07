@@ -310,15 +310,42 @@ def _ascii_heatmap(arr: np.ndarray, width: int = 36, height: int = 12) -> str:
 
 
 def _viz_caption(mode: str, arr: np.ndarray) -> str:
+    vals = np.asarray(arr, dtype=np.float32).reshape(-1)
+    spread = float(np.std(vals))
+    span = float(np.max(vals) - np.min(vals))
+    zeros = float(np.mean(np.isclose(vals, 0.0)))
+
     if mode == "plots":
         if arr.ndim == 1 or (arr.ndim == 2 and 1 in arr.shape):
-            return "Caption: Line plot of tensor values over index."
-        return "Caption: Heatmap plot showing tensor intensity across dimensions."
+            start = float(vals[0])
+            end = float(vals[-1])
+            drift = end - start
+            if drift > max(1e-6, 0.05 * spread):
+                trend = "upward"
+            elif drift < -max(1e-6, 0.05 * spread):
+                trend = "downward"
+            else:
+                trend = "flat"
+            tone = "volatile" if spread > 0.75 else "stable"
+            return f"Signal is {trend} with {tone} variation."
+        contrast = "high-contrast" if span > 2.0 * max(1e-6, spread) else "low-contrast"
+        return f"Tensor field shows {contrast} structure across dimensions."
+
     if mode == "heatmap":
-        return "Caption: Synthesized heatmap approximating tensor magnitude distribution."
+        pocket = "outlier pockets" if span > 3.0 * max(1e-6, spread) else "smooth gradients"
+        return f"Synthesized map highlights {pocket} and intensity flow."
+
     if mode == "matrix":
-        return "Caption: Coarse matrix view emphasizing relative tensor magnitude."
-    return "Caption: ASCII fallback summarizing tensor structure and intensity."
+        density = "sparse" if zeros > 0.5 else "dense"
+        return f"Matrix bins preserve rank intensity in a {density} field."
+
+    return "ASCII retains coarse structure for non-graphics terminals."
+
+
+def _format_caption(text: str) -> str:
+    if _supports_graphical_terminal():
+        return f"\x1b[38;2;139;233;253m╰─ ⟡ Insight\x1b[0m \x1b[3m{text}\x1b[0m"
+    return f"Insight: {text}"
 
 
 def viz_stage(
@@ -326,6 +353,7 @@ def viz_stage(
     scope: dict[str, Any],
     to_numpy: Callable[[Any], np.ndarray | None],
     framework: str,
+    metadata: dict[str, str] | None = None,
     limit: int = 3,
 ) -> None:
     if os.environ.get("T2C_VIZ", "1").strip().lower() in {"0", "false", "off", "no"}:
@@ -393,6 +421,11 @@ def viz_stage(
             f"- {name}: shape={arr_f.shape} mean={arr_f.mean():.4f} "
             f"std={arr_f.std():.4f} min={arr_f.min():.4f} max={arr_f.max():.4f}"
         )
+        if metadata and name in metadata:
+            if _supports_graphical_terminal():
+                print(f"\x1b[38;2;255;203;107m  ↳ {metadata[name]}\x1b[0m")
+            else:
+                print(f"  -> {metadata[name]}")
         if chosen == "plots":
             png_bytes = _matplotlib_plot_png(arr_f, width_px=960, height_px=540)
             if png_bytes is not None:
@@ -405,4 +438,4 @@ def viz_stage(
             print(_full_block_heatmap(arr_f, width=72, height=30))
         else:
             print(_ascii_heatmap(arr_f))
-        print(_viz_caption(chosen, arr_f))
+        print(_format_caption(_viz_caption(chosen, arr_f)))

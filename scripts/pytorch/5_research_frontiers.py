@@ -4,6 +4,8 @@ import torch.nn as nn
 
 from utils import DTYPE, normal, scalar, viz_stage
 
+VIZ_META = {}
+
 print("🚀 RESEARCH FRONTIERS (PyTorch)")
 print("=" * 50)
 

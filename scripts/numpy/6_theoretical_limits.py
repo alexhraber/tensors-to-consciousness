@@ -3,6 +3,8 @@ import numpy as np
 
 from utils import DTYPE, finite_diff_grad_dict, init_linear, linear, normal, softmax, viz_stage
 
+VIZ_META = {}
+
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES (NumPy)")
 print("=" * 50)
 

@@ -3,6 +3,8 @@ import numpy as np
 
 from utils import DTYPE, finite_diff_grad_vector, init_linear, linear, normal, softmax, uniform, viz_stage
 
+VIZ_META = {}
+
 print("🔬 ADVANCED COMPUTATIONAL THEORY (NumPy)")
 print("=" * 50)
 

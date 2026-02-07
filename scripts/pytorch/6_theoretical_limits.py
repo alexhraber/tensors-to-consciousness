@@ -4,6 +4,8 @@ import torch.nn as nn
 
 from utils import DTYPE, normal, scalar, softmax, viz_stage
 
+VIZ_META = {}
+
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES (PyTorch)")
 print("=" * 50)
 

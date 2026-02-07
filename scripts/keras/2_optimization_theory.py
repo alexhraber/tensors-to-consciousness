@@ -3,6 +3,8 @@ import numpy as np
 
 from utils import DTYPE, finite_diff_grad_scalar, viz_stage
 
+VIZ_META = {}
+
 print("🎯 OPTIMIZATION THEORY (Keras)")
 print("=" * 50)
 

@@ -3,6 +3,8 @@ import numpy as np
 
 from utils import DTYPE, normal, viz_stage
 
+VIZ_META = {}
+
 print("🧮 COMPUTATIONAL PRIMITIVES (NumPy)")
 print("=" * 50)
 

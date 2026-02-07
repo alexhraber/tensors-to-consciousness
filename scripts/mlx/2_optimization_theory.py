@@ -2,6 +2,8 @@
 import mlx.core as mx
 from utils import viz_stage
 
+VIZ_META = {}
+
 print("🎯 OPTIMIZATION THEORY")
 print("=" * 50)
 

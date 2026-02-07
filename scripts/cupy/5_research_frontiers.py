@@ -3,6 +3,8 @@ import cupy as cp
 
 from utils import DTYPE, init_linear, linear, normal, viz_stage
 
+VIZ_META = {}
+
 print("🚀 RESEARCH FRONTIERS (CuPy)")
 print("=" * 50)
 

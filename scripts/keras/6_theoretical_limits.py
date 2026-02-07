@@ -6,6 +6,8 @@ from keras import ops
 
 from utils import DTYPE, normal, scalar, softmax, viz_stage
 
+VIZ_META = {}
+
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES (Keras)")
 print("=" * 50)
 
