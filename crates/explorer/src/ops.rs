@@ -213,7 +213,17 @@ fn bootstrap(quiet: bool, strict: bool) -> Result<()> {
     // Ensure pre-commit is installed. Prefer `uv` when available.
     if !which("pre-commit") {
         if which("uv") {
-            let _ = run_status(&["uv", "pip", "install", "pre-commit"], quiet);
+            let root = repo_root()?;
+            let status = Command::new("uv")
+                .args(["pip", "install", "pre-commit"])
+                // Keep cache local to the repo to avoid permission pitfalls and improve reuse.
+                .env("UV_CACHE_DIR", root.join(".uv-cache"))
+                .current_dir(&root)
+                .status()
+                .context("uv pip install pre-commit")?;
+            if !status.success() && !quiet {
+                eprintln!("warning: failed to install pre-commit via uv");
+            }
         } else if which("python") {
             let _ = run_status(&["python", "-m", "pip", "install", "pre-commit"], quiet);
         }
