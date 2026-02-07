@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Primary execution entrypoint for configured framework research modules."""
+"""Primary execution entrypoint for configured framework algorithm playground."""
 
 from __future__ import annotations
 
@@ -9,17 +9,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from algos.registry import execution_modules_for_framework
+from algos.registry import list_algorithm_keys
+from algos.registry import resolve_algorithm_keys
 from tools.runtime import SUPPORTED_FRAMEWORKS, load_config, python_in_venv
 
-MODULE_FILES = [
-    "0_computational_primitives.py",
-    "1_automatic_differentiation.py",
-    "2_optimization_theory.py",
-    "3_neural_theory.py",
-    "4_advanced_theory.py",
-    "5_research_frontiers.py",
-    "6_theoretical_limits.py",
-]
 DEFAULT_FRAMEWORK = "numpy"
 
 
@@ -30,12 +24,12 @@ def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run T2C interactive studio or research targets for a selected framework."
+        description="Run T2C interactive studio or sandbox algorithm targets for a selected framework."
     )
     parser.add_argument(
         "target",
         nargs="?",
-        help="One of: validate, viz, 0,1,2,3,4,5,6, all (default: interactive studio).",
+        help="One of: validate, viz, run (default: interactive studio).",
     )
     parser.add_argument(
         "--framework",
@@ -53,15 +47,20 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--inputs",
-        help="Path to input-override JSON (or raw JSON string) used by all scripts.",
+        help="Path to input-override JSON (or raw JSON string) used by playground runs.",
     )
     parser.add_argument(
-        "--module",
-        help="Module/profile selector for TUI visualizations (0..6 or title fragment).",
+        "--algos",
+        help="Comma-separated algorithm keys, or 'default'/'all' (default: default).",
     )
     parser.add_argument(
         "--algorithm",
-        help="Algorithm selector for the selected module (key or title fragment).",
+        help="Initial algorithm selector for TUI (key or title fragment).",
+    )
+    parser.add_argument(
+        "--list-algos",
+        action="store_true",
+        help="Print available algorithm keys and exit.",
     )
     parser.add_argument(
         "-c",
@@ -139,12 +138,18 @@ def ensure_setup_if_needed(
 
 def main() -> int:
     args = parse_args()
+    if getattr(args, "list_algos", False):
+        print("Available algos:")
+        for key in list_algorithm_keys():
+            print(f"- {key}")
+        return 0
+
     repo_root = Path(__file__).resolve().parent
     os.chdir(repo_root)
     env = os.environ.copy()
     inputs = getattr(args, "inputs", None)
-    module_selector = getattr(args, "module", None)
     algorithm_selector = getattr(args, "algorithm", None)
+    algo_selector = getattr(args, "algos", None)
 
     existing_framework = None
     try:
@@ -181,11 +186,16 @@ def main() -> int:
         if setup_ran:
             run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         if force_cli:
-            scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]
+            try:
+                algo_keys = resolve_algorithm_keys(algo_selector)
+            except ValueError as exc:
+                print(str(exc), file=sys.stderr)
+                return 1
+            module_paths = execution_modules_for_framework(framework, algo_keys)
         else:
             cmd = [str(py), "-m", "tools.tui", "--framework", framework]
-            if module_selector:
-                cmd.extend(["--module", module_selector])
+            if algo_selector:
+                cmd.extend(["--algos", algo_selector])
             if algorithm_selector:
                 cmd.extend(["--algorithm", algorithm_selector])
             run_cmd(cmd, env=env)
@@ -195,23 +205,25 @@ def main() -> int:
         return 0
     elif args.target == "viz":
         cmd = [str(py), "-m", "tools.tui", "--framework", framework]
-        if module_selector:
-            cmd.extend(["--module", module_selector])
+        if algo_selector:
+            cmd.extend(["--algos", algo_selector])
         if algorithm_selector:
             cmd.extend(["--algorithm", algorithm_selector])
         run_cmd(cmd, env=env)
         return 0
-    elif args.target == "all":
-        scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]
-    elif args.target in {str(i) for i in range(7)}:
-        idx = int(args.target)
-        scripts = [f"scripts/{framework}/{MODULE_FILES[idx]}"]
+    elif args.target == "run":
+        try:
+            algo_keys = resolve_algorithm_keys(algo_selector)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        module_paths = execution_modules_for_framework(framework, algo_keys)
     else:
-        print("Invalid target. Use: validate, viz, 0,1,2,3,4,5,6, all", file=sys.stderr)
+        print("Invalid target. Use: validate, viz, run", file=sys.stderr)
         return 1
 
-    for script in scripts:
-        run_cmd([str(py), script], env=env)
+    for module in module_paths:
+        run_cmd([str(py), "-m", module], env=env)
     return 0
 
 

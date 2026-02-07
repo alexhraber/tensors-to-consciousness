@@ -86,7 +86,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-validate",
         action="store_true",
-        help="Install dependencies but do not run validation scripts.",
+        help="Install dependencies but do not run validation modules.",
     )
     return parser.parse_args()
 
@@ -115,8 +115,8 @@ def main() -> int:
         print("Use these commands:")
         print("  python main.py validate")
         print("  python main.py viz")
-        print("  python main.py 0")
-        print("  python main.py all")
+        print("  python main.py run --algos default")
+        print("  python main.py --list-algos")
 
     print("\nSetup complete.")
     return 0

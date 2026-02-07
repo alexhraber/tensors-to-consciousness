@@ -30,7 +30,7 @@ def main() -> int:
     framework = args.framework or load_config()["framework"]
     script = validate_script_for_framework(framework)
 
-    framework_dir = ROOT / "scripts" / framework
+    framework_dir = ROOT / "frameworks" / framework
     if str(framework_dir) not in sys.path:
         sys.path.insert(0, str(framework_dir))
     runpy.run_path(str((ROOT / script).resolve()), run_name="__main__")

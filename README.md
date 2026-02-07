@@ -67,6 +67,26 @@ The entire research track is implemented in each of the following frameworks:
 - `keras`
 - `cupy`
 
+## Algorithm Layout
+
+Algorithm implementations live under `algos/<framework>/`.
+Framework backends live under `frameworks/<framework>/` and provide reusable ops/models utilities.
+Algorithm ordering, complexity ranking, defaults, and execution mapping are centralized in `algos/registry.py`.
+
+To scaffold a new abstract algorithm + backend adapters:
+
+```bash
+python tools/scaffold_algo.py --complexity 2 --key rk4_solver --title "RK4 Solver" --formula "x_{t+1}=x_t+..." --description "Fourth-order integration"
+```
+
+Sandbox-style runs use algorithm combinations instead of fixed `0..6` module targets:
+
+```bash
+python main.py run --framework jax --algos chain_rule,gradient_descent,adam
+python main.py viz --framework jax --algos all
+python main.py --list-algos
+```
+
 ## Notes
 
 - `python -m tests` validates CLI/setup/runtime operations.

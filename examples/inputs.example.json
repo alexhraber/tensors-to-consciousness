@@ -5,7 +5,7 @@
       "seed": 7,
       "normal": { "mean": 0.0, "std": 0.5 },
       "uniform": { "low": -0.5, "high": 0.5 },
-      "scripts": {
+      "modules": {
         "0_computational_primitives.py": {
           "calls": {
             "tensor_3d": { "shape": [4, 4, 4], "std": 0.25 },

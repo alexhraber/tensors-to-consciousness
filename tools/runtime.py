@@ -27,4 +27,4 @@ def validate_script_for_framework(framework: str) -> str:
         raise RuntimeError(
             f"Unsupported framework '{framework}'. Run `python -m tools.setup <framework>` first."
         )
-    return f"scripts/{framework}/test_setup.py"
+    return f"frameworks/{framework}/test_setup.py"

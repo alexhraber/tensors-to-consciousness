@@ -12,8 +12,8 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 ## Controls
 
 - `m` / `M`: cycle mode forward/reverse (`simple`, `advanced`, `ultra`)
-- `n` / `b`: module profile next/back (`0..6`)
-- `a` / `A`: algorithm next/back within the active module
+- `n` / `b`: algorithm next/back within selected algo set
+- `a` / `A`: alias next/back for rapid cycling
 - `f`: framework selector modal
 - `p`: compute platform selector (`cpu` / `gpu`)
 - `i`: guided parameter input
@@ -29,13 +29,13 @@ If no framework config exists yet, it defaults to `numpy` (no onboarding prompt)
 - `advanced`: tunable algorithm parameters with formula + description.
 - `ultra`: advanced controls + live transformation motion.
 
-## Start at a Specific Module + Algorithm
+## Start with a Specific Algo Set
 
 ```bash
-python main.py viz --module 2 --algorithm momentum
+python main.py viz --algos gradient_descent,momentum,adam --algorithm momentum
 ```
 
-- `--module`: `0..6` or title fragment
-- `--algorithm`: algorithm key or title fragment in selected module
+- `--algos`: comma-separated algorithm keys, or `default`/`all`
+- `--algorithm`: key/title to focus initially
 
 For non-interactive command usage, see `docs/cli.md`.

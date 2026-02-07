@@ -82,8 +82,22 @@ def _distribution_overrides(framework: str, dist: str, ctx: dict[str, Any]) -> d
     base = _to_dict(cfg)
     fw = _to_dict(_to_dict(cfg.get("frameworks")).get(framework))
     script_name = str(ctx.get("script", ""))
-    base_script = _to_dict(_to_dict(base.get("scripts")).get(script_name))
-    fw_script = _to_dict(_to_dict(fw.get("scripts")).get(script_name))
+    # Preferred key for per-module overrides is `modules`.
+    # Keep compatibility with legacy `scripts` and transitional `frameworks`.
+    base_modules = _to_dict(base.get("modules"))
+    if not base_modules:
+        base_modules = _to_dict(base.get("scripts"))
+    if not base_modules:
+        base_modules = _to_dict(base.get("frameworks"))
+
+    fw_modules = _to_dict(fw.get("modules"))
+    if not fw_modules:
+        fw_modules = _to_dict(fw.get("scripts"))
+    if not fw_modules:
+        fw_modules = _to_dict(fw.get("frameworks"))
+
+    base_script = _to_dict(base_modules.get(script_name))
+    fw_script = _to_dict(fw_modules.get(script_name))
 
     merged = _merge_dicts(
         _to_dict(base.get(dist)),

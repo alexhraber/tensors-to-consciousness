@@ -10,22 +10,23 @@ For interactive studio usage, see `docs/tui.md`.
 python main.py --help
 python main.py -c
 python main.py validate
-python main.py all --framework jax
+python main.py run --framework jax --algos default
+python main.py --list-algos
 ```
 
 ## Direct Visualization Fetch
 
 ```bash
-python main.py viz --module 2 --algorithm momentum
+python main.py viz --algos gradient_descent,momentum --algorithm momentum
 ```
 
-- `--module`: `0..6` or title fragment
-- `--algorithm`: algorithm key or title fragment in selected module
+- `--algos`: comma-separated algorithm keys, or `default`/`all`
+- `--algorithm`: initial focused algorithm key/title for the TUI
 
 ## Input Overrides
 
 ```bash
-python main.py all --framework jax --inputs examples/inputs.example.json
+python main.py run --framework jax --algos chain_rule,adam --inputs examples/inputs.example.json
 ```
 
 `--inputs` supports:

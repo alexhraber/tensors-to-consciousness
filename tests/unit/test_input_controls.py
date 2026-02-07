@@ -50,7 +50,7 @@ class InputControlsTests(unittest.TestCase):
             "frameworks": {
                 "jax": {
                     "normal": {"std": 2.0},
-                    "scripts": {
+                    "modules": {
                         "test_input_controls.py": {
                             "normal": {"std": 3.0},
                             "calls": {
@@ -76,7 +76,7 @@ class InputControlsTests(unittest.TestCase):
         cfg = {
             "frameworks": {
                 "jax": {
-                    "scripts": {
+                    "modules": {
                         "test_input_controls.py": {
                             "calls": {str(line): {"shape": [11], "std": 0.25}}
                         }
@@ -93,4 +93,3 @@ class InputControlsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

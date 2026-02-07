@@ -2,9 +2,11 @@
 
 ## Architecture
 
-The repo is framework-track based.
+The repo is sandbox/playground based.
 
-- Source implementations live in `scripts/<framework>/`
+- Algorithm implementations live in `algos/<framework>/`
+- Framework backends live in `frameworks/<framework>/`
+- Algorithm registry (ordering/complexity/defaults) lives in `algos/registry.py`
 - Operational commands are:
   - `main.py` (single public entrypoint; setup is auto-triggered)
 
@@ -12,7 +14,7 @@ The repo is framework-track based.
 
 ```bash
 python main.py
-python main.py all
+python main.py run --algos default
 python -m tests
 ```
 
@@ -22,19 +24,13 @@ python -m tests
 
 A framework track should include:
 
-- `scripts/<framework>/utils.py`
-- `scripts/<framework>/test_setup.py`
-- `scripts/<framework>/0_computational_primitives.py`
-- `scripts/<framework>/1_automatic_differentiation.py`
-- `scripts/<framework>/2_optimization_theory.py`
-- `scripts/<framework>/3_neural_theory.py`
-- `scripts/<framework>/4_advanced_theory.py`
-- `scripts/<framework>/5_research_frontiers.py`
-- `scripts/<framework>/6_theoretical_limits.py`
+- `frameworks/<framework>/utils.py`
+- `frameworks/<framework>/test_setup.py`
+- optional adapter modules under `frameworks/<framework>/algorithms/`
 
 Requirements:
 
-- Keep research-module names and sequence identical.
+- Keep algorithm behavior aligned across frameworks.
 - Keep conceptual behavior aligned across frameworks.
 - Prefer framework-native autodiff where available.
 - If numerical gradients are required, document it in `README.md`.
@@ -44,13 +40,15 @@ Requirements:
 When adding/changing frameworks:
 
 1. Update `tools/setup.py` framework map (`deps`, `validate` script).
-2. Ensure `main.py` can resolve the framework name and scripts.
-3. Validate setup + run path:
+2. Ensure `main.py` can resolve the framework name and algorithm selection.
+3. Add/update algorithm metadata in `algos/registry.py`.
+4. Prefer scaffolding new abstract algorithms via `python tools/scaffold_algo.py ...`.
+5. Validate setup + run path:
 
 ```bash
 python main.py
 python main.py validate
-python main.py 0
+python main.py run --algos default
 ```
 
 ## Documentation expectations
@@ -63,5 +61,5 @@ python main.py 0
 ## Hygiene
 
 - Do not commit generated runtime state (`.t2c/`, `.venv/`, `out/`, `__pycache__/`).
-- Keep scripts runnable with direct `python <script>.py`.
+- Keep frameworks runnable with direct `python <script>.py`.
 - Prefer small, focused commits with clear messages.

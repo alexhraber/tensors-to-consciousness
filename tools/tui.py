@@ -14,6 +14,8 @@ import termios
 import tty
 from types import ModuleType
 
+from algos.registry import build_tui_profiles
+from algos.registry import resolve_algorithm_keys
 from tools import runtime
 from tools import shinkei
 
@@ -25,155 +27,7 @@ ULTRA_TRANSFORMS = (
 )
 ULTRA_REFRESH_SECONDS = 0.45
 VIEW_ORDER = ("simplified", "advanced", "ultra")
-SCRIPT_PROFILES = (
-    {
-        "id": "0",
-        "title": "Computational Primitives",
-        "algorithms": (
-            {
-                "key": "tensor_ops",
-                "title": "Tensor Operations",
-                "description": "Elementwise and matrix operations over structured tensors.",
-                "formula": "C = A ⊙ B,  M = A @ B",
-                "preset": {"samples": 900, "freq": 1.4, "amplitude": 0.9, "damping": 0.05, "noise": 0.06, "phase": 0.2, "grid": 72},
-            },
-            {
-                "key": "norms",
-                "title": "Norm Geometry",
-                "description": "Magnitude and stability readout across tensor trajectories.",
-                "formula": "||x||₂ = sqrt(sum_i x_i²)",
-                "preset": {"samples": 980, "freq": 1.6, "amplitude": 1.0, "damping": 0.06, "noise": 0.05, "phase": 0.3, "grid": 76},
-            },
-        ),
-    },
-    {
-        "id": "1",
-        "title": "Automatic Differentiation",
-        "algorithms": (
-            {
-                "key": "chain_rule",
-                "title": "Chain Rule Field",
-                "description": "Derivative amplification through nested nonlinearities.",
-                "formula": "d/dx sin(x²) = 2x cos(x²)",
-                "preset": {"samples": 1100, "freq": 1.9, "amplitude": 1.1, "damping": 0.08, "noise": 0.04, "phase": 0.55, "grid": 88},
-            },
-            {
-                "key": "jacobian",
-                "title": "Jacobian Sensitivity",
-                "description": "Multivariate gradient coupling across dimensions.",
-                "formula": "J_ij = ∂f_i/∂x_j",
-                "preset": {"samples": 1180, "freq": 2.05, "amplitude": 1.05, "damping": 0.09, "noise": 0.05, "phase": 0.7, "grid": 90},
-            },
-        ),
-    },
-    {
-        "id": "2",
-        "title": "Optimization Theory",
-        "algorithms": (
-            {
-                "key": "gradient_descent",
-                "title": "Gradient Descent",
-                "description": "Iterative descent dynamics over a curved objective.",
-                "formula": "xₜ₊₁ = xₜ - η∇f(xₜ)",
-                "preset": {"samples": 1200, "freq": 2.2, "amplitude": 1.0, "damping": 0.13, "noise": 0.10, "phase": 0.9, "grid": 96},
-            },
-            {
-                "key": "momentum",
-                "title": "Momentum Descent",
-                "description": "Velocity-augmented traversal with inertia memory.",
-                "formula": "vₜ₊₁ = βvₜ + ∇f(xₜ),  xₜ₊₁ = xₜ - ηvₜ₊₁",
-                "preset": {"samples": 1280, "freq": 2.35, "amplitude": 1.1, "damping": 0.11, "noise": 0.12, "phase": 1.05, "grid": 98},
-            },
-            {
-                "key": "adam",
-                "title": "Adam Dynamics",
-                "description": "Adaptive first/second moment optimization geometry.",
-                "formula": "xₜ₊₁ = xₜ - η m̂ₜ / (sqrt(v̂ₜ)+ε)",
-                "preset": {"samples": 1320, "freq": 2.5, "amplitude": 1.05, "damping": 0.12, "noise": 0.13, "phase": 1.15, "grid": 102},
-            },
-        ),
-    },
-    {
-        "id": "3",
-        "title": "Neural Theory",
-        "algorithms": (
-            {
-                "key": "forward_pass",
-                "title": "Forward Composition",
-                "description": "Layered nonlinear transformation and feature shaping.",
-                "formula": "y = σ(W₂ σ(W₁x + b₁) + b₂)",
-                "preset": {"samples": 1300, "freq": 2.5, "amplitude": 1.2, "damping": 0.09, "noise": 0.12, "phase": 1.2, "grid": 104},
-            },
-            {
-                "key": "activation_flow",
-                "title": "Activation Flow",
-                "description": "Activation distribution drift across depth.",
-                "formula": "a_l = φ(W_l a_{l-1} + b_l)",
-                "preset": {"samples": 1360, "freq": 2.7, "amplitude": 1.18, "damping": 0.10, "noise": 0.13, "phase": 1.35, "grid": 108},
-            },
-        ),
-    },
-    {
-        "id": "4",
-        "title": "Advanced Computational Theory",
-        "algorithms": (
-            {
-                "key": "manifold_field",
-                "title": "Manifold Field",
-                "description": "Curved latent field with coupled oscillatory terms.",
-                "formula": "z = exp(-λ||x||²) · sin(ωx) · cos(ωy)",
-                "preset": {"samples": 1450, "freq": 2.9, "amplitude": 1.25, "damping": 0.11, "noise": 0.14, "phase": 1.55, "grid": 116},
-            },
-            {
-                "key": "attention_surface",
-                "title": "Attention Surface",
-                "description": "Softmax geometry over query-key interactions.",
-                "formula": "Attn(Q,K,V) = softmax(QK^T/√d)V",
-                "preset": {"samples": 1500, "freq": 3.05, "amplitude": 1.2, "damping": 0.12, "noise": 0.15, "phase": 1.7, "grid": 120},
-            },
-        ),
-    },
-    {
-        "id": "5",
-        "title": "Research Frontiers",
-        "algorithms": (
-            {
-                "key": "scaling_laws",
-                "title": "Scaling Laws",
-                "description": "Performance trends across model/data scale.",
-                "formula": "L(N,D) ≈ A N^-α + B D^-β + C",
-                "preset": {"samples": 1550, "freq": 3.2, "amplitude": 1.3, "damping": 0.15, "noise": 0.18, "phase": 1.9, "grid": 124},
-            },
-            {
-                "key": "grokking",
-                "title": "Grokking Transition",
-                "description": "Delayed generalization phase shift dynamics.",
-                "formula": "gen_gap(t) = L_test(t) - L_train(t)",
-                "preset": {"samples": 1620, "freq": 3.35, "amplitude": 1.28, "damping": 0.16, "noise": 0.20, "phase": 2.05, "grid": 128},
-            },
-        ),
-    },
-    {
-        "id": "6",
-        "title": "Theoretical Limits",
-        "algorithms": (
-            {
-                "key": "information_bound",
-                "title": "Information Bound",
-                "description": "Information transfer upper bounds under entropy constraints.",
-                "formula": "I(X;Y) ≤ min(H(X), H(Y))",
-                "preset": {"samples": 1700, "freq": 3.6, "amplitude": 1.35, "damping": 0.17, "noise": 0.20, "phase": 2.2, "grid": 132},
-            },
-            {
-                "key": "thermo_learning",
-                "title": "Thermodynamics of Learning",
-                "description": "Energy/work dynamics across optimization states.",
-                "formula": "ΔE = W - Q",
-                "preset": {"samples": 1760, "freq": 3.75, "amplitude": 1.32, "damping": 0.18, "noise": 0.22, "phase": 2.35, "grid": 136},
-            },
-        ),
-    },
-)
+SCRIPT_PROFILES = build_tui_profiles(resolve_algorithm_keys("all"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -213,12 +67,12 @@ def parse_args() -> argparse.Namespace:
         help="JSON file path or inline JSON to seed the parameter state.",
     )
     parser.add_argument(
-        "--module",
-        help="Initial module/profile selector (0..6 or partial module title).",
+        "--algos",
+        help="Comma-separated algorithm keys, or 'default'/'all' (default: all).",
     )
     parser.add_argument(
         "--algorithm",
-        help="Initial algorithm selector key/title for the selected module.",
+        help="Initial algorithm selector key/title within the active algo set.",
     )
     return parser.parse_args()
 
@@ -365,7 +219,7 @@ def _command_console(
         if cmd in {"help", "h", "?"}:
             print(
                 "Commands: help, show, view <simplified|advanced|ultra>, "
-                "set <k=v>, run <validate|all|0..6>, back, quit"
+                "set <k=v>, run <validate|algo1,algo2,...>, back, quit"
             )
             continue
         if cmd == "show":
@@ -408,18 +262,28 @@ def _command_console(
             continue
         if cmd == "run" and len(parts) == 2:
             target = parts[1]
-            if target not in {"validate", "all", "0", "1", "2", "3", "4", "5", "6"}:
-                print("Use one of: validate, all, 0..6")
-                continue
-            cmdline = [
-                sys.executable,
-                "main.py",
-                target,
-                "--framework",
-                framework,
-                "--inputs",
-                shinkei.state_json(state),
-            ]
+            if target == "validate":
+                cmdline = [
+                    sys.executable,
+                    "main.py",
+                    "validate",
+                    "--framework",
+                    framework,
+                    "--inputs",
+                    shinkei.state_json(state),
+                ]
+            else:
+                cmdline = [
+                    sys.executable,
+                    "main.py",
+                    "run",
+                    "--framework",
+                    framework,
+                    "--algos",
+                    target,
+                    "--inputs",
+                    shinkei.state_json(state),
+                ]
             print("+ " + " ".join(cmdline))
             env = os.environ.copy()
             env.update(_platform_env(framework, platform))
@@ -643,7 +507,7 @@ def _resolve_script_index(selector: str | None) -> int:
     if not raw:
         return 0
     for i, profile in enumerate(SCRIPT_PROFILES):
-        if raw == profile["id"]:
+        if raw == str(profile["id"]).lower():
             return i
     for i, profile in enumerate(SCRIPT_PROFILES):
         if raw in profile["title"].lower():
@@ -692,7 +556,6 @@ def _render_interactive(
     np: ModuleType,
     state: shinkei.VizState,
     framework: str,
-    module_selector: str | None = None,
     algo_selector: str | None = None,
 ) -> int:
     if not sys.stdin.isatty():
@@ -705,7 +568,7 @@ def _render_interactive(
     active_platform = _load_platform()
     motion_enabled = state.view != "ultra"
     motion_tick = 0
-    script_index = _resolve_script_index(module_selector)
+    script_index = _resolve_script_index(algo_selector)
     algo_index = _resolve_algo_index(script_index, algo_selector)
     if state.view in {"advanced", "ultra"}:
         _apply_profile_to_state(state, script_index, algo_index)
@@ -767,7 +630,7 @@ def _render_interactive(
                     )
                 caption_line = shinkei._format_caption(caption)
                 controls_line = (
-                    "Controls: [m] mode cycle  [n]/[b] module next/back  [a]/[A] algorithm next/back  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
+                    "Controls: [m] mode cycle  [n]/[b] algo next/back  [a]/[A] alias next/back  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
                 )
 
                 partial_viz_only = (
@@ -786,7 +649,9 @@ def _render_interactive(
                         width=layout["header_w"],
                     )
                     print()
-                    print(f"module [{profile['id']}] {profile['title']} · algorithm [{algo['key']}] {algo['title']}")
+                    print(
+                        f"algo [{algo['key']}] {algo['title']} · complexity={profile.get('complexity', '?')}"
+                    )
                     print(f"formula: {algo['formula']}")
                     print(f"description: {algo['description']}")
                     print()
@@ -920,9 +785,18 @@ def main() -> int:
         view=getattr(args, "view", "advanced"),
         inputs=getattr(args, "inputs", None),
     )
-    module_selector = getattr(args, "module", None)
+    algos_selector = getattr(args, "algos", None)
     algo_selector = getattr(args, "algorithm", None)
-    script_index = _resolve_script_index(module_selector)
+    try:
+        algo_keys = resolve_algorithm_keys("all" if algos_selector is None else algos_selector)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    global SCRIPT_PROFILES
+    SCRIPT_PROFILES = build_tui_profiles(algo_keys)
+
+    script_index = _resolve_script_index(algo_selector)
     algo_index = _resolve_algo_index(script_index, algo_selector)
     if state.view in {"advanced", "ultra"}:
         _apply_profile_to_state(state, script_index, algo_index)
@@ -963,7 +837,6 @@ def main() -> int:
         np=np,
         state=state,
         framework=framework,
-        module_selector=module_selector,
         algo_selector=algo_selector,
     )
 

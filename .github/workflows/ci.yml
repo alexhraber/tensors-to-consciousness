@@ -6,7 +6,8 @@ on:
     paths:
       - "main.py"
       - ".python-version"
-      - "scripts/**"
+      - "algos/**"
+      - "frameworks/**"
       - "tools/**"
       - "tests/**"
       - "assets/viz/**"
@@ -17,7 +18,8 @@ on:
     paths:
       - "main.py"
       - ".python-version"
-      - "scripts/**"
+      - "algos/**"
+      - "frameworks/**"
       - "tools/**"
       - "tests/**"
       - "assets/viz/**"
@@ -63,13 +65,13 @@ jobs:
               - "main.py"
               - ".python-version"
               - "examples/inputs.example.json"
-              - "scripts/**"
+              - "algos/**"
+              - "frameworks/**"
               - "tools/runtime.py"
               - "tools/setup.py"
               - "tools/validate.py"
               - "tools/tui.py"
               - "tools/shinkei.py"
-              - "tools/common_viz.py"
               - "tools/input_controls.py"
             tests:
               - "tests/**"
@@ -308,10 +310,12 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Ensure VIZ_META is declared in all research modules
+      - name: Ensure VIZ_META is declared in all algorithm modules
         run: |
           set -euo pipefail
-          missing="$(rg -L '^VIZ_META\\s*=\\s*\\{' scripts/*/[0-6]_*.py || true)"
+          missing="$(rg -L '^VIZ_META\\s*=\\s*\\{' \
+            algos/cupy/*.py algos/jax/*.py algos/keras/*.py algos/mlx/*.py algos/numpy/*.py algos/pytorch/*.py \
+            -g '!algos/*/__init__.py' || true)"
           if [ -n "$missing" ]; then
             echo "Missing VIZ_META declaration in:"
             echo "$missing"
@@ -327,7 +331,7 @@ jobs:
           import sys
 
           bad = []
-          for path in sorted(pathlib.Path("scripts").glob("*/*_*.py")):
+          for path in sorted(pathlib.Path("algos").glob("*/*_*.py")):
               if path.name.startswith("test_"):
                   continue
               src = path.read_text(encoding="utf-8")
@@ -382,7 +386,7 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Verify framework track file contract
+      - name: Verify framework backend contract
         env:
           FRAMEWORK: ${{ matrix.framework }}
         run: |
@@ -393,21 +397,12 @@ jobs:
           import sys
 
           fw = os.environ["FRAMEWORK"]
-          root = pathlib.Path("scripts") / fw
+          root = pathlib.Path("frameworks") / fw
           if not root.exists():
               print(f"Missing framework directory: {root}")
               sys.exit(1)
 
-          required = [f"{i}_{name}.py" for i, name in enumerate([
-              "computational_primitives",
-              "automatic_differentiation",
-              "optimization_theory",
-              "neural_theory",
-              "advanced_theory",
-              "research_frontiers",
-              "theoretical_limits",
-          ])]
-          required += ["utils.py", "test_setup.py"]
+          required = ["utils.py", "test_setup.py"]
 
           missing = [name for name in required if not (root / name).exists()]
           if missing:
@@ -416,15 +411,15 @@ jobs:
                   print(f" - {root / name}")
               sys.exit(1)
 
-          py_files = sorted(p.name for p in root.glob("*.py"))
-          if len(py_files) < len(required):
-              print(f"{fw}: expected at least {len(required)} python files, found {len(py_files)}")
+          algo_backend = root / "algorithms"
+          if not algo_backend.exists():
+              print(f"{fw}: missing algorithms adapter directory: {algo_backend}")
               sys.exit(1)
 
           print(f"{fw}: framework track contract passed.")
           PY
 
-      - name: Verify module name parity against numpy baseline
+      - name: Verify algo module parity against numpy baseline
         env:
           FRAMEWORK: ${{ matrix.framework }}
         run: |
@@ -435,17 +430,11 @@ jobs:
           import sys
 
           fw = os.environ["FRAMEWORK"]
-          base = pathlib.Path("scripts/numpy")
-          tgt = pathlib.Path("scripts") / fw
+          base = pathlib.Path("algos/numpy")
+          tgt = pathlib.Path("algos") / fw
 
-          base_modules = sorted(
-              p.name for p in base.glob("[0-6]_*.py")
-              if not p.name.startswith("test_")
-          )
-          tgt_modules = sorted(
-              p.name for p in tgt.glob("[0-6]_*.py")
-              if not p.name.startswith("test_")
-          )
+          base_modules = sorted(p.name for p in base.glob("*.py") if p.name != "__init__.py")
+          tgt_modules = sorted(p.name for p in tgt.glob("*.py") if p.name != "__init__.py")
 
           if base_modules != tgt_modules:
               print(f"{fw}: module parity mismatch")

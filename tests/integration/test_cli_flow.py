@@ -71,6 +71,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs=None,
+            algos=None,
+            algorithm=None,
+            list_algos=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -89,6 +92,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs=None,
+            algos=None,
+            algorithm=None,
+            list_algos=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -110,6 +116,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=True,
             cli=False,
             inputs=None,
+            algos=None,
+            algorithm=None,
+            list_algos=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -130,6 +139,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=False,
             cli=False,
             inputs=None,
+            algos=None,
+            algorithm=None,
+            list_algos=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
@@ -156,6 +168,9 @@ class T2CFlowIntegrationTests(unittest.TestCase):
             no_setup=False,
             cli=True,
             inputs=None,
+            algos=None,
+            algorithm=None,
+            list_algos=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
@@ -170,17 +185,20 @@ class T2CFlowIntegrationTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         calls = [c[0][0] for c in run_cmd_mock.call_args_list]
         self.assertEqual(calls[0], [".venv-np/bin/python", "-m", "tools.validate", "--framework", "numpy"])
-        self.assertEqual(len(calls), 8)
+        self.assertEqual(len(calls), 4)
         self.assertEqual(ensure_setup_mock.call_args.kwargs["framework"], t2c.DEFAULT_FRAMEWORK)
 
     def test_t2c_main_passes_inputs_env(self) -> None:
         args = argparse.Namespace(
-            target="0",
+            target="run",
             framework="jax",
             venv=".venv-jax",
             no_setup=True,
             cli=False,
             inputs="examples/inputs.example.json",
+            algos="gradient_descent",
+            algorithm=None,
+            list_algos=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -193,14 +211,17 @@ class T2CFlowIntegrationTests(unittest.TestCase):
         env = run_cmd_mock.call_args.kwargs["env"]
         self.assertEqual(env.get("T2C_INPUTS"), "examples/inputs.example.json")
 
-    def test_t2c_main_executes_module_zero(self) -> None:
+    def test_t2c_main_executes_selected_algo_module(self) -> None:
         args = argparse.Namespace(
-            target="0",
+            target="run",
             framework=None,
             venv=None,
             no_setup=True,
             cli=False,
             inputs=None,
+            algos="tensor_ops",
+            algorithm=None,
+            list_algos=False,
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
@@ -211,7 +232,7 @@ class T2CFlowIntegrationTests(unittest.TestCase):
                         rc = t2c.main()
         self.assertEqual(rc, 0)
         cmd = run_cmd_mock.call_args[0][0]
-        self.assertEqual(cmd, [".venv-np/bin/python", "scripts/numpy/0_computational_primitives.py"])
+        self.assertEqual(cmd, [".venv-np/bin/python", "-m", "algos.numpy.computational_primitives"])
 
 
 if __name__ == "__main__":

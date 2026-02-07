@@ -22,7 +22,7 @@ class ValidateEntrypointTests(unittest.TestCase):
                     rc = validate.main()
         self.assertEqual(rc, 0)
         run_path = run_path_mock.call_args[0][0]
-        self.assertTrue(run_path.endswith("scripts/jax/test_setup.py"))
+        self.assertTrue(run_path.endswith("frameworks/jax/test_setup.py"))
 
 
 class SetupFlowIntegrationTests(unittest.TestCase):
