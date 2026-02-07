@@ -30,6 +30,12 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  CI_BUDGET_TEST_WARN_SEC: 120
+  CI_BUDGET_TEST_FAIL_SEC: 240
+  CI_BUDGET_VIZ_WARN_SEC: 60
+  CI_BUDGET_VIZ_FAIL_SEC: 120
+
 jobs:
   changes:
     name: Change Detection
@@ -122,6 +128,7 @@ jobs:
         run: |
           END_TS=$(date +%s)
           DURATION=$((END_TS - JOB_START_TS))
+          echo "JOB_DURATION_SEC=${DURATION}" >> "$GITHUB_ENV"
           mkdir -p ci-metrics
           cat > "ci-metrics/test-matrix-py${{ matrix.python-version }}.json" <<EOF
           {
@@ -137,6 +144,20 @@ jobs:
             echo "### CI Timing: test-matrix (py${{ matrix.python-version }})"
             echo "- Duration: ${DURATION}s"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce test job budget
+        if: always()
+        run: |
+          DUR="${JOB_DURATION_SEC}"
+          WARN="${CI_BUDGET_TEST_WARN_SEC}"
+          FAIL="${CI_BUDGET_TEST_FAIL_SEC}"
+          if [ "$DUR" -gt "$FAIL" ]; then
+            echo "Test job exceeded hard budget: ${DUR}s > ${FAIL}s" >&2
+            exit 1
+          fi
+          if [ "$DUR" -gt "$WARN" ]; then
+            echo "::warning::Test job exceeded warning budget: ${DUR}s > ${WARN}s"
+          fi
 
       - name: Upload timing metrics
         if: always()
@@ -215,6 +236,7 @@ jobs:
         run: |
           END_TS=$(date +%s)
           DURATION=$((END_TS - JOB_START_TS))
+          echo "JOB_DURATION_SEC=${DURATION}" >> "$GITHUB_ENV"
           mkdir -p ci-metrics
           cat > "ci-metrics/viz-assets.json" <<EOF
           {
@@ -229,6 +251,20 @@ jobs:
             echo "### CI Timing: viz-assets"
             echo "- Duration: ${DURATION}s"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce viz job budget
+        if: always()
+        run: |
+          DUR="${JOB_DURATION_SEC}"
+          WARN="${CI_BUDGET_VIZ_WARN_SEC}"
+          FAIL="${CI_BUDGET_VIZ_FAIL_SEC}"
+          if [ "$DUR" -gt "$FAIL" ]; then
+            echo "viz-assets job exceeded hard budget: ${DUR}s > ${FAIL}s" >&2
+            exit 1
+          fi
+          if [ "$DUR" -gt "$WARN" ]; then
+            echo "::warning::viz-assets job exceeded warning budget: ${DUR}s > ${WARN}s"
+          fi
 
       - name: Upload timing metrics
         if: always()
