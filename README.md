@@ -40,6 +40,26 @@ mise run install-test-deps
 python explorer.py
 ```
 
+## Explorer Preview
+
+<p align="center">
+  <img src="assets/render/tui_explorer.gif" alt="TUI explorer preview" width="88%">
+</p>
+
+## Shinkei Render Samples
+
+<p align="center">
+  <img src="assets/render/optimization_flow.gif" alt="Optimization flow sample" width="32%">
+  <img src="assets/render/attention_dynamics.gif" alt="Attention dynamics sample" width="32%">
+  <img src="assets/render/phase_portraits.gif" alt="Phase portrait sample" width="32%">
+</p>
+
+Asset regeneration:
+
+```bash
+mise run assets-regenerate
+```
+
 ## Documentation
 
 - [Documentation Index](docs/README.md)
@@ -54,7 +74,7 @@ python explorer.py
 ## Contributors
 
 <p align="center">
-  <img src="https://contrib.rocks/image?repo=alexhraber/tensors-to-consciousness" alt="Contributors screenshot" width="5%">
+  <img src="https://contrib.rocks/image?repo=alexhraber/tensors-to-consciousness" alt="Contributors screenshot" width="90%">
 </p>
 
 ## License
