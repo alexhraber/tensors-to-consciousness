@@ -27,25 +27,12 @@ mise run docs-verify
 mise run contract-transforms
 FRAMEWORK=jax mise run contract-framework
 mise run assets-regenerate
-mise run act-ci
 mise run pre-push
 ```
 
-## Local Actions Simulation (`act`)
+## Local Gate (Docker-First)
 
-`act` runs repository workflows locally, and those workflows run `mise` tasks.
-This keeps the chain consistent: hook -> `act` -> workflow -> `mise`.
-
-Requirements:
-
-- Docker
-- `act` (managed by `mise` in this repository; install via `mise install`)
-
-Run CI-equivalent workflow checks:
-
-```bash
-mise run act-ci
-```
+The pre-push hook runs a path-scoped gate that executes CI-equivalent commands in a local Docker image.
 
 Full gate used by the pre-push hook:
 
@@ -56,14 +43,14 @@ mise run pre-push
 Pre-push behavior:
 
 - detects changed files relative to upstream
-- selects only relevant `act` jobs
-- runs selected `act` jobs in parallel across local CPU cores by default (`CI_GATE_JOBS=nproc`)
-- each selected workflow job executes `mise run ...` tasks inside the workflow
-- caches successful local gate runs in `.git/explorer-cache/act-gate.json` to speed repeated loops on unchanged signatures
+- selects only relevant CI job scopes
+- runs selected scopes in parallel across local CPU cores by default (`CI_GATE_JOBS=nproc`)
+- runs those scopes in a local Docker image (same as CI)
+- caches successful local gate runs in `.git/explorer-cache/ci-gate.json` to speed repeated loops on unchanged signatures
 
 Pre-commit behavior:
 
-- contributor bootstrap only (`tools/setup_contributor.py`)
+- contributor bootstrap only (`explorer ops bootstrap`)
 - full validation intentionally runs at pre-push to avoid duplicate local pain
 
 Emergency bypass for one push:

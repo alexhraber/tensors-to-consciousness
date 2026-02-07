@@ -21,8 +21,16 @@ pub fn default_framework_for_platform() -> &'static str {
 }
 
 pub fn repo_root() -> Result<PathBuf> {
-    let cwd = std::env::current_dir().context("current_dir")?;
-    Ok(cwd)
+    let out = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .output()
+        .context("git rev-parse --show-toplevel")?;
+    if !out.status.success() {
+        return Err(anyhow!(
+            "failed to resolve repo root (are you in a git repo?)"
+        ));
+    }
+    Ok(PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()))
 }
 
 pub fn load_active_config(root: &Path) -> Option<ActiveConfig> {
@@ -30,17 +38,6 @@ pub fn load_active_config(root: &Path) -> Option<ActiveConfig> {
     if let Ok(raw) = fs::read_to_string(&new_p) {
         if let Ok(cfg) = serde_json::from_str::<ActiveConfig>(&raw) {
             return Some(cfg);
-        }
-    }
-    // Legacy fallbacks
-    for p in [
-        root.join(".config").join("config.json"),
-        root.join(".t2c").join("config.json"),
-    ] {
-        if let Ok(raw) = fs::read_to_string(&p) {
-            if let Ok(cfg) = serde_json::from_str::<ActiveConfig>(&raw) {
-                return Some(cfg);
-            }
         }
     }
     None
@@ -100,20 +97,76 @@ pub fn ensure_setup(bootstrap_python: &str, rt: &ResolvedRuntime) -> Result<()> 
     if rt.engine_python.exists() {
         return Ok(());
     }
-    // Create venv + install deps; tools/setup.py also writes active config.
-    let status = Command::new(bootstrap_python)
-        .args([
-            "-m",
-            "tools.setup",
-            &rt.framework,
-            "--venv",
-            &rt.venv_dir.to_string_lossy(),
-            "--skip-validate",
-        ])
-        .status()
-        .with_context(|| format!("failed to run setup for framework {}", rt.framework))?;
-    if !status.success() {
-        return Err(anyhow!("setup failed for framework {}", rt.framework));
+    if Command::new("uv").args(["--version"]).output().is_err() {
+        return Err(anyhow!(
+            "`uv` is required to set up framework environments (install uv, then retry)"
+        ));
     }
+
+    // Create venv and install deps.
+    let status = Command::new("uv")
+        .args(["venv", &rt.venv_dir.to_string_lossy()])
+        .status()
+        .with_context(|| format!("failed to create venv {}", rt.venv_dir.display()))?;
+    if !status.success() {
+        return Err(anyhow!("uv venv failed for {}", rt.venv_dir.display()));
+    }
+
+    let common_deps: &[&str] = &["matplotlib"];
+    let mut framework_deps: Vec<String> = match rt.framework.as_str() {
+        // On Linux containers (including Apple Docker Desktop VMs), install MLX CPU backend.
+        "mlx" => {
+            if cfg!(target_os = "macos") {
+                vec!["mlx".to_string()]
+            } else {
+                vec!["mlx[cpu]".to_string()]
+            }
+        }
+        "jax" => vec!["jax[cpu]".to_string()],
+        "pytorch" => vec!["torch".to_string()],
+        "numpy" => vec!["numpy".to_string()],
+        "keras" => vec!["keras".to_string(), "tensorflow".to_string()],
+        "cupy" => vec!["cupy-cuda12x".to_string()],
+        other => return Err(anyhow!("unsupported framework: {other}")),
+    };
+
+    let mut args: Vec<String> = vec![
+        "pip".to_string(),
+        "install".to_string(),
+        "--python".to_string(),
+        rt.engine_python.to_string_lossy().to_string(),
+        "--upgrade".to_string(),
+    ];
+    args.extend(common_deps.iter().map(|s| s.to_string()));
+    args.append(&mut framework_deps);
+
+    let status = Command::new("uv")
+        .args(args)
+        .status()
+        .with_context(|| format!("failed to install deps for framework {}", rt.framework))?;
+    if !status.success() {
+        return Err(anyhow!("dependency install failed for framework {}", rt.framework));
+    }
+
+    // Record active config.
+    save_active_config(&repo_root()?, &ActiveConfig {
+        framework: rt.framework.clone(),
+        venv: rt.venv_dir.to_string_lossy().to_string(),
+    })?;
+
+    // Optional validation (best-effort): we keep it cheap for auto-setup.
+    let _ = Command::new(&rt.engine_python)
+        .arg(format!("frameworks/{}/test_setup.py", rt.framework))
+        .status();
+
+    let _ = bootstrap_python; // reserved for future: alternate setup strategies
+    Ok(())
+}
+
+pub fn save_active_config(root: &Path, cfg: &ActiveConfig) -> Result<()> {
+    let dir = root.join(".explorer");
+    fs::create_dir_all(&dir).context("create .explorer")?;
+    let p = dir.join("config.json");
+    fs::write(&p, serde_json::to_string_pretty(cfg)?).context("write config.json")?;
     Ok(())
 }

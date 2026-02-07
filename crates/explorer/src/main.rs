@@ -3,6 +3,7 @@ use base64::Engine;
 use clap::{Parser, Subcommand};
 use serde_json::json;
 
+mod ops;
 mod py_rpc;
 mod runtime;
 mod tui;
@@ -64,6 +65,12 @@ enum Command {
         /// Venv directory override (default: .venv-<framework>)
         #[arg(long)]
         venv: Option<String>,
+    },
+
+    /// Repository operations (policy, hooks, PR submission, local CI gate)
+    Ops {
+        #[command(subcommand)]
+        cmd: ops::OpsCmd,
     },
 }
 
@@ -149,6 +156,9 @@ fn parse_f32_le_bytes(bytes: &[u8]) -> Result<Vec<f32>> {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+    // Ensure relative paths (framework scripts, docs, assets) resolve from repo root.
+    let root = runtime::repo_root()?;
+    std::env::set_current_dir(&root).context("chdir to repo root")?;
 
     match cli.cmd.unwrap_or(Command::Tui {
         framework: None,
@@ -190,7 +200,6 @@ fn main() -> Result<()> {
             steps,
             inputs,
         } => {
-            let root = runtime::repo_root()?;
             let rt = runtime::resolve_runtime(&root, Some(&framework), venv.as_deref());
             runtime::ensure_setup(&cli.bootstrap_python, &rt)?;
             let mut engine = py_rpc::PyEngine::spawn(rt.engine_python.to_string_lossy().as_ref())?;
@@ -229,16 +238,18 @@ fn main() -> Result<()> {
             engine.shutdown()?;
         }
         Command::Validate { framework, venv } => {
-            let root = runtime::repo_root()?;
             let rt = runtime::resolve_runtime(&root, framework.as_deref(), venv.as_deref());
             runtime::ensure_setup(&cli.bootstrap_python, &rt)?;
-            let status = std::process::Command::new(rt.engine_python)
-                .args(["-m", "tools.validate", "--framework", &rt.framework])
+            let status = std::process::Command::new(&rt.engine_python)
+                .args([format!("frameworks/{}/test_setup.py", rt.framework)])
                 .status()
-                .context("run tools.validate")?;
+                .context("run framework test_setup")?;
             if !status.success() {
                 return Err(anyhow!("validate failed for framework {}", rt.framework));
             }
+        }
+        Command::Ops { cmd } => {
+            ops::run_ops(cmd)?;
         }
     }
     Ok(())

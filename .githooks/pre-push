@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-python tools/git_policy.py --hook pre-push
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
 
 if [[ "${SKIP_ACT:-0}" == "1" ]]; then
-  echo "SKIP_ACT=1 set; skipping act pre-push validation." >&2
+  echo "SKIP_ACT=1 set; skipping local CI validation." >&2
   exit 0
 fi
 
+if [[ ! -x ./target/debug/explorer ]]; then
+  cargo build -p explorer >/dev/null
+fi
+
+./target/debug/explorer ops git-policy --hook pre-push
+
 # Default to saturating local cores unless explicitly overridden.
 export CI_GATE_JOBS="${CI_GATE_JOBS:-nproc}"
-
-mise run pre-push
+./target/debug/explorer ops pre-push-gate --jobs "${CI_GATE_JOBS}"

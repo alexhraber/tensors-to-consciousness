@@ -36,7 +36,7 @@ def _default_venv_for_framework(framework: str) -> Path:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run T2C interactive explorer or sandbox transform targets for a selected framework."
+        description="Run the explorer or sandbox transform targets for a selected framework."
     )
     parser.add_argument(
         "target",

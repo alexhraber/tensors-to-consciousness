@@ -247,11 +247,15 @@ depends = ["act-check"]
 run = "act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync --env LOCAL_ACT=true"
 
 [tasks.pre-push]
-description = "Pre-push quality gate with path-based job selection (hook -> act -> workflow -> mise)."
-run = "python tools/pre_push_gate.py --jobs nproc"
+description = "Pre-push quality gate with path-based job selection (Docker-first)."
+run = '''
+mise run rust-build
+./target/debug/explorer ops pre-push-gate --jobs nproc
+'''
 
 [tasks.submit-pr]
 description = "Push current feature branch and open/reuse a PR via GitHub API with DNS override fallback."
 run = '''
-python tools/submit_pr.py --base main
+mise run rust-build
+./target/debug/explorer ops submit-pr --base main
 '''

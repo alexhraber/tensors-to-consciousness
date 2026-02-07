@@ -86,7 +86,7 @@ def capture_command_gif(
 
     output_gif.parent.mkdir(parents=True, exist_ok=True)
 
-    with tempfile.TemporaryDirectory(prefix="ttc_headless_capture_") as td:
+    with tempfile.TemporaryDirectory(prefix="explorer_headless_capture_") as td:
         tmp = Path(td)
         mp4 = tmp / "capture.mp4"
 

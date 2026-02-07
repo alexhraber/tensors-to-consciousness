@@ -11,7 +11,6 @@ from tools import core
 DEFAULT_CONFIG_FILE = Path(".explorer/config.json")
 DEFAULT_LEGACY_CONFIG_FILES = (
     Path(".config/config.json"),
-    Path(".t2c/config.json"),
 )
 
 # Patchable in tests.
@@ -98,7 +97,7 @@ def load_config() -> dict[str, Any]:
         raw = _load_raw_config_from_disk()
     except FileNotFoundError:
         raise RuntimeError(
-            "No active framework config found. Run `python -m tools.setup <framework>` first."
+            "No active framework config found. Run `explorer setup --framework <name>` first."
         )
     cfg = with_config_defaults(raw if isinstance(raw, dict) else {})
     # Migration: persist to the new location once we successfully load.
@@ -121,6 +120,6 @@ def load_config_optional() -> dict[str, object]:
 def validate_script_for_framework(framework: str) -> str:
     if framework not in SUPPORTED_FRAMEWORKS:
         raise RuntimeError(
-            f"Unsupported framework '{framework}'. Run `python -m tools.setup <framework>` first."
+            f"Unsupported framework '{framework}'. Run `explorer setup --framework <name>` first."
         )
     return f"frameworks/{framework}/test_setup.py"
