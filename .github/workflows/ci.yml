@@ -38,6 +38,8 @@ jobs:
       runtime: ${{ steps.filter.outputs.runtime }}
       tests: ${{ steps.filter.outputs.tests }}
       viz: ${{ steps.filter.outputs.viz }}
+      viz_generator: ${{ steps.filter.outputs.viz_generator }}
+      viz_assets: ${{ steps.filter.outputs.viz_assets }}
       ci: ${{ steps.filter.outputs.ci }}
 
     steps:
@@ -62,6 +64,10 @@ jobs:
               - ".github/ci/requirements-test.txt"
             viz:
               - "tools/generate_viz_assets.py"
+              - "assets/viz/**"
+            viz_generator:
+              - "tools/generate_viz_assets.py"
+            viz_assets:
               - "assets/viz/**"
             ci:
               - ".github/workflows/ci.yml"
@@ -150,13 +156,20 @@ jobs:
         run: |
           ffmpeg -version
 
-      - name: Regenerate visualization assets
+      - name: Validate committed GIF assets
+        if: needs.changes.outputs.viz_assets == 'true' || needs.changes.outputs.ci == 'true'
         run: |
-          python tools/generate_viz_assets.py
+          for f in assets/viz/*.gif; do
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$f"
+          done
 
-      - name: Verify deterministic regeneration in runner
+      - name: Fast deterministic generator check
+        if: needs.changes.outputs.viz_generator == 'true' || needs.changes.outputs.ci == 'true'
         run: |
-          sha256sum assets/viz/*.gif > /tmp/viz_hashes_1.txt
-          python tools/generate_viz_assets.py
-          sha256sum assets/viz/*.gif > /tmp/viz_hashes_2.txt
+          set -euo pipefail
+          rm -rf /tmp/viz-a /tmp/viz-b
+          python tools/generate_viz_assets.py --output-dir /tmp/viz-a --frames 20 --fps 12 --width 320 --height 180
+          python tools/generate_viz_assets.py --output-dir /tmp/viz-b --frames 20 --fps 12 --width 320 --height 180
+          sha256sum /tmp/viz-a/*.gif | sort > /tmp/viz_hashes_1.txt
+          sha256sum /tmp/viz-b/*.gif | sort > /tmp/viz_hashes_2.txt
           diff -u /tmp/viz_hashes_1.txt /tmp/viz_hashes_2.txt
