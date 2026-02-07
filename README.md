@@ -19,7 +19,6 @@
 </p>
 
 <p><strong>Mathematical Foundations of AI/ML Across Frameworks</strong></p>
-<p>Choose framework once with setup, then run everything with universal commands.</p>
 
 </div>
 
