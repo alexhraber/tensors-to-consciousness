@@ -33,10 +33,16 @@ This repository contains 7 theory-first chapters implemented across peer framewo
 - `keras`
 - `cupy`
 
+Top-level operational commands:
+
+- `python setup.py <framework>`: install + validate selected framework and save active selection
+- `python validate.py`: run validation for active framework
+- `python run.py <target>`: run chapter targets (`0..6`, `all`) for active framework
+
 The standard workflow is:
 
-1. `python setup_framework.py <framework>`
-2. `python run.py validate`
+1. `python setup.py <framework>`
+2. `python validate.py`
 3. `python run.py 0` ... `python run.py 6` or `python run.py all`
 
 ## Chapter Sequence
@@ -63,24 +69,24 @@ source env/bin/activate
 ### 2) Setup framework (pick once)
 
 ```bash
-python setup_framework.py mlx
+python setup.py mlx
 # or: jax | pytorch | numpy | keras | cupy
 ```
 
 ### 3) Run commands
 
 ```bash
-python run.py validate
+python validate.py
 python run.py 0
 python run.py all
 ```
 
 ## Primary Setup Script
 
-`setup_framework.py` is the only setup entrypoint.
+`setup.py` is the only setup entrypoint.
 
 ```bash
-python setup_framework.py <framework>
+python setup.py <framework>
 ```
 
 Supported values:
@@ -103,17 +109,16 @@ What setup does:
 Useful options:
 
 ```bash
-python setup_framework.py jax --venv .venv-jax
-python setup_framework.py cupy --skip-validate
-python setup_framework.py all
+python setup.py jax --venv .venv-jax
+python setup.py cupy --skip-validate
+python setup.py all
 ```
 
 ## Run Script
 
-`run.py` reads `.t2c/config.json` and runs commands for your selected framework.
+`run.py` reads `.t2c/config.json` and runs chapter commands for your selected framework.
 
 ```bash
-python run.py validate
 python run.py 0
 python run.py 1
 python run.py 2
@@ -122,6 +127,12 @@ python run.py 4
 python run.py 5
 python run.py 6
 python run.py all
+```
+
+Use `validate.py` to run the validation script for the active framework:
+
+```bash
+python validate.py
 ```
 
 Optional overrides:
@@ -146,12 +157,12 @@ All framework scripts live under `scripts/<framework>/`.
 
 | Framework | Setup | Validation | Chapters |
 |---|---|---|---|
-| MLX | `python setup_framework.py mlx` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
-| JAX | `python setup_framework.py jax` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
-| PyTorch | `python setup_framework.py pytorch` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
-| NumPy | `python setup_framework.py numpy` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
-| Keras | `python setup_framework.py keras` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
-| CuPy | `python setup_framework.py cupy` | `python run.py validate` | `python run.py 0` ... `python run.py 6` |
+| MLX | `python setup.py mlx` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
+| JAX | `python setup.py jax` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
+| PyTorch | `python setup.py pytorch` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
+| NumPy | `python setup.py numpy` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
+| Keras | `python setup.py keras` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
+| CuPy | `python setup.py cupy` | `python validate.py` | `python run.py 0` ... `python run.py 6` |
 
 ## Notes
 

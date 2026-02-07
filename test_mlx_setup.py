@@ -1,4 +1,4 @@
-from _run_universal import run_target
+from _run import run_target
 
 
 if __name__ == "__main__":

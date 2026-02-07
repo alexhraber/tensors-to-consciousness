@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Universal runner that uses the framework selected by setup_framework.py."""
+"""Runner that uses the framework selected by setup.py."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def python_in_venv(venv_dir: Path) -> Path:
 def load_config() -> dict[str, str]:
     if not CONFIG_FILE.exists():
         print(
-            "No active framework config found. Run `python setup_framework.py <framework>` first.",
+            "No active framework config found. Run `python setup.py <framework>` first.",
             file=sys.stderr,
         )
         raise SystemExit(1)

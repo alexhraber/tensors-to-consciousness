@@ -121,7 +121,7 @@ def main() -> int:
     if args.framework != "all":
         write_active_config(args.framework, venv_dir)
         print(f"\nActive framework set to: {args.framework}")
-        print("Use universal commands:")
+        print("Use these commands:")
         print("  python run.py validate")
         print("  python run.py 0")
         print("  python run.py all")

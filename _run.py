@@ -32,7 +32,7 @@ def _load_framework() -> str:
     if env_fw:
         return env_fw
     raise RuntimeError(
-        "No active framework configured. Run `python setup_framework.py <framework>` first."
+        "No active framework configured. Run `python setup.py <framework>` first."
     )
 
 
@@ -40,7 +40,7 @@ def run_target(target: str) -> None:
     framework = _load_framework()
     if framework not in {"mlx", "jax", "pytorch", "numpy", "keras", "cupy"}:
         raise RuntimeError(
-            f"Unsupported framework '{framework}'. Run `python setup_framework.py <framework>` first."
+            f"Unsupported framework '{framework}'. Run `python setup.py <framework>` first."
         )
 
     if target == "validate":

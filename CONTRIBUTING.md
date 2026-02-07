@@ -5,15 +5,16 @@
 The repo is framework-track based.
 
 - Source implementations live in `scripts/<framework>/`
-- Universal execution is handled by:
-  - `setup_framework.py` (choose/install/validate once)
-  - `run.py` (run chapters/validation universally)
+- Operational commands are:
+  - `setup.py` (choose/install/validate once)
+  - `validate.py` (run validation for active framework)
+  - `run.py` (run chapter targets)
 
 ## Local workflow
 
 ```bash
-python setup_framework.py <framework>
-python run.py validate
+python setup.py <framework>
+python validate.py
 python run.py all
 ```
 
@@ -42,20 +43,20 @@ Requirements:
 
 When adding/changing frameworks:
 
-1. Update `setup_framework.py` framework map (`deps`, `validate` script).
+1. Update `setup.py` framework map (`deps`, `validate` script).
 2. Ensure `run.py` can resolve the framework name and scripts.
 3. Validate setup + run path:
 
 ```bash
-python setup_framework.py <framework>
-python run.py validate
+python setup.py <framework>
+python validate.py
 python run.py 0
 ```
 
 ## Documentation expectations
 
 - Keep `README.md` aligned with actual setup/run behavior.
-- Keep examples using universal commands (`setup_framework.py`, `run.py`).
+- Keep examples aligned with operational commands (`setup.py`, `validate.py`, `run.py`).
 
 ## Hygiene
 
