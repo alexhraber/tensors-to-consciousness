@@ -1,21 +1,6 @@
 name: Assets and README Sync
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "explorer.py"
-      - "transforms/**"
-      - "frameworks/**"
-      - "tools/shinkei.py"
-      - "tools/tui.py"
-      - "tools/headless_capture.py"
-      - "tools/generate_render_assets.py"
-      - ".python-version"
-      - "mise.toml"
-      - ".github/ci/requirements-test.txt"
-      - ".github/workflows/ci.yml"
-      - ".github/workflows/assets-readme-sync.yml"
   pull_request:
     branches: ["main"]
     paths:
@@ -74,16 +59,3 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           git diff --exit-code -- README.md assets/render
-
-      - name: Commit and push updated assets on main
-        if: github.event_name == 'push'
-        run: |
-          if git diff --quiet -- README.md assets/render; then
-            echo "No README/assets changes to commit."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md assets/render
-          git commit -m "chore(assets): refresh headless render samples [skip ci]"
-          git push origin HEAD:main

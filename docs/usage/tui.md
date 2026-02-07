@@ -11,7 +11,7 @@ python explorer.py
 If no prior config exists, the default framework is:
 
 - `mlx` on macOS
-- `numpy` on other platforms
+- `jax` on other platforms
 
 ## Operator Controls
 

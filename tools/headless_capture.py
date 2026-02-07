@@ -181,7 +181,7 @@ def capture_tui_session_gif(
     *,
     output_gif: Path,
     python_exe: str,
-    framework: str = "numpy",
+    framework: str = "jax",
     transforms: str = "default",
     width: int = 1280,
     height: int = 720,

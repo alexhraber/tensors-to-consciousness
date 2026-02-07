@@ -16,7 +16,7 @@ DEFAULT_DEBUG = False
 
 
 def default_framework_for_platform(platform: str | None = None) -> str:
-    return "mlx" if (platform or sys.platform) == "darwin" else "numpy"
+    return "mlx" if (platform or sys.platform) == "darwin" else "jax"
 
 
 DEFAULT_FRAMEWORK = default_framework_for_platform()

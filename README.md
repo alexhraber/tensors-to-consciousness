@@ -21,106 +21,42 @@
 
 ---
 
-## Tenor Exploration Platform
+## Tensor Exploration Platform
 
-`tensors-to-consciousness` is a framework-agnostic exploration system for mathematical transforms on tensor fields.
+`tensors-to-consciousness` is an interactive terminal system for exploring tensor transforms across multiple compute frameworks.
 
-Core architecture:
-
-1. `transforms/`: canonical transform definitions and catalog metadata.
-2. `frameworks/`: execution engines that consume transform sequences.
-3. `tools/shinkei.py`: rendering and terminal presentation path.
-4. `tools/tui.py`: interactive operator surface for selection, ordering, and control.
-5. `explorer.py`: unified entrypoint and runtime orchestration.
-
-## Quickstart (Container-First)
+## Quickstart
 
 ```bash
 docker compose build explorer
 docker compose run --rm explorer
 ```
 
-GPU profiles:
-
-```bash
-docker compose --profile nvidia run --rm explorer-nvidia
-docker compose --profile amd run --rm explorer-amd
-docker compose --profile intel run --rm explorer-intel
-docker compose --profile apple run --rm explorer-apple
-```
-
-Local launch:
-
-```bash
-python explorer.py
-```
-
-Local parity with CI (`mise`):
+Local:
 
 ```bash
 mise install
 mise run install-test-deps
-mise run test-all
+python explorer.py
 ```
 
-First-run defaults:
-
-- macOS: `mlx`
-- other platforms: `numpy`
-
-<p align="center">
-  <img src="assets/render/tui_explorer.gif" alt="TUI explorer preview" width="86%">
-</p>
-
-## Visual Samples
-
-Headless captures of three transform progression examples (real `explorer.py run` path):
-
-<p align="center">
-  <img src="assets/render/optimization_flow.gif" alt="Optimization flow sample" width="32%">
-  <img src="assets/render/attention_dynamics.gif" alt="Attention dynamics sample" width="32%">
-  <img src="assets/render/phase_portraits.gif" alt="Phase portrait sample" width="32%">
-</p>
-
-## Supported Frameworks
-
-- `mlx`
-- `jax`
-- `pytorch`
-- `numpy`
-- `keras`
-- `cupy`
-
-## Top 5 Core Transforms
-
-- `tensor_ops`
-- `chain_rule`
-- `gradient_descent`
-- `momentum`
-- `adam`
-
-## References
+## Documentation
 
 - [Documentation Index](docs/README.md)
 - [Architecture and Contracts](docs/reference/architecture.md)
 - [TUI Guide](docs/usage/tui.md)
 - [CLI Guide](docs/usage/cli.md)
 - [Container Guide](docs/usage/container.md)
-- [Diagnostics and Logging](docs/usage/diagnostics.md)
-- [Render Asset Generation](docs/usage/assets.md)
 - [Transform Catalog](docs/reference/transforms.md)
 - [Supported Frameworks](docs/reference/frameworks.md)
-- [Rust Core](docs/development/rust-core.md)
 - [Contributing](CONTRIBUTING.md)
 
-## Core Commands
+## Contributors
 
-```bash
-python explorer.py --list-transforms
-python explorer.py run --framework jax --transforms chain_rule,gradient_descent,adam
-python explorer.py render --framework numpy --transforms default
-mise run test-all
-mise run docs-generate
-mise run assets-regenerate
-mise run pre-push
-```
+<p align="center">
+  <img src="https://contrib.rocks/image?repo=alexhraber/tensors-to-consciousness" alt="Contributors screenshot" width="90%">
+</p>
+
+## License
+
+[MIT](LICENSE)
