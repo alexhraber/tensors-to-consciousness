@@ -1,7 +1,86 @@
-mlx-env/
+# ------------------------------
+# Python bytecode and caches
+# ------------------------------
 __pycache__/
 *.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+
+# ------------------------------
+# Virtual environments
+# ------------------------------
 .venv/
+.venv-*/
+venv/
 env/
+ENV/
+mlx-env/
+
+# ------------------------------
+# Packaging and build outputs
+# ------------------------------
+build/
+dist/
+site/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+*.egg
+wheelhouse/
+
+# ------------------------------
+# Coverage and test artifacts
+# ------------------------------
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+nosetests.xml
+*.cover
+*.py,cover
+
+# ------------------------------
+# Runtime/local state
+# ------------------------------
+.config/
 .t2c/
 out/
+tmp/
+temp/
+*.tmp
+*.bak
+
+# ------------------------------
+# Logs and reports
+# ------------------------------
+*.log
+*.pid
+*.seed
+*.stackdump
+
+# ------------------------------
+# Editor and IDE settings
+# ------------------------------
+.vscode/
+.idea/
+*.iml
+*.suo
+*.user
+*.userossc
+*.swp
+*.swo
+*~
+
+# ------------------------------
+# OS-generated files
+# ------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
