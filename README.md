@@ -41,6 +41,12 @@ docker compose build explorer
 docker compose run --rm explorer python main.py
 ```
 
+GPU passthrough launch:
+
+```bash
+docker compose --profile gpu run --rm explorer-gpu python main.py
+```
+
 <p align="center">
   <img src="assets/render/tui_explorer.gif" alt="TUI explorer preview" width="86%">
 </p>
