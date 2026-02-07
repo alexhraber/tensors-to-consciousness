@@ -79,14 +79,14 @@ class CommonVizTests(unittest.TestCase):
                 common_viz.viz_stage("stage_off", scope, lambda x: x, framework="numpy")
         self.assertEqual(buf.getvalue(), "")
 
-    def test_viz_stage_kitty_falls_back_to_half_block(self) -> None:
+    def test_viz_stage_plots_falls_back_to_heatmap(self) -> None:
         common_viz = _load_common_viz()
         np = common_viz.np
         scope = {"x": np.arange(64, dtype=np.float32).reshape(8, 8)}
 
         with patch.dict(
             os.environ,
-            {"T2C_VIZ_STYLE": "kitty", "T2C_VIZ_TRACE": "1"},
+            {"T2C_VIZ_STYLE": "plots", "T2C_VIZ_TRACE": "1"},
             clear=False,
         ), patch.object(common_viz, "_supports_graphical_terminal", return_value=True), patch.object(
             common_viz, "_supports_kitty_graphics", return_value=False
@@ -94,9 +94,9 @@ class CommonVizTests(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 common_viz.viz_stage("stage_fallback", scope, lambda x: x, framework="numpy")
-        self.assertIn("[VIS renderer=half-block]", buf.getvalue())
+        self.assertIn("[VIS renderer=heatmap]", buf.getvalue())
 
-    def test_viz_stage_default_prefers_kitty_when_inline_available(self) -> None:
+    def test_viz_stage_default_prefers_plots_when_inline_available(self) -> None:
         common_viz = _load_common_viz()
         np = common_viz.np
         scope = {"x": np.arange(64, dtype=np.float32).reshape(8, 8)}
@@ -107,7 +107,7 @@ class CommonVizTests(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 common_viz.viz_stage("stage_fluid", scope, lambda x: x, framework="numpy")
-        self.assertIn("[VIS renderer=kitty]", buf.getvalue())
+        self.assertIn("[VIS renderer=plots]", buf.getvalue())
 
     def test_inline_support_requires_capability_or_force(self) -> None:
         common_viz = _load_common_viz()

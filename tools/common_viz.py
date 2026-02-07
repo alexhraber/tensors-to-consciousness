@@ -86,36 +86,6 @@ def _viridis(v: float) -> tuple[int, int, int]:
     return r, g, bch
 
 
-def _ansi_heatmap(arr: np.ndarray, width: int = 36, height: int = 12) -> str:
-    if arr.ndim == 1:
-        arr = arr.reshape(1, -1)
-    if arr.ndim > 2:
-        arr = arr.reshape(arr.shape[0], -1)
-    arr = np.asarray(arr, dtype=np.float32)
-    if arr.size == 0:
-        return "(empty)"
-
-    h, w = arr.shape
-    ys = np.linspace(0, h - 1, num=min(height, h), dtype=int)
-    xs = np.linspace(0, w - 1, num=min(width, w), dtype=int)
-    sampled = arr[np.ix_(ys, xs)]
-    mn = float(np.min(sampled))
-    mx = float(np.max(sampled))
-    if mx - mn < 1e-12:
-        norm = np.zeros_like(sampled, dtype=np.float32)
-    else:
-        norm = (sampled - mn) / (mx - mn)
-
-    lines: list[str] = []
-    for row in norm:
-        cells = []
-        for v in row:
-            r, g, b = _viridis(float(v))
-            cells.append(f"\x1b[48;2;{r};{g};{b}m  \x1b[0m")
-        lines.append("".join(cells))
-    return "\n".join(lines)
-
-
 def _full_block_heatmap(arr: np.ndarray, width: int = 56, height: int = 20) -> str:
     """Truecolor full-block renderer (one sample per terminal cell)."""
     if arr.ndim == 1:
@@ -231,23 +201,6 @@ def _kitty_transmit_payload(
     return "".join(chunks)
 
 
-def _kitty_from_rgb(rgb: np.ndarray, cells_w: int = 48, cells_h: int = 12) -> str:
-    rgb = np.asarray(rgb, dtype=np.uint8)
-    if rgb.ndim != 3 or rgb.shape[2] != 3:
-        return "(empty)"
-    if rgb.size == 0:
-        return "(empty)"
-    payload_b64 = base64.b64encode(rgb.tobytes()).decode("ascii")
-    return _kitty_transmit_payload(
-        payload_b64,
-        format_code=24,
-        pixel_w=rgb.shape[1],
-        pixel_h=rgb.shape[0],
-        cells_w=cells_w,
-        cells_h=cells_h,
-    )
-
-
 def _kitty_from_png_bytes(png_bytes: bytes, cells_w: int = 64, cells_h: int = 18) -> str:
     if not png_bytes:
         return "(empty)"
@@ -280,64 +233,6 @@ def _upsample_interp(arr: np.ndarray, out_h: int, out_w: int) -> np.ndarray:
     for j in range(out_w):
         out[:, j] = np.interp(y_new, y_old, tmp[:, j]).astype(np.float32)
     return out
-
-
-def _box_blur(arr: np.ndarray, rounds: int = 2) -> np.ndarray:
-    out = np.asarray(arr, dtype=np.float32)
-    for _ in range(max(1, rounds)):
-        padded = np.pad(out, ((1, 1), (1, 1)), mode="reflect")
-        out = (
-            padded[:-2, :-2]
-            + padded[:-2, 1:-1]
-            + padded[:-2, 2:]
-            + padded[1:-1, :-2]
-            + padded[1:-1, 1:-1]
-            + padded[1:-1, 2:]
-            + padded[2:, :-2]
-            + padded[2:, 1:-1]
-            + padded[2:, 2:]
-        ) / 9.0
-    return out.astype(np.float32)
-
-
-def _fluid_rgb(arr: np.ndarray, width: int = 320, height: int = 180) -> np.ndarray:
-    """Generate a smooth, non-blocky color field suitable for inline image rendering."""
-    if arr.ndim == 1:
-        arr = arr.reshape(1, -1)
-    if arr.ndim > 2:
-        arr = arr.reshape(arr.shape[0], -1)
-    arr = np.asarray(arr, dtype=np.float32)
-    if arr.size == 0:
-        return np.zeros((1, 1, 3), dtype=np.uint8)
-
-    sampled = _upsample_interp(arr, out_h=max(24, height), out_w=max(24, width))
-    if sampled.shape[0] < 2:
-        sampled = np.vstack([sampled, sampled])
-    if sampled.shape[1] < 2:
-        sampled = np.hstack([sampled, sampled])
-    sampled = _box_blur(sampled, rounds=3)
-    # Add soft ridges so tiny tensors still get visible, fluid-looking structure.
-    yy = np.linspace(0.0, 1.0, sampled.shape[0], dtype=np.float32)[:, None]
-    xx = np.linspace(0.0, 1.0, sampled.shape[1], dtype=np.float32)[None, :]
-    sampled = sampled + 0.08 * np.sin(2.0 * np.pi * (1.3 * xx + 0.7 * yy))
-
-    mn = float(np.min(sampled))
-    mx = float(np.max(sampled))
-    if mx - mn < 1e-12:
-        norm = np.full_like(sampled, 0.5, dtype=np.float32)
-    else:
-        norm = (sampled - mn) / (mx - mn)
-
-    rgb = np.zeros((norm.shape[0], norm.shape[1], 3), dtype=np.uint8)
-    for y in range(norm.shape[0]):
-        for x in range(norm.shape[1]):
-            rgb[y, x] = _viridis(float(norm[y, x]))
-    return rgb
-
-
-def _fluid_inline_render(arr: np.ndarray, width: int = 320, height: int = 180) -> str:
-    rgb = _fluid_rgb(arr, width=width, height=height)
-    return _kitty_from_rgb(rgb, cells_w=64, cells_h=18)
 
 
 def _matplotlib_plot_png(arr: np.ndarray, width_px: int = 960, height_px: int = 540) -> bytes | None:
@@ -442,41 +337,42 @@ def viz_stage(
 
     # Prefer larger tensors to show the most informative surfaces.
     candidates.sort(key=lambda item: item[1].size, reverse=True)
-    style = os.environ.get("T2C_VIZ_STYLE", "kitty").strip().lower()
+    style = os.environ.get("T2C_VIZ_STYLE", "plots").strip().lower()
     use_graphics = style != "ascii" and _supports_graphical_terminal()
     kitty_ok = _supports_kitty_graphics()
     inline_image_ok = _supports_inline_image_graphics()
     chosen = "ascii"
     # Canonical fallback chain:
-    # kitty -> half-block -> full-block -> ascii
-    # Legacy aliases are preserved for compatibility.
-    if style in {"kitty", "image", "auto", "fluid-render", "fluid-image", "fluid"}:
+    # plots -> heatmap -> matrix -> ascii
+    if style == "plots":
         if inline_image_ok and kitty_ok:
-            chosen = "kitty"
+            chosen = "plots"
         elif use_graphics:
-            chosen = "half-block"
+            chosen = "heatmap"
         elif sys.stdout.isatty():
-            chosen = "full-block"
+            chosen = "matrix"
         else:
             chosen = "ascii"
-    elif style in {"gpu-render", "gpu", "half-block", "half-cubes", "half", "pixel"}:
+    elif style == "heatmap":
         if use_graphics:
-            chosen = "half-block"
+            chosen = "heatmap"
         elif sys.stdout.isatty():
-            chosen = "full-block"
+            chosen = "matrix"
         else:
             chosen = "ascii"
-    elif style in {"full-block", "full-cubes", "full", "ansi"}:
+    elif style == "matrix":
         if use_graphics:
-            chosen = "full-block"
+            chosen = "matrix"
         else:
             chosen = "ascii"
-    elif style in {"ascii", "text"}:
+    elif style == "ascii":
         chosen = "ascii"
+    else:
+        chosen = "plots" if inline_image_ok and kitty_ok else ("heatmap" if use_graphics else "ascii")
     if os.environ.get("T2C_VIZ_TRACE", "1").strip().lower() in {"1", "true", "yes", "on"}:
         print(f"[VIS renderer={chosen}]")
-        if chosen != "kitty":
-            print("[VIS hint] Kitty graphics unavailable; using fallback renderer.")
+        if chosen != "plots":
+            print("[VIS hint] Plot rendering unavailable; using synthesized fallback.")
 
     print(f"\n[VIS:{framework}] {stage}")
     for name, arr in candidates[:limit]:
@@ -485,15 +381,15 @@ def viz_stage(
             f"- {name}: shape={arr_f.shape} mean={arr_f.mean():.4f} "
             f"std={arr_f.std():.4f} min={arr_f.min():.4f} max={arr_f.max():.4f}"
         )
-        if chosen == "kitty":
+        if chosen == "plots":
             png_bytes = _matplotlib_plot_png(arr_f, width_px=960, height_px=540)
             if png_bytes is not None:
                 print(_kitty_from_png_bytes(png_bytes, cells_w=72, cells_h=22))
             else:
                 print(_pixel_heatmap(arr_f, width=72, height=30))
-        elif chosen == "half-block":
+        elif chosen == "heatmap":
             print(_pixel_heatmap(arr_f, width=72, height=30))
-        elif chosen == "full-block":
+        elif chosen == "matrix":
             print(_full_block_heatmap(arr_f, width=72, height=30))
         else:
             print(_ascii_heatmap(arr_f))
