@@ -49,7 +49,8 @@ mise run test-all
 - Rust core build: `./tools/build_rust_core.sh`
 - Local Actions simulation with `act` (workflow-driven, executes `mise` tasks): `mise run act-ci`
 - Full pre-push gate (single validation choke point: hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
-- PR submission helper: `mise run submit-pr` (pushes current feature branch and runs `gh pr create --fill`)
+- PR submission helper: `mise run submit-pr` (pushes current feature branch and opens/reuses a PR via GitHub API with DNS override fallback)
+- Optional DNS override list for GitHub API: `GH_API_RESOLVE_IPS=140.82.114.6,140.82.113.6,140.82.112.6`
 - Pre-push cache: successful gate jobs are cached per change signature in `.git/t2c-cache/act-gate.json` to keep repeat loops fast
 - Pre-push parallelism: default is all local cores (`CI_GATE_JOBS=nproc`); set `CI_GATE_JOBS=<n|nproc>` (or run `python tools/pre_push_gate.py --jobs <n|nproc>`) to tune concurrency
 
