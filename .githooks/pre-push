@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+branch="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "${ALLOW_MAIN_PUSH:-0}" != "1" ]] && [[ "$branch" == "main" || "$branch" == "master" ]]; then
+  echo "Direct pushes from '$branch' are blocked by repository policy." >&2
+  echo "Push your feature branch and open a PR instead:" >&2
+  echo "  mise run submit-pr" >&2
+  echo "Set ALLOW_MAIN_PUSH=1 only for exceptional maintenance pushes." >&2
+  exit 1
+fi
+
 if [[ "${SKIP_ACT:-0}" == "1" ]]; then
   echo "SKIP_ACT=1 set; skipping act pre-push validation." >&2
   exit 0

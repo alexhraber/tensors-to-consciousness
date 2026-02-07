@@ -28,6 +28,7 @@ mise run test-all
 
 - Keep changes scoped and reviewable.
 - Use conventional commit subjects: `type(scope): summary` (enforced by `.githooks/commit-msg`).
+- Branch-first policy: commits and pushes from `main`/`master` are blocked by hooks (override only with `ALLOW_MAIN_COMMIT=1` or `ALLOW_MAIN_PUSH=1`).
 - Regenerate generated references when catalog/framework contracts change.
 - Do not commit runtime state (`.config/`, virtual environments, caches, output scratch files).
 
@@ -44,8 +45,9 @@ mise run test-all
 - Rust core build: `./tools/build_rust_core.sh`
 - Local Actions simulation with `act` (workflow-driven, executes `mise` tasks): `mise run act-ci`
 - Full pre-push gate (single validation choke point: hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
+- PR submission helper: `mise run submit-pr` (pushes current feature branch and runs `gh pr create --fill`)
 - Pre-push cache: successful gate jobs are cached per change signature in `.git/t2c-cache/act-gate.json` to keep repeat loops fast
-- Pre-push parallelism: set `CI_GATE_JOBS=<n>` (or run `python tools/pre_push_gate.py --jobs <n>`) to tune concurrency; `act-ci-*` jobs are serialized by default for `act` stability (override with `CI_GATE_ACT_PARALLEL=1`)
+- Pre-push parallelism: set `CI_GATE_JOBS=<n|nproc>` (or run `python tools/pre_push_gate.py --jobs <n|nproc>`) to tune concurrency; `act-ci-*` jobs are serialized by default for `act` stability (override with `CI_GATE_ACT_PARALLEL=1`)
 
 Commit message examples:
 

@@ -86,20 +86,32 @@ def _run_task(task: str) -> None:
     subprocess.run(["mise", "run", task], cwd=ROOT, check=True)
 
 
-def _resolve_jobs(jobs_arg: int | None, tasks: list[str]) -> int:
+def _parse_jobs_value(raw: str | None) -> int | None:
+    if raw is None:
+        return None
+    value = raw.strip().lower()
+    if not value:
+        return None
+    if value in {"nproc", "cpu", "cpus", "max"}:
+        return os.cpu_count() or 2
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def _resolve_jobs(jobs_arg: str | None, tasks: list[str]) -> int:
     task_count = len(tasks)
     if task_count <= 1:
         return 1
     if any(task.startswith("act-ci-") for task in tasks) and os.environ.get("CI_GATE_ACT_PARALLEL") != "1":
         return 1
-    if jobs_arg is not None:
-        return max(1, min(jobs_arg, task_count))
-    jobs_env = os.environ.get("CI_GATE_JOBS")
-    if jobs_env:
-        try:
-            return max(1, min(int(jobs_env), task_count))
-        except ValueError:
-            pass
+    parsed_jobs_arg = _parse_jobs_value(jobs_arg)
+    if parsed_jobs_arg is not None:
+        return max(1, min(parsed_jobs_arg, task_count))
+    parsed_jobs_env = _parse_jobs_value(os.environ.get("CI_GATE_JOBS"))
+    if parsed_jobs_env is not None:
+        return max(1, min(parsed_jobs_env, task_count))
     cpu = os.cpu_count() or 2
     return max(1, min(2, cpu, task_count))
 
@@ -153,9 +165,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--jobs",
-        type=int,
+        type=str,
         default=None,
-        help="Parallel local gate jobs (default: 2; act-ci tasks are serialized unless CI_GATE_ACT_PARALLEL=1).",
+        help="Parallel local gate jobs (int or 'nproc'; act-ci tasks are serialized unless CI_GATE_ACT_PARALLEL=1).",
     )
     return parser.parse_args()
 
