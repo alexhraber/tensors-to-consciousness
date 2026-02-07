@@ -171,7 +171,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Enforce test job budget
-        if: always()
+        if: ${{ always() && env.LOCAL_ACT != 'true' }}
         run: |
           DUR="${JOB_DURATION_SEC}"
           WARN="${CI_BUDGET_TEST_WARN_SEC}"
@@ -327,7 +327,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Enforce render job budget
-        if: always()
+        if: ${{ always() && env.LOCAL_ACT != 'true' }}
         run: |
           DUR="${JOB_DURATION_SEC}"
           WARN="${CI_BUDGET_RENDER_WARN_SEC}"
