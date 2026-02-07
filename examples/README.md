@@ -13,10 +13,10 @@ Input presets for `--inputs` / `INPUTS`.
 ## Usage
 
 ```bash
-python explorer.py run --framework jax --transforms chain_rule,momentum,adam --inputs examples/inputs.example.json
-python explorer.py run --framework numpy --transforms spectral_filter,wave_propagation --inputs examples/inputs.spectral_sweep.json
-python explorer.py run --framework pytorch --transforms constraint_projection,entropy_flow --inputs examples/inputs.stability_focus.json
-python explorer.py run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
+explorer run --framework jax --transforms chain_rule,momentum,adam --inputs examples/inputs.example.json
+explorer run --framework numpy --transforms spectral_filter,wave_propagation --inputs examples/inputs.spectral_sweep.json
+explorer run --framework pytorch --transforms constraint_projection,entropy_flow --inputs examples/inputs.stability_focus.json
+explorer run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
 ```
 
 ## Headless Progression Examples
@@ -24,13 +24,13 @@ python explorer.py run --framework keras --transforms reaction_diffusion,stochas
 These transform progressions back the three README render GIFs:
 
 ```bash
-python explorer.py run --framework numpy --transforms tensor_ops,chain_rule,gradient_descent,momentum,adam --inputs examples/inputs.example.json
-python explorer.py run --framework numpy --transforms forward_pass,activation_flow,attention_surface,attention_message_passing --inputs examples/inputs.framework_matrix.json
-python explorer.py run --framework numpy --transforms laplacian_diffusion,reaction_diffusion,spectral_filter,wave_propagation,entropy_flow --inputs examples/inputs.spectral_sweep.json
+explorer run --framework numpy --transforms tensor_ops,chain_rule,gradient_descent,momentum,adam --inputs examples/inputs.example.json
+explorer run --framework numpy --transforms forward_pass,activation_flow,attention_surface,attention_message_passing --inputs examples/inputs.framework_matrix.json
+explorer run --framework numpy --transforms laplacian_diffusion,reaction_diffusion,spectral_filter,wave_propagation,entropy_flow --inputs examples/inputs.spectral_sweep.json
 ```
 
 Inline JSON also works:
 
 ```bash
-python explorer.py run --framework numpy --transforms tensor_ops,chain_rule --inputs '{"seed": 9, "normal": {"std": 0.5}}'
+explorer run --framework numpy --transforms tensor_ops,chain_rule --inputs '{"seed": 9, "normal": {"std": 0.5}}'
 ```

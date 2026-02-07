@@ -216,7 +216,7 @@ def capture_tui_session_gif(
 def capture_transform_progression_gif(
     *,
     output_gif: Path,
-    python_exe: str,
+    explorer_bin: str,
     framework: str,
     transforms: str,
     inputs: str | None = None,
@@ -228,8 +228,7 @@ def capture_transform_progression_gif(
 ) -> None:
     cmd_parts = [
         "export TERM=xterm-256color COLORTERM=truecolor PYTHONUNBUFFERED=1;",
-        shlex.quote(python_exe),
-        "explorer.py",
+        shlex.quote(explorer_bin),
         "run",
         "--framework",
         shlex.quote(framework),

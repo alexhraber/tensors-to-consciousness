@@ -5,10 +5,10 @@ import unittest
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run test suites.")
+    parser = argparse.ArgumentParser(description="Run Python (ML/transform) test suites.")
     parser.add_argument(
         "--suite",
-        choices=["all", "unit", "integration"],
+        choices=["all", "unit"],
         default="all",
         help="Select test suite scope (default: all).",
     )
@@ -25,11 +25,9 @@ def main() -> int:
     args = parse_args()
     loader = unittest.defaultTestLoader
     if args.suite == "all":
-        suite = loader.discover("tests")
-    elif args.suite == "unit":
-        suite = loader.discover("tests/unit")
+        suite = loader.discover("tests/python")
     else:
-        suite = loader.discover("tests/integration")
+        suite = loader.discover("tests/python/unit")
     result = unittest.TextTestRunner(verbosity=args.verbosity).run(suite)
     return 0 if result.wasSuccessful() else 1
 

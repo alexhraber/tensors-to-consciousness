@@ -1,2 +1,0 @@
-"""Unit test package."""
-

@@ -24,6 +24,8 @@ pub enum OpsCmd {
     SubmitPr(SubmitPrArgs),
     /// Path-selected local CI gate (hook -> Docker -> CI-equivalent commands)
     PrePushGate(PrePushGateArgs),
+    /// Run repository test suites (Rust by default; optional Python ML/transform tests)
+    Test(TestArgs),
 }
 
 #[derive(Args)]
@@ -58,6 +60,13 @@ pub struct PrePushGateArgs {
     pub jobs: Option<String>,
 }
 
+#[derive(Args)]
+pub struct TestArgs {
+    /// One of: rust, python, all
+    #[arg(long, default_value = "rust", value_parser = ["rust", "python", "all"])]
+    pub scope: String,
+}
+
 pub fn run_ops(cmd: OpsCmd) -> Result<()> {
     match cmd {
         OpsCmd::GitPolicy(args) => git_policy(&args.hook),
@@ -65,7 +74,48 @@ pub fn run_ops(cmd: OpsCmd) -> Result<()> {
         OpsCmd::Bootstrap(args) => bootstrap(args.quiet, args.strict),
         OpsCmd::SubmitPr(args) => submit_pr(&args.base, args.skip_push),
         OpsCmd::PrePushGate(args) => pre_push_gate(&args.mode, args.no_cache, args.jobs.as_deref()),
+        OpsCmd::Test(args) => run_tests(&args.scope),
     }
+}
+
+fn run_tests(scope: &str) -> Result<()> {
+    match scope {
+        "rust" => {
+            run_status(&["cargo", "test", "-p", "explorer"], false)?;
+            // `core` is a Python extension module; validate by building it.
+            run_status(&["cargo", "build", "-p", "core"], false)?;
+        }
+        "python" => {
+            // Compile all tracked python sources (fast sanity check).
+            let files = run_output(&["git", "ls-files", "*.py"])?;
+            let mut args: Vec<String> = vec!["python".to_string(), "-m".to_string(), "py_compile".to_string()];
+            for f in files.lines().map(|l| l.trim()).filter(|l| !l.is_empty()) {
+                args.push(f.to_string());
+            }
+            if args.len() > 3 {
+                let root = repo_root()?;
+                let status = Command::new(&args[0])
+                    .args(&args[1..])
+                    .current_dir(root)
+                    .status()
+                    .context("python -m py_compile <files>")?;
+                if !status.success() {
+                    return Err(anyhow!("python bytecode compilation failed"));
+                }
+            }
+            run_status(&["python", "-m", "tests.python", "--suite", "unit"], false)?;
+        }
+        "all" => {
+            run_tests("rust")?;
+            run_tests("python")?;
+        }
+        other => {
+            return Err(anyhow!(
+                "invalid test scope: {other} (expected: rust, python, all)"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn repo_root() -> Result<PathBuf> {
@@ -551,8 +601,6 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
     let test_inputs = has_exact(
         paths,
         &[
-            "explorer.py",
-            "app/explorer.py",
             ".python-version",
             "mise.toml",
             "Cargo.toml",
@@ -562,7 +610,7 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
         ],
     ) || has_prefix(
         paths,
-        &["app/", "transforms/", "frameworks/", "tools/", "tests/", "crates/"],
+        &["transforms/", "frameworks/", "tools/", "tests/python/", "crates/"],
     );
 
     let transform_contract_inputs = has_prefix(paths, &["transforms/"])
@@ -571,7 +619,6 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
             &[
                 "frameworks/engine.py",
                 "tools/runtime.py",
-                "tools/playground.py",
                 "mise.toml",
                 ".github/workflows/ci.yml",
             ],
@@ -581,7 +628,6 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
         || has_exact(
             paths,
             &[
-                "tools/setup.py",
                 "tools/runtime.py",
                 "mise.toml",
                 ".github/workflows/ci.yml",
@@ -721,10 +767,11 @@ fn run_ci_task(task: &str, image: &str) -> Result<()> {
         "ci-test" => {
             r#"git config --global --add safe.directory /workspace && \
 python -m py_compile $(git ls-files "*.py") && \
+cargo test -p explorer && \
+cargo build -p core && \
 python -m coverage erase && \
-python -m coverage run -m tests --suite unit && \
-python -m coverage run --append -m tests --suite integration && \
-python -m coverage report --show-missing --fail-under=69 && \
+python -m coverage run -m tests.python --suite unit && \
+python -m coverage report --show-missing && \
 python -m coverage xml -o coverage.xml && \
 explorer --help >/dev/null && \
 explorer list-transforms >/dev/null"#

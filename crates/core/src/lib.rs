@@ -266,6 +266,11 @@ fn parse_assignment(py: Python<'_>, expr: &str) -> PyResult<PyObject> {
     Ok(tuple.into_any().unbind())
 }
 
+// Note: we intentionally avoid Rust unit tests here.
+// `core` is built as a Python extension module (`cdylib`), and running
+// `cargo test` requires linking against libpython, which is not guaranteed to
+// be available in minimal CI images. CI validates this crate by building it.
+
 #[pyfunction]
 fn normalize_platform(raw: Option<&str>, default_platform: &str) -> PyResult<String> {
     let p = raw.unwrap_or(default_platform).trim().to_ascii_lowercase();
