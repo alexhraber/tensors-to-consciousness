@@ -2,4 +2,3 @@
 set -euo pipefail
 
 python tools/setup_contributor.py --quiet
-mise run pre-commit

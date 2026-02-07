@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 import subprocess
 import sys
 import argparse
+import time
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CACHE_FILE = ROOT / ".git" / "t2c-cache" / "act-gate.json"
 
 
 def _git_output(*args: str) -> str:
@@ -81,7 +86,7 @@ def select_act_tasks(paths: list[str]) -> list[str]:
     if runtime or tests or ci:
         tasks.extend(
             [
-                "act-ci-test-matrix",
+                "act-ci-test",
                 "act-ci-transform-contract",
                 "act-ci-framework-contract-numpy",
             ]
@@ -99,6 +104,40 @@ def _run_task(task: str) -> None:
     subprocess.run(["mise", "run", task], cwd=ROOT, check=True)
 
 
+def _load_cache() -> dict[str, dict[str, float]]:
+    try:
+        payload = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+        entries = payload.get("entries")
+        if isinstance(entries, dict):
+            normalized: dict[str, dict[str, float]] = {}
+            for k, v in entries.items():
+                if isinstance(k, str) and isinstance(v, dict):
+                    ts = float(v.get("ts", 0.0))
+                    normalized[k] = {"ts": ts}
+            return normalized
+    except (FileNotFoundError, json.JSONDecodeError, OSError, ValueError, TypeError):
+        pass
+    return {}
+
+
+def _save_cache(entries: dict[str, dict[str, float]]) -> None:
+    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if len(entries) > 400:
+        newest = sorted(entries.items(), key=lambda item: item[1].get("ts", 0.0), reverse=True)[:200]
+        entries = dict(newest)
+    CACHE_FILE.write_text(json.dumps({"entries": entries}, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _cache_signature(mode: str, base_ref: str, paths: list[str]) -> str:
+    head = _git_output("rev-parse", "HEAD")
+    if mode == "pre-push":
+        payload = f"mode={mode}\nhead={head}\nbase={base_ref}\npaths=" + "\n".join(sorted(paths))
+    else:
+        staged = _git_output("diff", "--cached")
+        payload = f"mode={mode}\nhead={head}\nstaged_diff={staged}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run path-selected act CI jobs.")
     parser.add_argument(
@@ -107,11 +146,17 @@ def parse_args() -> argparse.Namespace:
         default="pre-push",
         help="Change scope mode: staged files for pre-commit or branch diff for pre-push.",
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable local gate cache and force all selected act jobs to run.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    cache_disabled = args.no_cache or os.environ.get("CI_GATE_NO_CACHE") == "1"
     base_ref = _best_base_ref()
     paths = (
         _changed_files_for_pre_commit() if args.mode == "pre-commit" else _changed_files_for_pre_push(base_ref)
@@ -125,12 +170,33 @@ def main() -> int:
         return 0
 
     prefix = "pre-commit" if args.mode == "pre-commit" else "pre-push"
+    signature = _cache_signature(args.mode, base_ref, paths)
+    cache_entries = {} if cache_disabled else _load_cache()
+    cache_dirty = False
     if args.mode == "pre-push":
         print(f"[{prefix}] Base ref: {base_ref}")
     print(f"[{prefix}] Changed files: {len(paths)}")
     for task in tasks:
+        cache_key = f"{args.mode}:{task}:{signature}"
+        if not cache_disabled and cache_key in cache_entries:
+            print(f"[{prefix}] Skipping {task} (cached success).")
+            continue
         print(f"[{prefix}] Running {task}")
-        _run_task(task)
+        try:
+            _run_task(task)
+        except subprocess.CalledProcessError as exc:
+            print(f"[{prefix}] ERROR {task} failed (exit {exc.returncode}).", file=sys.stderr)
+            print(
+                f"[{prefix}] Install/refresh toolchain with `mise install`, "
+                f"then retry. For one-off bypass: `SKIP_ACT=1 git commit` or `SKIP_ACT=1 git push`.",
+                file=sys.stderr,
+            )
+            return exc.returncode or 1
+        if not cache_disabled:
+            cache_entries[cache_key] = {"ts": time.time()}
+            cache_dirty = True
+    if not cache_disabled and cache_dirty:
+        _save_cache(cache_entries)
     print(f"[{prefix}] Completed selected act jobs.")
     return 0
 

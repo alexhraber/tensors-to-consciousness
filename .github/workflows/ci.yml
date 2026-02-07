@@ -49,20 +49,34 @@ jobs:
     name: Change Detection
     runs-on: ubuntu-latest
     outputs:
-      runtime: ${{ steps.filter.outputs.runtime }}
-      tests: ${{ steps.filter.outputs.tests }}
-      docs: ${{ steps.filter.outputs.docs }}
-      render: ${{ steps.filter.outputs.render }}
-      ci: ${{ steps.filter.outputs.ci }}
+      runtime: ${{ steps.filter.outputs.runtime || steps.act_defaults.outputs.runtime }}
+      tests: ${{ steps.filter.outputs.tests || steps.act_defaults.outputs.tests }}
+      docs: ${{ steps.filter.outputs.docs || steps.act_defaults.outputs.docs }}
+      render: ${{ steps.filter.outputs.render || steps.act_defaults.outputs.render }}
+      ci: ${{ steps.filter.outputs.ci || steps.act_defaults.outputs.ci }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Local act defaults
+        id: act_defaults
+        if: ${{ env.ACT == 'true' }}
+        run: |
+          {
+            echo "runtime=true"
+            echo "tests=true"
+            echo "docs=true"
+            echo "render=true"
+            echo "ci=true"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Filter changed paths
         id: filter
+        if: ${{ env.ACT != 'true' }}
         uses: dorny/paths-filter@v3
         with:
+          base: ${{ github.event.repository.default_branch || 'main' }}
           filters: |
             runtime:
               - "explorer.py"
@@ -87,15 +101,11 @@ jobs:
               - ".github/ci/**"
               - ".github/workflows/**"
 
-  test-matrix:
-    name: Test (Python ${{ matrix.python-version }})
+  test:
+    name: Test (Python 3.14)
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout
@@ -112,7 +122,7 @@ jobs:
 
       - name: Select Python version
         run: |
-          mise use -g python@${{ matrix.python-version }}
+          mise use -g python@3.14
 
       - name: Toolchain versions
         run: |
@@ -145,10 +155,10 @@ jobs:
           DURATION=$((END_TS - JOB_START_TS))
           echo "JOB_DURATION_SEC=${DURATION}" >> "$GITHUB_ENV"
           mkdir -p ci-metrics
-          cat > "ci-metrics/test-matrix-py${{ matrix.python-version }}.json" <<EOF
+          cat > "ci-metrics/test-py3.14.json" <<EOF
           {
-            "job": "test-matrix",
-            "python_version": "${{ matrix.python-version }}",
+            "job": "test",
+            "python_version": "3.14",
             "duration_seconds": ${DURATION},
             "run_id": "${{ github.run_id }}",
             "run_attempt": "${{ github.run_attempt }}",
@@ -156,7 +166,7 @@ jobs:
           }
           EOF
           {
-            echo "### CI Timing: test-matrix (py${{ matrix.python-version }})"
+            echo "### CI Timing: test (py3.14)"
             echo "- Duration: ${DURATION}s"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -175,19 +185,19 @@ jobs:
           fi
 
       - name: Upload timing metrics
-        if: always()
+        if: ${{ always() && env.LOCAL_ACT != 'true' && env.ACT != 'true' && github.actor != 'nektos/act' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ci-timing-test-matrix-py${{ matrix.python-version }}
-          path: ci-metrics/test-matrix-py${{ matrix.python-version }}.json
+          name: ci-timing-test-py3.14
+          path: ci-metrics/test-py3.14.json
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload coverage report
-        if: always()
+        if: ${{ always() && env.LOCAL_ACT != 'true' && env.ACT != 'true' && github.actor != 'nektos/act' }}
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-py${{ matrix.python-version }}
+          name: coverage-report-py3.14
           path: coverage.xml
           if-no-files-found: error
           retention-days: 30
@@ -331,7 +341,7 @@ jobs:
           fi
 
       - name: Upload timing metrics
-        if: always()
+        if: ${{ always() && env.LOCAL_ACT != 'true' && env.ACT != 'true' && github.actor != 'nektos/act' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-timing-render-assets

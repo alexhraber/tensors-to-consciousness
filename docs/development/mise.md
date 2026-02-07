@@ -28,7 +28,6 @@ mise run contract-transforms
 FRAMEWORK=numpy mise run contract-framework
 mise run assets-regenerate
 mise run act-ci
-mise run pre-commit
 mise run pre-push
 ```
 
@@ -40,7 +39,7 @@ This keeps the chain consistent: hook -> `act` -> workflow -> `mise`.
 Requirements:
 
 - Docker
-- `act` (https://nektosact.com/installation/)
+- `act` (managed by `mise` in this repository; install via `mise install`)
 
 Run CI-equivalent workflow checks:
 
@@ -59,17 +58,23 @@ Pre-push behavior:
 - detects changed files relative to upstream
 - selects only relevant `act` jobs
 - each selected workflow job executes `mise run ...` tasks inside the workflow
+- caches successful local gate runs in `.git/t2c-cache/act-gate.json` to speed repeated loops on unchanged signatures
 
 Pre-commit behavior:
 
-- detects staged changed files
-- selects only relevant `act` jobs
-- executes the same workflow jobs and `mise run ...` tasks as GitHub Actions
+- contributor bootstrap only (`tools/setup_contributor.py`)
+- full validation intentionally runs at pre-push to avoid duplicate local pain
 
 Emergency bypass for one push:
 
 ```bash
 SKIP_ACT=1 git push
+```
+
+Force cache bypass for a single gate run:
+
+```bash
+CI_GATE_NO_CACHE=1 mise run pre-push
 ```
 
 ## Render and Headless Capture

@@ -118,7 +118,25 @@ class TuiInteractiveFlowTests(unittest.TestCase):
                                         with patch.object(tui.shinkei, "_ascii_heatmap", return_value="plot"):
                                             with patch.object(tui.shinkei, "_format_caption", side_effect=lambda x: x):
                                                 with patch.object(tui, "_layout_for_view", return_value={"cols": 120, "rows": 40, "header_w": 96, "plot_w": 80, "plot_h": 20, "ascii_w": 80, "ascii_h": 20}):
-                                                    with patch.object(tui, "_render_landing", side_effect=lambda framework, platform, width, term_cols, term_rows: landing_calls.append((framework, platform))):
+                                                    original_landing_frame_text = tui._landing_frame_text
+
+                                                    def _record_landing_frame(
+                                                        framework: str,
+                                                        platform: str,
+                                                        width: int,
+                                                        term_cols: int,
+                                                        term_rows: int,
+                                                    ) -> str:
+                                                        landing_calls.append((framework, platform))
+                                                        return original_landing_frame_text(
+                                                            framework,
+                                                            platform,
+                                                            width,
+                                                            term_cols,
+                                                            term_rows,
+                                                        )
+
+                                                    with patch.object(tui, "_landing_frame_text", side_effect=_record_landing_frame):
                                                         with patch.object(tui.sys, "stdin", _FakeStdin()):
                                                             with patch.object(tui.sys, "stdout", _FakeStdout()):
                                                                 rc = tui._render_interactive(

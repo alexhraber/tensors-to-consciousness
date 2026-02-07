@@ -36,12 +36,13 @@ mise run test-all
 - Repo hook entry: `.githooks/pre-push`
 - Installer: `python tools/install_githooks.py`
 - Contributor bootstrap: `python tools/setup_contributor.py` (auto-invoked by `.githooks/pre-commit` when needed)
-- Pre-commit gate: `mise run pre-commit` (same validation chain as Actions, scoped to staged changes)
+- Pre-commit hook: lightweight bootstrap only
 - Catalog docs generator: `mise run docs-generate`
 - Render asset generator: `mise run assets-regenerate`
 - Rust core build: `./tools/build_rust_core.sh`
 - Local Actions simulation with `act` (workflow-driven, executes `mise` tasks): `mise run act-ci`
-- Full pre-push gate (hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
+- Full pre-push gate (single validation choke point: hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
+- Pre-push cache: successful gate jobs are cached per change signature in `.git/t2c-cache/act-gate.json` to keep repeat loops fast
 
 ## Adding or Updating Framework Backends
 

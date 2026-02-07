@@ -8,7 +8,7 @@ from tools.pre_push_gate import select_act_tasks
 class PrePushGateTests(unittest.TestCase):
     def test_runtime_change_selects_core_jobs(self) -> None:
         tasks = select_act_tasks(["tools/tui.py"])
-        self.assertIn("act-ci-test-matrix", tasks)
+        self.assertIn("act-ci-test", tasks)
         self.assertIn("act-ci-transform-contract", tasks)
         self.assertIn("act-ci-framework-contract-numpy", tasks)
         self.assertIn("act-ci-docs-sync", tasks)
@@ -24,7 +24,7 @@ class PrePushGateTests(unittest.TestCase):
 
     def test_ci_change_selects_all_ci_jobs(self) -> None:
         tasks = select_act_tasks([".github/workflows/ci.yml"])
-        self.assertIn("act-ci-test-matrix", tasks)
+        self.assertIn("act-ci-test", tasks)
         self.assertIn("act-ci-transform-contract", tasks)
         self.assertIn("act-ci-framework-contract-numpy", tasks)
         self.assertIn("act-ci-docs-sync", tasks)
