@@ -32,15 +32,6 @@ docker compose build explorer
 docker compose run --rm explorer
 ```
 
-Local:
-
-```bash
-mise install
-mise run install-test-deps
-mise run build
-./target/debug/explorer
-```
-
 ## Explorer Preview
 
 <p align="center">
@@ -54,12 +45,6 @@ mise run build
   <img src="assets/render/attention_dynamics.gif" alt="Attention dynamics sample" width="32%">
   <img src="assets/render/phase_portraits.gif" alt="Phase portrait sample" width="32%">
 </p>
-
-Asset regeneration:
-
-```bash
-mise run assets-regenerate
-```
 
 ## Documentation
 
