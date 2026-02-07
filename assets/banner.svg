@@ -1,0 +1,48 @@
+<svg width="1600" height="520" viewBox="0 0 1600 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#070B14"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+    <linearGradient id="neonA" x1="160" y1="120" x2="760" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00E5FF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#00E5FF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="neonB" x1="900" y1="80" x2="1460" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7CFF6B" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#7CFF6B" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="0" y="0" width="1600" height="520" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="520" rx="30" fill="url(#bg)"/>
+
+  <g opacity="0.75">
+    <path d="M80 80H1520" stroke="#31435F" stroke-width="1"/>
+    <path d="M80 440H1520" stroke="#31435F" stroke-width="1"/>
+    <path d="M80 80V440" stroke="#31435F" stroke-width="1"/>
+    <path d="M1520 80V440" stroke="#31435F" stroke-width="1"/>
+  </g>
+
+  <g filter="url(#glow)">
+    <ellipse cx="420" cy="300" rx="300" ry="140" fill="url(#neonA)"/>
+    <ellipse cx="1180" cy="250" rx="280" ry="130" fill="url(#neonB)"/>
+  </g>
+
+  <text x="110" y="166" fill="#E7EEF8" font-family="Georgia, 'Times New Roman', serif" font-size="24" letter-spacing="3">MATHEMATICAL FOUNDATIONS SERIES</text>
+  <text x="110" y="248" fill="#FFFFFF" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="72" font-weight="700">tensors-to-consciousness</text>
+  <text x="112" y="306" fill="#A8B9CD" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="30" font-weight="500">MLX  ·  JAX  ·  PyTorch  ·  NumPy  ·  Keras  ·  CuPy</text>
+
+  <g font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" font-weight="600">
+    <rect x="110" y="348" width="260" height="50" rx="12" fill="#0E1628" stroke="#00E5FF"/>
+    <text x="140" y="380" fill="#C5F8FF">Backend Abstraction</text>
+
+    <rect x="390" y="348" width="280" height="50" rx="12" fill="#0E1628" stroke="#7CFF6B"/>
+    <text x="422" y="380" fill="#D8FFD2">Dedicated Framework Tracks</text>
+
+    <rect x="690" y="348" width="250" height="50" rx="12" fill="#0E1628" stroke="#7A8BA3"/>
+    <text x="728" y="380" fill="#D5DEE9">Chapter-by-Chapter Parity</text>
+  </g>
+</svg>

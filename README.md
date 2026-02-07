@@ -1,72 +1,142 @@
+<div align="center">
+
 # tensors-to-consciousness
 
-[![Backend: MLX (default)](https://img.shields.io/badge/Backend-MLX-blue?logo=apple&logoColor=white)](https://github.com/ml-explore/mlx)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alexhraber/tensors-to-consciousness)
+<img src="assets/banner.svg" alt="tensors-to-consciousness banner" width="100%">
 
-## Mathematical Foundations of AI/ML
+<p>
+  <a href="https://github.com/ml-explore/mlx"><img alt="MLX" src="https://img.shields.io/badge/MLX-Apple-000000?logo=apple&logoColor=white"></a>
+  <a href="https://github.com/jax-ml/jax"><img alt="JAX" src="https://img.shields.io/badge/JAX-Framework-FE5F00?logo=jax&logoColor=white"></a>
+  <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-Framework-EE4C2C?logo=pytorch&logoColor=white"></a>
+  <a href="https://numpy.org/"><img alt="NumPy" src="https://img.shields.io/badge/NumPy-Framework-013243?logo=numpy&logoColor=white"></a>
+  <a href="https://keras.io/"><img alt="Keras" src="https://img.shields.io/badge/Keras-Framework-D00000?logo=keras&logoColor=white"></a>
+  <a href="https://cupy.dev/"><img alt="CuPy" src="https://img.shields.io/badge/CuPy-Framework-76B900?logo=nvidia&logoColor=white"></a>
+</p>
 
-A comprehensive journey through the theoretical foundations of artificial intelligence and machine learning, now structured with a backend abstraction so frameworks beyond MLX can be added without rewriting chapter code.
+<p>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
+  <a href="https://deepwiki.com/alexhraber/tensors-to-consciousness"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
+</p>
 
-### Overview
+<p><strong>Mathematical Foundations of AI/ML Across Frameworks</strong></p>
+<p>Main backend abstraction for MLX + dedicated full chapter tracks for JAX, PyTorch, NumPy, Keras, and CuPy.</p>
 
-This repository contains a systematic exploration of computational theory, progressing through 7 levels:
+</div>
 
-0. **Computational Primitives** - Tensors, operations, reductions
-1. **Automatic Differentiation** - Chain rule, gradients, backpropagation theory
-2. **Optimization Theory** - Gradient descent, momentum, adaptive methods
-3. **Neural Network Theory** - Universal approximation, information flow
-4. **Advanced Theory** - Manifold learning, attention mechanisms, Riemannian optimization
-5. **Research Frontiers** - Meta-learning, scaling laws, lottery tickets, grokking
-6. **Theoretical Limits** - Information geometry, consciousness, quantum computation
+---
 
-## Backend Architecture
+## Contents
 
-Chapter scripts import from `t2c.frameworks` instead of importing MLX directly:
+- [What This Repo Is](#what-this-repo-is)
+- [Chapter Sequence](#chapter-sequence)
+- [Live Previews](#live-previews)
+- [Quickstart](#quickstart)
+- [Main Backend Path (MLX)](#main-backend-path-mlx)
+- [Dedicated Framework Tracks](#dedicated-framework-tracks)
+- [Notes](#notes)
+- [Contributing](#contributing)
+
+## What This Repo Is
+
+This repository walks through 7 chapters of AI/ML theory with:
+
+- A backend-abstracted main path (`t2c.frameworks`, currently `mlx`)
+- Dedicated framework replicas in `scripts/`:
+  - `jax`
+  - `pytorch`
+  - `numpy`
+  - `keras`
+  - `cupy`
+
+## Chapter Sequence
+
+| # | Chapter | Focus |
+|---|---|---|
+| 0 | Computational Primitives | Tensors, operations, reductions |
+| 1 | Automatic Differentiation | Chain rule, gradients, backpropagation theory |
+| 2 | Optimization Theory | Gradient descent, momentum, adaptive methods |
+| 3 | Neural Network Theory | Universal approximation, information flow |
+| 4 | Advanced Theory | Manifolds, attention, Riemannian optimization |
+| 5 | Research Frontiers | Meta-learning, scaling laws, lottery tickets, grokking |
+| 6 | Theoretical Limits | Information geometry, consciousness, quantum-inspired computation |
+
+## Live Previews
+
+<table>
+  <tr>
+    <td><strong>MLX</strong><br><img src="assets/previews/mlx.gif" alt="MLX preview" width="360"></td>
+    <td><strong>JAX</strong><br><img src="assets/previews/jax.gif" alt="JAX preview" width="360"></td>
+  </tr>
+  <tr>
+    <td><strong>PyTorch</strong><br><img src="assets/previews/pytorch.gif" alt="PyTorch preview" width="360"></td>
+    <td><strong>NumPy</strong><br><img src="assets/previews/numpy.gif" alt="NumPy preview" width="360"></td>
+  </tr>
+  <tr>
+    <td><strong>Keras</strong><br><img src="assets/previews/keras.gif" alt="Keras preview" width="360"></td>
+    <td><strong>CuPy</strong><br><img src="assets/previews/cupy.gif" alt="CuPy preview" width="360"></td>
+  </tr>
+</table>
+
+## Quickstart
+
+### 1) Create environment
+
+```bash
+python -m venv env
+source env/bin/activate
+```
+
+### 2) Pick one path
+
+- Main MLX/backend path:
+
+```bash
+pip install mlx
+python test_backend_setup.py
+python 0_computational_primitives.py
+```
+
+- Dedicated track path (example: JAX):
+
+```bash
+pip install "jax[cpu]"
+python scripts/jax/test_jax_setup.py
+python scripts/jax/0_computational_primitives.py
+```
+
+## Main Backend Path (MLX)
+
+Main chapter scripts (`0_...py` to `6_...py`) import from `t2c.frameworks`:
 
 ```python
 import t2c.frameworks as fw
 
 mx = fw.mx
-nn = fw.nn  # where needed
+nn = fw.nn
 ```
 
-Backend selection is environment-driven:
+Select backend via env var:
 
 ```bash
 export T2C_BACKEND=mlx
 ```
 
-Currently supported backend:
-- `mlx` (default)
+Currently supported in `t2c.frameworks`: `mlx`.
 
-If an unsupported backend is requested, startup fails with a clear configuration error.
-
-## Requirements
-
-- Python 3.11+
-- Virtual environment recommended
-- Backend-specific dependency (currently `mlx`)
-
-## Setup
+### Setup
 
 ```bash
-python -m venv env
-source env/bin/activate
 pip install mlx
-```
-
-Then validate backend wiring:
-
-```bash
 python test_backend_setup.py
 ```
 
-`test_mlx_setup.py` is retained as a compatibility entrypoint and runs the same backend setup test.
+Compatibility entrypoint:
 
-## Usage
+```bash
+python test_mlx_setup.py
+```
 
-Run the scripts in sequence:
+### Run all main chapters
 
 ```bash
 python 0_computational_primitives.py
@@ -78,159 +148,46 @@ python 5_research_frontiers.py
 python 6_theoretical_limits.py
 ```
 
-## Dedicated JAX Scripts
+## Dedicated Framework Tracks
 
-A full JAX replication of chapters `0`-`6` is available under `scripts/jax/`.
+All dedicated tracks live under `scripts/<framework>/`.
 
-Setup:
+| Framework | Install | Setup Test | Chapters |
+|---|---|---|---|
+| JAX | `pip install "jax[cpu]"` | `python scripts/jax/test_jax_setup.py` | `python scripts/jax/0_computational_primitives.py` ... `python scripts/jax/6_theoretical_limits.py` |
+| PyTorch | `pip install torch` | `python scripts/pytorch/test_pytorch_setup.py` | `python scripts/pytorch/0_computational_primitives.py` ... `python scripts/pytorch/6_theoretical_limits.py` |
+| NumPy | `pip install numpy` | `python scripts/numpy/test_numpy_setup.py` | `python scripts/numpy/0_computational_primitives.py` ... `python scripts/numpy/6_theoretical_limits.py` |
+| Keras | `pip install keras tensorflow` | `python scripts/keras/test_keras_setup.py` | `python scripts/keras/0_computational_primitives.py` ... `python scripts/keras/6_theoretical_limits.py` |
+| CuPy | `pip install cupy-cuda12x` | `python scripts/cupy/test_cupy_setup.py` | `python scripts/cupy/0_computational_primitives.py` ... `python scripts/cupy/6_theoretical_limits.py` |
 
-```bash
-python -m venv env
-source env/bin/activate
-pip install "jax[cpu]"
-```
+> CuPy: choose the wheel that matches your CUDA version.
 
-Validate JAX environment:
+## Notes
 
-```bash
-python scripts/jax/test_jax_setup.py
-```
+- `numpy` and `cupy` tracks use finite-difference gradients in autodiff-heavy sections.
+- `keras` track mixes gradient tape with numerical approximations in selected sections.
+- Missing dependencies will surface as `ModuleNotFoundError` in setup tests.
 
-Run JAX chapters:
+## Contributing
 
-```bash
-python scripts/jax/0_computational_primitives.py
-python scripts/jax/1_automatic_differentiation.py
-python scripts/jax/2_optimization_theory.py
-python scripts/jax/3_neural_theory.py
-python scripts/jax/4_advanced_theory.py
-python scripts/jax/5_research_frontiers.py
-python scripts/jax/6_theoretical_limits.py
-```
+Contributions are welcome for both backend abstraction work and dedicated framework tracks.
 
-## Dedicated PyTorch Scripts
+### Add a Backend to `t2c.frameworks` (Main Path)
 
-A full PyTorch replication of chapters `0`-`6` is available under `scripts/pytorch/`.
+1. Add `t2c/frameworks/<name>_backend.py` implementing `load() -> Backend`.
+2. Register `<name>` in `_AVAILABLE_BACKENDS` inside `t2c/frameworks/__init__.py`.
+3. Keep exports aligned with the current contract (`mx`, optional `nn`).
+4. Validate with:
+   - `python test_backend_setup.py`
+   - `T2C_BACKEND=<name> python 0_computational_primitives.py`
+   - `T2C_BACKEND=<name> python 1_automatic_differentiation.py`
 
-Setup:
+### Add a Dedicated Framework Track (Latest Pattern)
 
-```bash
-python -m venv env
-source env/bin/activate
-pip install torch
-```
-
-Validate PyTorch environment:
-
-```bash
-python scripts/pytorch/test_pytorch_setup.py
-```
-
-Run PyTorch chapters:
-
-```bash
-python scripts/pytorch/0_computational_primitives.py
-python scripts/pytorch/1_automatic_differentiation.py
-python scripts/pytorch/2_optimization_theory.py
-python scripts/pytorch/3_neural_theory.py
-python scripts/pytorch/4_advanced_theory.py
-python scripts/pytorch/5_research_frontiers.py
-python scripts/pytorch/6_theoretical_limits.py
-```
-
-## Dedicated NumPy Scripts
-
-A full NumPy replication of chapters `0`-`6` is available under `scripts/numpy/`.
-
-Setup:
-
-```bash
-python -m venv env
-source env/bin/activate
-pip install numpy
-```
-
-Validate NumPy environment:
-
-```bash
-python scripts/numpy/test_numpy_setup.py
-```
-
-Run NumPy chapters:
-
-```bash
-python scripts/numpy/0_computational_primitives.py
-python scripts/numpy/1_automatic_differentiation.py
-python scripts/numpy/2_optimization_theory.py
-python scripts/numpy/3_neural_theory.py
-python scripts/numpy/4_advanced_theory.py
-python scripts/numpy/5_research_frontiers.py
-python scripts/numpy/6_theoretical_limits.py
-```
-
-## Dedicated Keras Scripts
-
-A full Keras replication of chapters `0`-`6` is available under `scripts/keras/`.
-
-Setup:
-
-```bash
-python -m venv env
-source env/bin/activate
-pip install keras tensorflow
-```
-
-Validate Keras environment:
-
-```bash
-python scripts/keras/test_keras_setup.py
-```
-
-Run Keras chapters:
-
-```bash
-python scripts/keras/0_computational_primitives.py
-python scripts/keras/1_automatic_differentiation.py
-python scripts/keras/2_optimization_theory.py
-python scripts/keras/3_neural_theory.py
-python scripts/keras/4_advanced_theory.py
-python scripts/keras/5_research_frontiers.py
-python scripts/keras/6_theoretical_limits.py
-```
-
-## Dedicated CuPy Scripts
-
-A full CuPy replication of chapters `0`-`6` is available under `scripts/cupy/`.
-
-Setup:
-
-```bash
-python -m venv env
-source env/bin/activate
-pip install cupy-cuda12x
-```
-
-Validate CuPy environment:
-
-```bash
-python scripts/cupy/test_cupy_setup.py
-```
-
-Run CuPy chapters:
-
-```bash
-python scripts/cupy/0_computational_primitives.py
-python scripts/cupy/1_automatic_differentiation.py
-python scripts/cupy/2_optimization_theory.py
-python scripts/cupy/3_neural_theory.py
-python scripts/cupy/4_advanced_theory.py
-python scripts/cupy/5_research_frontiers.py
-python scripts/cupy/6_theoretical_limits.py
-```
-
-## Adding a New Backend Later
-
-1. Add `t2c/frameworks/<name>_backend.py` with a `load()` function returning `Backend(name, core, nn)`.
-2. Register it in `_AVAILABLE_BACKENDS` in `t2c/frameworks/__init__.py`.
-3. Install that framework's dependency.
-4. Run `python test_backend_setup.py` and chapter scripts with `T2C_BACKEND=<name>`.
+1. Create `scripts/<framework>/` with:
+   - `utils.py`
+   - `test_<framework>_setup.py`
+   - `0_...py` through `6_...py`
+2. Keep chapter naming and progression identical to main path.
+3. Document install + setup test + run commands in `README.md`.
+4. Prefer framework-native autodiff; if not available, use finite-difference and note it in `Notes`.
