@@ -52,12 +52,6 @@ python main.py --help
   <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
 </p>
 
-Maintainers can regenerate visualization GIFs with:
-
-```bash
-python tools/generate_viz_assets.py
-```
-
 ## Research Tracks
 
 Framework tracks are implemented under `scripts/<framework>/`:
