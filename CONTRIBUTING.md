@@ -4,7 +4,7 @@
 
 The repo is sandbox/playground based.
 
-- Algorithm implementations live in `algos/<framework>/`
+- Algorithm definitions/math contracts live in `algos/`
 - Framework backends live in `frameworks/<framework>/`
 - Algorithm registry (ordering/complexity/defaults) lives in `algos/registry.py`
 - Operational commands are:
@@ -18,7 +18,7 @@ python main.py run --algos default
 python -m tests
 ```
 
-`python -m tests` runs top-level operational tests (setup/runner/config behavior) and intentionally avoids framework-specific math validation.
+`python -m tests` runs top-level operational tests (setup/runner/config behavior) and engine contract checks.
 
 ## Add or update a framework track
 

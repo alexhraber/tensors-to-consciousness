@@ -295,8 +295,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  viz-contract:
-    name: Visualization Contract
+  algorithm-contract:
+    name: Algorithm Contract
     needs: changes
     if: needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
@@ -310,61 +310,28 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Ensure VIZ_META is declared in all algorithm modules
-        run: |
-          set -euo pipefail
-          missing="$(rg -L '^VIZ_META\\s*=\\s*\\{' \
-            algos/cupy/*.py algos/jax/*.py algos/keras/*.py algos/mlx/*.py algos/numpy/*.py algos/pytorch/*.py \
-            -g '!algos/*/__init__.py' || true)"
-          if [ -n "$missing" ]; then
-            echo "Missing VIZ_META declaration in:"
-            echo "$missing"
-            exit 1
-          fi
-
-      - name: Enforce VIZ_META contract order (declare before first viz_stage)
+      - name: Validate registry/definition contract
         run: |
           set -euo pipefail
           python - <<'PY'
-          import ast
-          import pathlib
+          from algos.definitions import ALGORITHM_DEFINITIONS
+          from algos.registry import ALGO_MAP
           import sys
 
-          bad = []
-          for path in sorted(pathlib.Path("algos").glob("*/*_*.py")):
-              if path.name.startswith("test_"):
-                  continue
-              src = path.read_text(encoding="utf-8")
-              try:
-                  tree = ast.parse(src, filename=str(path))
-              except SyntaxError as exc:
-                  bad.append(f"{path}: syntax error ({exc})")
-                  continue
+          registry_keys = set(ALGO_MAP.keys())
+          definition_keys = set(ALGORITHM_DEFINITIONS.keys())
 
-              viz_meta_line = None
-              first_viz_stage = None
-              for node in tree.body:
-                  if isinstance(node, ast.Assign):
-                      for target in node.targets:
-                          if isinstance(target, ast.Name) and target.id == "VIZ_META":
-                              viz_meta_line = node.lineno
-                  if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
-                      fn = node.value.func
-                      if isinstance(fn, ast.Name) and fn.id == "viz_stage":
-                          first_viz_stage = node.lineno
-                          break
+          missing_defs = sorted(registry_keys - definition_keys)
+          extra_defs = sorted(definition_keys - registry_keys)
 
-              if first_viz_stage is None:
-                  continue
-              if viz_meta_line is None or viz_meta_line > first_viz_stage:
-                  bad.append(f"{path}: define VIZ_META before first viz_stage call")
-
-          if bad:
-              print("Visualization contract violations:")
-              for item in bad:
-                  print(f" - {item}")
+          if missing_defs or extra_defs:
+              print("Algorithm contract violations:")
+              if missing_defs:
+                  print(f" - missing definitions: {missing_defs}")
+              if extra_defs:
+                  print(f" - unregistered definitions: {extra_defs}")
               sys.exit(1)
-          print("Visualization contract checks passed.")
+          print("Algorithm contract checks passed.")
           PY
 
   framework-contract:
@@ -417,30 +384,4 @@ jobs:
               sys.exit(1)
 
           print(f"{fw}: framework track contract passed.")
-          PY
-
-      - name: Verify algo module parity against numpy baseline
-        env:
-          FRAMEWORK: ${{ matrix.framework }}
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import os
-          import pathlib
-          import sys
-
-          fw = os.environ["FRAMEWORK"]
-          base = pathlib.Path("algos/numpy")
-          tgt = pathlib.Path("algos") / fw
-
-          base_modules = sorted(p.name for p in base.glob("*.py") if p.name != "__init__.py")
-          tgt_modules = sorted(p.name for p in tgt.glob("*.py") if p.name != "__init__.py")
-
-          if base_modules != tgt_modules:
-              print(f"{fw}: module parity mismatch")
-              print(f"numpy: {base_modules}")
-              print(f"{fw}: {tgt_modules}")
-              sys.exit(1)
-
-          print(f"{fw}: module parity matches numpy baseline.")
           PY

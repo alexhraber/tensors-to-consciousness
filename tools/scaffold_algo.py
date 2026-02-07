@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold an abstract math algorithm and per-framework adapter stubs."""
+"""Scaffold an abstract math algorithm and optional framework adapter stubs."""
 
 from __future__ import annotations
 

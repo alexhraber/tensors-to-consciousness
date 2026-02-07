@@ -69,7 +69,7 @@ The entire research track is implemented in each of the following frameworks:
 
 ## Algorithm Layout
 
-Algorithm implementations live under `algos/<framework>/`.
+Algorithm definitions and math contracts live under `algos/` (framework-agnostic).
 Framework backends live under `frameworks/<framework>/` and provide reusable ops/models utilities.
 Algorithm ordering, complexity ranking, defaults, and execution mapping are centralized in `algos/registry.py`.
 
