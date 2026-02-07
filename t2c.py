@@ -11,7 +11,7 @@ from pathlib import Path
 
 from tools.runtime import SUPPORTED_FRAMEWORKS, load_config, python_in_venv
 
-CHAPTER_FILES = [
+MODULE_FILES = [
     "0_computational_primitives.py",
     "1_automatic_differentiation.py",
     "2_optimization_theory.py",
@@ -33,7 +33,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "target",
-        help="One of: validate, viz, 0,1,2,3,4,5,6, all",
+        nargs="?",
+        help="One of: validate, viz, 0,1,2,3,4,5,6, all (default: auto mode).",
     )
     parser.add_argument(
         "--framework",
@@ -52,13 +53,28 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def prompt_framework_choice() -> str:
+    print("Select framework:")
+    for idx, framework in enumerate(SUPPORTED_FRAMEWORKS, start=1):
+        print(f"  {idx}. {framework}")
+    while True:
+        raw = input("Framework number or name: ").strip().lower()
+        if raw in SUPPORTED_FRAMEWORKS:
+            return raw
+        if raw.isdigit():
+            pos = int(raw)
+            if 1 <= pos <= len(SUPPORTED_FRAMEWORKS):
+                return SUPPORTED_FRAMEWORKS[pos - 1]
+        print(f"Invalid selection: {raw}")
+
+
 def ensure_setup_if_needed(
     framework: str | None,
     venv: Path | None,
     framework_overridden: bool,
     allow_setup: bool,
     env: dict[str, str],
-) -> dict[str, str]:
+) -> tuple[dict[str, str], bool]:
     config: dict[str, str] = {}
     config_exists = True
     try:
@@ -81,7 +97,7 @@ def ensure_setup_if_needed(
     needs_setup = (not config_exists) or (not py.exists()) or requested_differs
 
     if not needs_setup:
-        return {"framework": framework, "venv": str(venv_dir)}
+        return {"framework": framework, "venv": str(venv_dir)}, False
 
     if not allow_setup:
         raise RuntimeError(
@@ -93,7 +109,7 @@ def ensure_setup_if_needed(
         [sys.executable, "-m", "tools.setup", framework, "--venv", str(venv_dir), "--skip-validate"],
         env=env,
     )
-    return {"framework": framework, "venv": str(venv_dir)}
+    return {"framework": framework, "venv": str(venv_dir)}, True
 
 
 def main() -> int:
@@ -102,11 +118,29 @@ def main() -> int:
     os.chdir(repo_root)
     env = os.environ.copy()
 
+    existing_framework = None
     try:
-        config = ensure_setup_if_needed(
-            framework=args.framework,
+        existing_framework = load_config().get("framework")
+    except RuntimeError:
+        existing_framework = None
+
+    onboarding_mode = args.target is None
+    framework = args.framework
+    if onboarding_mode and framework is None and existing_framework is None:
+        if not sys.stdin.isatty():
+            print(
+                "No framework configured. Re-run with --framework <framework> "
+                "(example: python t2c.py --framework jax).",
+                file=sys.stderr,
+            )
+            return 1
+        framework = prompt_framework_choice()
+
+    try:
+        config, setup_ran = ensure_setup_if_needed(
+            framework=framework,
             venv=Path(args.venv) if args.venv else None,
-            framework_overridden=args.framework is not None,
+            framework_overridden=framework is not None,
             allow_setup=not args.no_setup,
             env=env,
         )
@@ -118,17 +152,21 @@ def main() -> int:
     venv_dir = Path(config["venv"])
     py = python_in_venv(venv_dir)
 
-    if args.target == "validate":
+    if args.target is None:
+        if setup_ran:
+            run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
+        scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]
+    elif args.target == "validate":
         run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         return 0
-    if args.target == "viz":
+    elif args.target == "viz":
         run_cmd([str(py), "-m", "tools.viz_terminal", "--framework", framework], env=env)
         return 0
-    if args.target == "all":
-        scripts = [f"scripts/{framework}/{name}" for name in CHAPTER_FILES]
+    elif args.target == "all":
+        scripts = [f"scripts/{framework}/{name}" for name in MODULE_FILES]
     elif args.target in {str(i) for i in range(7)}:
         idx = int(args.target)
-        scripts = [f"scripts/{framework}/{CHAPTER_FILES[idx]}"]
+        scripts = [f"scripts/{framework}/{MODULE_FILES[idx]}"]
     else:
         print("Invalid target. Use: validate, viz, 0,1,2,3,4,5,6, all", file=sys.stderr)
         return 1

@@ -87,7 +87,7 @@ class RuntimeExecutionFlowTests(unittest.TestCase):
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
-                t2c, "ensure_setup_if_needed", return_value={"framework": "numpy", "venv": ".venv-np"}
+                t2c, "ensure_setup_if_needed", return_value=({"framework": "numpy", "venv": ".venv-np"}, False)
             ):
                 with patch.object(t2c, "python_in_venv", return_value=Path(".venv-np/bin/python")):
                     with patch.object(t2c, "run_cmd") as run_cmd_mock:

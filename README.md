@@ -36,6 +36,12 @@ Primary command:
 python t2c.py <target>
 ```
 
+Manual paths and advanced options are available via:
+
+```bash
+python t2c.py --help
+```
+
 ## Visualization Preview
 
 <p align="center">
@@ -61,9 +67,9 @@ Top-level operational command:
 
 The standard workflow is:
 
-1. `python t2c.py validate --framework jax` (first run sets/bootstraps framework)
+1. `python t2c.py` (first run prompts for framework, auto-validates, then runs `all`)
 2. `python t2c.py viz`
-3. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
+3. Fine-tuned execution via `python t2c.py --help`
 
 ## Research Module Sequence
 
@@ -86,12 +92,19 @@ python -m venv env
 source env/bin/activate
 ```
 
-### 2) First run (framework selection + auto-setup)
+### 2) First run (fully automated pipeline)
 
 ```bash
-python t2c.py validate --framework mlx
-# or: jax | pytorch | numpy | keras | cupy
+python t2c.py
 ```
+
+First run behavior:
+
+1. Detect whether framework config already exists
+2. Prompt for framework selection if it does not
+3. Auto-run setup if required
+4. Run validation
+5. Run all research modules
 
 ### 3) Run commands
 
@@ -122,6 +135,7 @@ python t2c.py 5
 python t2c.py 6
 python t2c.py all
 python t2c.py viz
+python t2c.py --help
 ```
 
 Optional overrides:
@@ -145,14 +159,14 @@ Framework scripts still exist and are used by `t2c.py` internally:
 
 All framework scripts live under `scripts/<framework>/`.
 
-| Framework | First Run | Validation | Research Modules |
+| Framework | Zero-Config First Run | Validation | Research Modules |
 |---|---|---|---|
-| MLX | `python t2c.py validate --framework mlx` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| JAX | `python t2c.py validate --framework jax` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| PyTorch | `python t2c.py validate --framework pytorch` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| NumPy | `python t2c.py validate --framework numpy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| Keras | `python t2c.py validate --framework keras` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| CuPy | `python t2c.py validate --framework cupy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| MLX | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| JAX | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| PyTorch | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| NumPy | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| Keras | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| CuPy | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
 
 ## Terminal Visualization
 

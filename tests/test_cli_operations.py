@@ -85,7 +85,9 @@ class T2CTests(unittest.TestCase):
                         allow_setup=True,
                         env=env,
                     )
-        self.assertEqual(result["framework"], "mlx")
+        config, setup_ran = result
+        self.assertEqual(config["framework"], "mlx")
+        self.assertFalse(setup_ran)
         run_cmd_mock.assert_not_called()
 
     def test_ensure_setup_missing_config_runs_setup(self) -> None:
@@ -99,7 +101,9 @@ class T2CTests(unittest.TestCase):
                     allow_setup=True,
                     env=env,
                 )
-        self.assertEqual(result["framework"], "jax")
+        config, setup_ran = result
+        self.assertEqual(config["framework"], "jax")
+        self.assertTrue(setup_ran)
         setup_cmd = run_cmd_mock.call_args[0][0]
         self.assertEqual(setup_cmd[1], "-m")
         self.assertEqual(setup_cmd[2], "tools.setup")
@@ -125,7 +129,9 @@ class T2CTests(unittest.TestCase):
             no_setup=True,
         )
         with patch.object(t2c, "parse_args", return_value=args):
-            with patch.object(t2c, "ensure_setup_if_needed", return_value={"framework": "mlx", "venv": ".venv"}):
+            with patch.object(
+                t2c, "ensure_setup_if_needed", return_value=({"framework": "mlx", "venv": ".venv"}, False)
+            ):
                 with patch.object(t2c, "run_cmd") as run_cmd_mock:
                     rc = t2c.main()
         self.assertEqual(rc, 1)
@@ -139,7 +145,9 @@ class T2CTests(unittest.TestCase):
             no_setup=True,
         )
         with patch.object(t2c, "parse_args", return_value=args):
-            with patch.object(t2c, "ensure_setup_if_needed", return_value={"framework": "mlx", "venv": ".venv"}):
+            with patch.object(
+                t2c, "ensure_setup_if_needed", return_value=({"framework": "mlx", "venv": ".venv"}, False)
+            ):
                 with patch.object(t2c, "run_cmd") as run_cmd_mock:
                     with patch.object(runtime, "python_in_venv", return_value=Path(".venv/bin/python")):
                         with patch.object(t2c, "python_in_venv", return_value=Path(".venv/bin/python")):
@@ -157,7 +165,7 @@ class T2CTests(unittest.TestCase):
         )
         with patch.object(t2c, "parse_args", return_value=args):
             with patch.object(
-                t2c, "ensure_setup_if_needed", return_value={"framework": "jax", "venv": ".venv-jax"}
+                t2c, "ensure_setup_if_needed", return_value=({"framework": "jax", "venv": ".venv-jax"}, False)
             ):
                 with patch.object(t2c, "run_cmd") as run_cmd_mock:
                     with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
@@ -165,6 +173,30 @@ class T2CTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         cmd = run_cmd_mock.call_args[0][0]
         self.assertEqual(cmd, [".venv-jax/bin/python", "-m", "tools.viz_terminal", "--framework", "jax"])
+
+    def test_t2c_main_onboarding_prompts_then_runs_validate_and_all(self) -> None:
+        args = argparse.Namespace(
+            target=None,
+            framework=None,
+            venv=None,
+            no_setup=False,
+        )
+        with patch.object(t2c, "parse_args", return_value=args):
+            with patch.object(t2c, "load_config", side_effect=RuntimeError("missing")):
+                with patch.object(t2c.sys.stdin, "isatty", return_value=True):
+                    with patch.object(t2c, "prompt_framework_choice", return_value="jax"):
+                        with patch.object(
+                            t2c,
+                            "ensure_setup_if_needed",
+                            return_value=({"framework": "jax", "venv": ".venv-jax"}, True),
+                        ):
+                            with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
+                                with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                                    rc = t2c.main()
+        self.assertEqual(rc, 0)
+        calls = [c[0][0] for c in run_cmd_mock.call_args_list]
+        self.assertEqual(calls[0], [".venv-jax/bin/python", "-m", "tools.validate", "--framework", "jax"])
+        self.assertEqual(len(calls), 8)
 
 
 if __name__ == "__main__":

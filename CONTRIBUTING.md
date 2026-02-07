@@ -11,7 +11,7 @@ The repo is framework-track based.
 ## Local workflow
 
 ```bash
-python t2c.py validate --framework <framework>
+python t2c.py
 python t2c.py all
 python -m tests
 ```
@@ -48,7 +48,7 @@ When adding/changing frameworks:
 3. Validate setup + run path:
 
 ```bash
-python t2c.py validate --framework <framework>
+python t2c.py
 python t2c.py validate
 python t2c.py 0
 ```
@@ -58,6 +58,7 @@ python t2c.py 0
 - Keep `README.md` aligned with actual setup/run behavior.
 - Keep examples aligned with the operational command (`t2c.py`).
 - If visualization previews change, regenerate GIF assets with `python tools/generate_viz_assets.py`.
+- Keep advanced usage discoverable through `python t2c.py --help`.
 
 ## Hygiene
 
