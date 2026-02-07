@@ -3,8 +3,22 @@ name: CI
 on:
   push:
     branches: ["main"]
+    paths:
+      - "main.py"
+      - "scripts/**"
+      - "tools/**"
+      - "tests/**"
+      - "assets/viz/**"
+      - ".github/workflows/**"
   pull_request:
     branches: ["main"]
+    paths:
+      - "main.py"
+      - "scripts/**"
+      - "tools/**"
+      - "tests/**"
+      - "assets/viz/**"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 concurrency:
@@ -15,8 +29,37 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Change Detection
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      viz: ${{ steps.filter.outputs.viz }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            code:
+              - "main.py"
+              - "scripts/**"
+              - "tools/**"
+              - "tests/**"
+              - ".github/workflows/ci.yml"
+            viz:
+              - "tools/generate_viz_assets.py"
+              - "assets/viz/**"
+              - ".github/workflows/ci.yml"
+
   test-matrix:
     name: Test (Python ${{ matrix.python-version }})
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -31,6 +74,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
 
       - name: Install test dependencies
         run: |
@@ -54,6 +105,8 @@ jobs:
 
   viz-assets:
     name: Visualization Assets Integrity
+    needs: changes
+    if: needs.changes.outputs.viz == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -65,8 +118,12 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install ffmpeg
+      - name: Ensure ffmpeg is available
         run: |
+          if command -v ffmpeg >/dev/null 2>&1; then
+            echo "ffmpeg already available"
+            exit 0
+          fi
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
