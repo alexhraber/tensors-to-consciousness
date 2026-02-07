@@ -3,10 +3,19 @@ from __future__ import annotations
 import os
 import unittest
 
-from tools.pre_push_gate import _parse_jobs_value, _resolve_jobs, select_act_tasks
+from tools.pre_push_gate import _is_lightweight_docs_only, _parse_jobs_value, _resolve_jobs, select_act_tasks
 
 
 class PrePushGateTests(unittest.TestCase):
+    def test_is_lightweight_docs_only_for_readme(self) -> None:
+        self.assertTrue(_is_lightweight_docs_only(["README.md"]))
+
+    def test_is_lightweight_docs_only_for_markdown_mix(self) -> None:
+        self.assertTrue(_is_lightweight_docs_only(["README.md", "docs/reference/transforms.md"]))
+
+    def test_is_lightweight_docs_only_false_for_non_markdown(self) -> None:
+        self.assertFalse(_is_lightweight_docs_only(["README.md", "tools/runtime.py"]))
+
     def test_parse_jobs_value_nproc(self) -> None:
         self.assertEqual(_parse_jobs_value("nproc"), os.cpu_count() or 2)
 
@@ -74,7 +83,7 @@ class PrePushGateTests(unittest.TestCase):
         self.assertIn("act-ci-test", tasks)
         self.assertIn("act-ci-transform-contract", tasks)
         self.assertIn("act-ci-framework-contract-jax", tasks)
-        self.assertNotIn("act-ci-docs-sync", tasks)
+        self.assertIn("act-ci-docs-sync", tasks)
         self.assertNotIn("act-ci-assets-sync", tasks)
 
     def test_irrelevant_change_selects_nothing(self) -> None:
