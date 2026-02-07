@@ -371,6 +371,17 @@ def _platform_env(framework: str, platform: str) -> dict[str, str]:
     return env
 
 
+def _handoff_framework_switch(framework: str) -> int:
+    cmdline = [
+        sys.executable,
+        "main.py",
+        "render",
+        "--framework",
+        framework,
+    ]
+    return subprocess.run(cmdline, check=False).returncode
+
+
 def _frame_line(text: str, width: int = 104) -> str:
     if len(text) >= width - 2:
         text = text[: width - 5] + "..."
@@ -846,8 +857,8 @@ def _render_interactive(
                     elif ch == "f":
                         chosen = _framework_selector(fd, active_framework)
                         if chosen and chosen != active_framework:
-                            active_framework = chosen
-                            _persist_framework(active_framework)
+                            _persist_framework(chosen)
+                            return _handoff_framework_switch(chosen)
                         needs_render = True
                         tick_refresh = False
                     elif ch == "p":
@@ -902,8 +913,8 @@ def _render_interactive(
                 elif ch == "f":
                     chosen = _framework_selector(fd, active_framework)
                     if chosen and chosen != active_framework:
-                        active_framework = chosen
-                        _persist_framework(active_framework)
+                        _persist_framework(chosen)
+                        return _handoff_framework_switch(chosen)
                     needs_render = True
                     tick_refresh = False
                 elif ch == "p":
