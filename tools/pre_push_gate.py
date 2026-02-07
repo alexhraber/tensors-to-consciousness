@@ -110,7 +110,13 @@ def select_act_tasks(paths: list[str]) -> list[str]:
 
 
 def _run_task(task: str) -> None:
-    subprocess.run(["mise", "run", task], cwd=ROOT, check=True)
+    env = os.environ.copy()
+    # `act` will attempt to authenticate action clones if `GITHUB_TOKEN` is present.
+    # For local gates we prefer anonymous clones (and avoid surprising failures from
+    # stale/invalid tokens).
+    if task.startswith("act-") or task.startswith("act-ci-"):
+        env.pop("GITHUB_TOKEN", None)
+    subprocess.run(["mise", "run", task], cwd=ROOT, check=True, env=env)
 
 
 def _parse_jobs_value(raw: str | None) -> int | None:
@@ -232,6 +238,12 @@ def main() -> int:
         return 0
 
     workers = _resolve_jobs(args.jobs, [task for task, _ in runnable_tasks])
+    # Running multiple `act` invocations concurrently is unstable because act uses
+    # deterministic container names for shared workflow jobs (e.g., "Change Detection"),
+    # which can collide. Default to serial execution unless explicitly enabled.
+    if workers > 1 and all(task.startswith("act-") or task.startswith("act-ci-") for task, _ in runnable_tasks):
+        if os.environ.get("ALLOW_PARALLEL_ACT") != "1":
+            workers = 1
     print(f"[{prefix}] Running {len(runnable_tasks)} act job(s) with {workers} worker(s).")
 
     failures: list[tuple[str, int]] = []
