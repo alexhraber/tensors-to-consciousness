@@ -86,8 +86,11 @@ def _run_task(task: str) -> None:
     subprocess.run(["mise", "run", task], cwd=ROOT, check=True)
 
 
-def _resolve_jobs(jobs_arg: int | None, task_count: int) -> int:
+def _resolve_jobs(jobs_arg: int | None, tasks: list[str]) -> int:
+    task_count = len(tasks)
     if task_count <= 1:
+        return 1
+    if any(task.startswith("act-ci-") for task in tasks) and os.environ.get("CI_GATE_ACT_PARALLEL") != "1":
         return 1
     if jobs_arg is not None:
         return max(1, min(jobs_arg, task_count))
@@ -152,7 +155,7 @@ def parse_args() -> argparse.Namespace:
         "--jobs",
         type=int,
         default=None,
-        help="Number of parallel act tasks to run (default: 2, capped by selected tasks).",
+        help="Parallel local gate jobs (default: 2; act-ci tasks are serialized unless CI_GATE_ACT_PARALLEL=1).",
     )
     return parser.parse_args()
 
@@ -191,7 +194,7 @@ def main() -> int:
         print(f"[{prefix}] Completed selected act jobs.")
         return 0
 
-    workers = _resolve_jobs(args.jobs, len(runnable_tasks))
+    workers = _resolve_jobs(args.jobs, [task for task, _ in runnable_tasks])
     print(f"[{prefix}] Running {len(runnable_tasks)} act job(s) with {workers} worker(s).")
 
     failures: list[tuple[str, int]] = []
