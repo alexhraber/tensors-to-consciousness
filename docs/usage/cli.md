@@ -29,5 +29,5 @@ explorer run --framework keras --transforms reaction_diffusion,stochastic_proces
 
 ```bash
 cargo test -p explorer
-python -m tests.python --suite unit
+python -m tests --suite unit
 ```

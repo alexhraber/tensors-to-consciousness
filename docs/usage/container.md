@@ -55,5 +55,5 @@ ssh <host> "cd /path/to/tensors-to-consciousness && docker compose run --rm -e R
 docker compose run --rm explorer explorer list-transforms
 docker compose run --rm explorer explorer run --framework numpy --transforms default
 docker compose run --rm explorer cargo test -p explorer
-docker compose run --rm explorer python -m tests.python --suite unit
+docker compose run --rm explorer python -m tests --suite unit
 ```

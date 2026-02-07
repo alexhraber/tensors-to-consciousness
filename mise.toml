@@ -49,7 +49,7 @@ mise run build
 description = "Run unit tests with coverage."
 run = '''
 python -m coverage erase
-python -m coverage run -m tests.python --suite unit
+python -m coverage run -m tests --suite unit
 '''
 
 [tasks.cov-integration]

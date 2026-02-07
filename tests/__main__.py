@@ -5,12 +5,14 @@ import unittest
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run Python (ML/transform) test suites.")
+    parser = argparse.ArgumentParser(
+        description="Run Python tests (transform/ML surface only)."
+    )
     parser.add_argument(
         "--suite",
         choices=["all", "unit"],
-        default="all",
-        help="Select test suite scope (default: all).",
+        default="unit",
+        help="Select test suite scope (default: unit).",
     )
     parser.add_argument(
         "--verbosity",
@@ -24,13 +26,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     loader = unittest.defaultTestLoader
-    if args.suite == "all":
-        suite = loader.discover("tests/python")
-    else:
-        suite = loader.discover("tests/python/unit")
+    # All Python tests live directly under `tests/` as `test_*.py`.
+    suite = loader.discover("tests")
     result = unittest.TextTestRunner(verbosity=args.verbosity).run(suite)
     return 0 if result.wasSuccessful() else 1
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

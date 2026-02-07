@@ -103,7 +103,7 @@ fn run_tests(scope: &str) -> Result<()> {
                     return Err(anyhow!("python bytecode compilation failed"));
                 }
             }
-            run_status(&["python", "-m", "tests.python", "--suite", "unit"], false)?;
+            run_status(&["python", "-m", "tests", "--suite", "unit"], false)?;
         }
         "all" => {
             run_tests("rust")?;
@@ -610,7 +610,7 @@ fn select_ci_tasks(paths: &[String]) -> Vec<String> {
         ],
     ) || has_prefix(
         paths,
-        &["transforms/", "frameworks/", "tools/", "tests/python/", "crates/"],
+        &["transforms/", "frameworks/", "tools/", "tests/", "crates/"],
     );
 
     let transform_contract_inputs = has_prefix(paths, &["transforms/"])
@@ -770,7 +770,7 @@ python -m py_compile $(git ls-files "*.py") && \
 cargo test -p explorer && \
 cargo build -p core && \
 python -m coverage erase && \
-python -m coverage run -m tests.python --suite unit && \
+python -m coverage run -m tests --suite unit && \
 python -m coverage report --show-missing && \
 python -m coverage xml -o coverage.xml && \
 explorer --help >/dev/null && \
