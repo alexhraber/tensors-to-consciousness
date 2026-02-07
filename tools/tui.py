@@ -20,14 +20,14 @@ from frameworks.engine import FrameworkEngine
 from tools import runtime
 from tools import shinkei
 
-ULTRA_TRANSFORMS = (
+SURGE_TRANSFORMS = (
     "signal warp",
     "field coupling",
     "spectral lift",
     "phase sweep",
 )
-ULTRA_REFRESH_SECONDS = 0.45
-VIEW_ORDER = ("simplified", "advanced", "ultra")
+SURGE_REFRESH_SECONDS = 0.45
+VIEW_ORDER = shinkei.CANONICAL_VIEWS
 SCRIPT_PROFILES = build_tui_profiles(resolve_transform_keys("all"))
 
 
@@ -54,8 +54,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--view",
-        choices=["simplified", "advanced", "ultra"],
-        default="advanced",
+        type=shinkei.parse_view_arg,
+        choices=list(shinkei.CANONICAL_VIEWS),
+        default="field",
         help="Initial view depth for interactive mode.",
     )
     parser.add_argument(
@@ -117,13 +118,13 @@ def _read_char(fd: int, timeout_s: float = 5.0) -> str:
 
 
 def _field_specs(view: str) -> list[tuple[str, str, object]]:
-    if view == "simplified":
+    if view == "seed":
         return [
             ("seed", "Random seed", int),
             ("freq", "Signal frequency", float),
             ("amplitude", "Signal amplitude", float),
         ]
-    if view == "advanced":
+    if view == "field":
         return [
             ("seed", "Random seed", int),
             ("samples", "Sample count", int),
@@ -219,7 +220,7 @@ def _command_console(
             return False
         if cmd in {"help", "h", "?"}:
             print(
-                "Commands: help, show, view <simplified|advanced|ultra>, "
+                "Commands: help, show, view <seed|field|surge>, "
                 "set <k=v>, run <validate|transform1,transform2,...>, back, quit"
             )
             continue
@@ -230,10 +231,11 @@ def _command_console(
             )
             continue
         if cmd == "view" and len(parts) == 2:
-            if parts[1] in {"simplified", "advanced", "ultra"}:
-                state.view = parts[1]
+            candidate = parts[1].strip().lower()
+            if candidate in {"seed", "field", "surge"}:
+                state.view = candidate
             else:
-                print("Invalid view. Use simplified, advanced, or ultra.")
+                print("Invalid view. Use seed, field, or surge.")
             continue
         if cmd == "set":
             expr = raw[len("set") :].strip()
@@ -439,9 +441,9 @@ def _layout_for_view(view: str) -> dict[str, int]:
 
     header_w = max(92, min(cols - 2, 150))
     plot_w = max(72, min(cols - 4, 120))
-    if view == "simplified":
+    if view == "seed":
         plot_h = max(16, min(rows - 14, 24))
-    elif view == "advanced":
+    elif view == "field":
         plot_h = max(18, min(rows - 13, 28))
     else:
         plot_h = max(20, min(rows - 12, 32))
@@ -476,7 +478,7 @@ def _profile_state(index: int, transform_index: int, seed: int = 7) -> shinkei.V
         noise=float(preset["noise"]),
         phase=float(preset["phase"]),
         grid=int(preset["grid"]),
-        view="simplified",
+        view="seed",
     )
 
 
@@ -560,8 +562,8 @@ def _render_pipeline_selector(
     return lines
 
 
-def _ultra_motion_state(base: shinkei.VizState, tick: int) -> tuple[shinkei.VizState, str]:
-    phase_idx = (tick // 5) % len(ULTRA_TRANSFORMS)
+def _surge_motion_state(base: shinkei.VizState, tick: int) -> tuple[shinkei.VizState, str]:
+    phase_idx = (tick // 5) % len(SURGE_TRANSFORMS)
     wave = (tick % 40) / 40.0
     if wave > 0.5:
         wave = 1.0 - wave
@@ -578,7 +580,7 @@ def _ultra_motion_state(base: shinkei.VizState, tick: int) -> tuple[shinkei.VizS
         grid=max(32, int(base.grid * (0.85 + 0.35 * wave))),
         view=base.view,
     )
-    return state, ULTRA_TRANSFORMS[phase_idx]
+    return state, SURGE_TRANSFORMS[phase_idx]
 
 
 def _render_interactive(
@@ -588,6 +590,7 @@ def _render_interactive(
     initial_pipeline: tuple[str, ...],
     transform_selector: str | None = None,
 ) -> int:
+    state.view = shinkei.normalize_view(state.view)
     if not sys.stdin.isatty():
         return shinkei.render_static(np=np, state=state, framework=framework, width=96, height=28)
 
@@ -596,7 +599,7 @@ def _render_interactive(
     fd = sys.stdin.fileno()
     active_framework = framework
     active_platform = _load_platform()
-    motion_enabled = state.view != "ultra"
+    motion_enabled = state.view != "surge"
     motion_tick = 0
     script_index = _resolve_script_index(transform_selector)
     transforms = tuple(profile["transforms"][0] for profile in SCRIPT_PROFILES)
@@ -604,7 +607,7 @@ def _render_interactive(
     pipeline: list[str] = [key for key in initial_pipeline if key in transform_keys]
     if not pipeline and transforms:
         pipeline = [str(transforms[script_index]["key"])]
-    if state.view in {"advanced", "ultra"}:
+    if state.view in {"field", "surge"}:
         _apply_profile_to_state(state, script_index)
     old = termios.tcgetattr(fd)
     _enter_alt()
@@ -626,12 +629,12 @@ def _render_interactive(
                 transform = transforms[script_index]
                 render_state = (
                     _profile_state(script_index, 0, seed=state.seed)
-                    if state.view == "simplified"
+                    if state.view == "seed"
                     else state
                 )
                 transform_label = "steady"
-                if state.view == "ultra" and motion_enabled:
-                    render_state, transform_label = _ultra_motion_state(state, motion_tick)
+                if state.view == "surge" and motion_enabled:
+                    render_state, transform_label = _surge_motion_state(state, motion_tick)
                 engine = _engine_for(active_framework)
                 active_pipeline = tuple(pipeline)
                 result = engine.run_pipeline(active_pipeline, size=render_state.grid, steps=1)
@@ -683,12 +686,12 @@ def _render_interactive(
                     )
                 caption_line = shinkei._format_caption(caption)
                 controls_line = (
-                    "Controls: [m] mode cycle  [n]/[b] cursor next/back  [x] toggle transform  ['[']/[']'] precedence up/down  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume ultra motion  [:] command mode  [r] reseed  [q] quit"
+                    "Controls: [m] mode cycle  [n]/[b] cursor next/back  [x] toggle transform  ['[']/[']'] precedence up/down  [f] framework  [p] cpu/gpu  [i] guided input  [e] quick key=value  [space] pause/resume surge motion  [:] command mode  [r] reseed  [q] quit"
                 )
                 selector_lines = _render_pipeline_selector(transforms, pipeline, script_index)
 
                 partial_viz_only = (
-                    tick_refresh and state.view == "ultra" and motion_enabled and dynamic_lines > 0
+                    tick_refresh and state.view == "surge" and motion_enabled and dynamic_lines > 0
                 )
                 if partial_viz_only:
                     _cursor_up(dynamic_lines)
@@ -709,9 +712,9 @@ def _render_interactive(
                     print(f"formula: {transform['formula']}")
                     print(f"description: {transform['description']}")
                     print()
-                    if state.view == "ultra":
+                    if state.view == "surge":
                         live = "live" if motion_enabled else "paused"
-                        print(f"ultra-motion: {live} · transform={transform_label}")
+                        print(f"surge-motion: {live} · transform={transform_label}")
                         print()
                     for line in selector_lines:
                         print(line)
@@ -735,10 +738,10 @@ def _render_interactive(
                 needs_render = False
                 tick_refresh = False
 
-            timeout = ULTRA_REFRESH_SECONDS if state.view == "ultra" and motion_enabled else 5.0
+            timeout = SURGE_REFRESH_SECONDS if state.view == "surge" and motion_enabled else 5.0
             ch = _read_char(fd, timeout_s=timeout)
             if not ch:
-                if state.view == "ultra" and motion_enabled:
+                if state.view == "surge" and motion_enabled:
                     motion_tick += 1
                     needs_render = True
                     tick_refresh = True
@@ -747,25 +750,25 @@ def _render_interactive(
                 break
             if ch == "m":
                 state.view = _next_view(state.view, direction=1)
-                if state.view == "ultra":
+                if state.view == "surge":
                     motion_enabled = False
                 needs_render = True
                 tick_refresh = False
             elif ch == "M":
                 state.view = _next_view(state.view, direction=-1)
-                if state.view == "ultra":
+                if state.view == "surge":
                     motion_enabled = False
                 needs_render = True
                 tick_refresh = False
             elif ch == "n":
                 script_index = _next_script_index(script_index, direction=1)
-                if state.view in {"advanced", "ultra"}:
+                if state.view in {"field", "surge"}:
                     _apply_profile_to_state(state, script_index)
                 needs_render = True
                 tick_refresh = False
             elif ch == "b":
                 script_index = _next_script_index(script_index, direction=-1)
-                if state.view in {"advanced", "ultra"}:
+                if state.view in {"field", "surge"}:
                     _apply_profile_to_state(state, script_index)
                 needs_render = True
                 tick_refresh = False
@@ -793,7 +796,7 @@ def _render_interactive(
                 needs_render = True
                 tick_refresh = False
             elif ch == "i":
-                if state.view != "simplified":
+                if state.view != "seed":
                     _guided_edit_state(fd, state, old)
                 needs_render = True
                 tick_refresh = False
@@ -812,7 +815,7 @@ def _render_interactive(
                 needs_render = True
                 tick_refresh = False
             elif ch == "e":
-                if state.view != "simplified":
+                if state.view != "seed":
                     _quick_edit_state(fd, state, old)
                 needs_render = True
                 tick_refresh = False
@@ -844,9 +847,10 @@ def main() -> int:
         return 1
 
     state = shinkei.build_state(
-        view=getattr(args, "view", "advanced"),
+        view=getattr(args, "view", "field"),
         inputs=getattr(args, "inputs", None),
     )
+    state.view = shinkei.normalize_view(state.view)
     transforms_selector = getattr(args, "transforms", None)
     transform_selector = getattr(args, "transform", None)
     try:
@@ -859,7 +863,7 @@ def main() -> int:
     SCRIPT_PROFILES = build_tui_profiles(transform_keys)
 
     script_index = _resolve_script_index(transform_selector)
-    if state.view in {"advanced", "ultra"}:
+    if state.view in {"field", "surge"}:
         _apply_profile_to_state(state, script_index)
     framework = getattr(args, "framework", "unknown")
     width = getattr(args, "width", 96)

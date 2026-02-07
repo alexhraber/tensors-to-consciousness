@@ -11,6 +11,36 @@ import tempfile
 from pathlib import Path
 
 
+def _fill_rect(buf: bytearray, width: int, height: int, x0: int, y0: int, x1: int, y1: int, color: tuple[int, int, int]) -> None:
+    x0 = max(0, min(width, x0))
+    x1 = max(0, min(width, x1))
+    y0 = max(0, min(height, y0))
+    y1 = max(0, min(height, y1))
+    if x1 <= x0 or y1 <= y0:
+        return
+    r, g, b = color
+    for y in range(y0, y1):
+        row = (y * width + x0) * 3
+        for _ in range(x0, x1):
+            buf[row : row + 3] = bytes((r, g, b))
+            row += 3
+
+
+def _draw_hline(buf: bytearray, width: int, height: int, x0: int, x1: int, y: int, color: tuple[int, int, int]) -> None:
+    _fill_rect(buf, width, height, x0, y, x1, y + 1, color)
+
+
+def _draw_vline(buf: bytearray, width: int, height: int, x: int, y0: int, y1: int, color: tuple[int, int, int]) -> None:
+    _fill_rect(buf, width, height, x, y0, x + 1, y1, color)
+
+
+def _draw_frame(buf: bytearray, width: int, height: int, x0: int, y0: int, x1: int, y1: int, color: tuple[int, int, int]) -> None:
+    _draw_hline(buf, width, height, x0, x1, y0, color)
+    _draw_hline(buf, width, height, x0, x1, y1 - 1, color)
+    _draw_vline(buf, width, height, x0, y0, y1, color)
+    _draw_vline(buf, width, height, x1 - 1, y0, y1, color)
+
+
 def clamp(v: float) -> int:
     if v < 0:
         return 0
@@ -142,6 +172,96 @@ def render_phase_portraits(frame: int, width: int, height: int) -> bytearray:
     return buf
 
 
+def render_tui_studio(frame: int, width: int, height: int) -> bytearray:
+    t = frame * 0.09
+    buf = bytearray(width * height * 3)
+
+    # Background.
+    idx = 0
+    for y in range(height):
+        ny = y / max(1, height - 1)
+        for x in range(width):
+            nx = x / max(1, width - 1)
+            glow = 0.5 + 0.5 * math.sin(3.2 * nx + 2.4 * ny + 0.7 * t)
+            r = clamp(7 + 12 * ny + 10 * glow)
+            g = clamp(10 + 14 * ny + 14 * glow)
+            b = clamp(18 + 22 * ny + 26 * glow)
+            buf[idx : idx + 3] = bytes((r, g, b))
+            idx += 3
+
+    # Terminal frame.
+    mx = max(18, int(width * 0.05))
+    my = max(14, int(height * 0.08))
+    x0, y0 = mx, my
+    x1, y1 = width - mx, height - my
+    _fill_rect(buf, width, height, x0, y0, x1, y1, (7, 10, 16))
+    _draw_frame(buf, width, height, x0, y0, x1, y1, (70, 92, 126))
+
+    # Header bar.
+    header_h = max(18, int((y1 - y0) * 0.08))
+    _fill_rect(buf, width, height, x0 + 1, y0 + 1, x1 - 1, y0 + header_h, (18, 26, 40))
+    _fill_rect(buf, width, height, x0 + 16, y0 + 7, x0 + int((x1 - x0) * 0.45), y0 + 11, (92, 150, 222))
+
+    # Layout panes.
+    body_y0 = y0 + header_h + 2
+    body_y1 = y1 - max(28, int((y1 - y0) * 0.1))
+    left_w = max(120, int((x1 - x0) * 0.36))
+    split_x = x0 + left_w
+    _draw_vline(buf, width, height, split_x, body_y0, body_y1, (50, 68, 94))
+
+    # Left panel rows with moving cursor and checkboxes.
+    row_h = max(10, int((body_y1 - body_y0) / 13))
+    selected = (frame // 5) % 10
+    enabled_count = 1 + ((frame // 7) % 5)
+    for i in range(10):
+        ry = body_y0 + 8 + i * row_h
+        if ry + row_h - 2 >= body_y1:
+            break
+        on = i < enabled_count
+        row_color = (14, 20, 30) if i != selected else (20, 34, 52)
+        _fill_rect(buf, width, height, x0 + 8, ry, split_x - 8, ry + row_h - 2, row_color)
+        cb_color = (92, 200, 132) if on else (95, 104, 124)
+        _draw_frame(buf, width, height, x0 + 12, ry + 2, x0 + 20, ry + 10, cb_color)
+        if on:
+            _fill_rect(buf, width, height, x0 + 14, ry + 4, x0 + 18, ry + 8, cb_color)
+        order_col = (230, 198, 112) if on else (116, 126, 144)
+        _fill_rect(buf, width, height, x0 + 26, ry + 3, x0 + 34, ry + 7, order_col)
+        _fill_rect(buf, width, height, x0 + 40, ry + 3, split_x - 18, ry + 6, (128, 146, 174))
+
+    # Right visualization panel with animated field.
+    rx0 = split_x + 10
+    rx1 = x1 - 10
+    ry0 = body_y0 + 8
+    ry1 = body_y1 - 8
+    _draw_frame(buf, width, height, rx0 - 2, ry0 - 2, rx1 + 2, ry1 + 2, (62, 84, 114))
+    w = max(1, rx1 - rx0)
+    h = max(1, ry1 - ry0)
+    for yy in range(h):
+        ny = (yy / h) * 2.0 - 1.0
+        for xx in range(w):
+            nx = (xx / w) * 2.0 - 1.0
+            band = math.sin(5.2 * nx + 1.6 * t) * math.cos(4.4 * ny - 1.2 * t)
+            wave = math.sin(8.0 * (nx * nx + ny * ny) - 1.8 * t)
+            v = 0.5 + 0.5 * (0.55 * band + 0.45 * wave)
+            r = clamp(20 + 140 * v)
+            g = clamp(24 + 100 * (1.0 - abs(0.5 - v) * 2.0))
+            b = clamp(48 + 170 * (1.0 - v))
+            j = ((ry0 + yy) * width + (rx0 + xx)) * 3
+            buf[j : j + 3] = bytes((r, g, b))
+
+    # Footer command bar.
+    foot_y0 = body_y1 + 6
+    foot_y1 = y1 - 8
+    _fill_rect(buf, width, height, x0 + 8, foot_y0, x1 - 8, foot_y1, (14, 20, 32))
+    _fill_rect(buf, width, height, x0 + 18, foot_y0 + 4, x0 + 96, foot_y0 + 7, (90, 160, 230))
+    _fill_rect(buf, width, height, x0 + 102, foot_y0 + 4, x0 + int((x1 - x0) * 0.78), foot_y0 + 7, (126, 136, 156))
+    if frame % 8 < 4:
+        cx = x0 + int((x1 - x0) * 0.78) + 4
+        _fill_rect(buf, width, height, cx, foot_y0 + 3, cx + 2, foot_y0 + 9, (240, 244, 252))
+
+    return buf
+
+
 def encode_gif(frames_dir: Path, output_gif: Path, fps: int) -> None:
     palette = frames_dir / "palette.png"
     subprocess.run(
@@ -190,7 +310,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--only",
         nargs="+",
-        choices=["optimization_flow", "attention_dynamics", "phase_portraits"],
+        choices=["optimization_flow", "attention_dynamics", "phase_portraits", "tui_studio"],
         help="Generate only selected assets.",
     )
     return parser.parse_args()
@@ -208,6 +328,7 @@ def main() -> int:
         "optimization_flow": render_optimization_flow,
         "attention_dynamics": render_attention_dynamics,
         "phase_portraits": render_phase_portraits,
+        "tui_studio": render_tui_studio,
     }
     if args.only:
         renderers = {name: renderers[name] for name in args.only}

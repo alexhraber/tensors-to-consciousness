@@ -48,4 +48,4 @@ jobs:
       - name: Verify generated docs are committed
         run: |
           set -euo pipefail
-          git diff --exit-code -- docs/transforms.md docs/frameworks.md
+          git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md

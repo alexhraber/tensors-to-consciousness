@@ -15,8 +15,9 @@ from transforms.catalog import catalog_transforms
 from tools.runtime import SUPPORTED_FRAMEWORKS
 
 DOCS_DIR = ROOT / "docs"
-TRANSFORMS_DOC = DOCS_DIR / "transforms.md"
-FRAMEWORKS_DOC = DOCS_DIR / "frameworks.md"
+REFERENCE_DIR = DOCS_DIR / "reference"
+TRANSFORMS_DOC = REFERENCE_DIR / "transforms.md"
+FRAMEWORKS_DOC = REFERENCE_DIR / "frameworks.md"
 
 
 def render_transforms_md() -> str:
@@ -90,7 +91,7 @@ def render_frameworks_md() -> str:
 
 
 def main() -> int:
-    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
     TRANSFORMS_DOC.write_text(render_transforms_md(), encoding="utf-8")
     FRAMEWORKS_DOC.write_text(render_frameworks_md(), encoding="utf-8")
     print(f"Generated {TRANSFORMS_DOC.relative_to(ROOT)}")

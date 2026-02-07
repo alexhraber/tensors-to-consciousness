@@ -3,4 +3,4 @@ set -euo pipefail
 
 python tools/generate_catalog_docs.py
 
-git add docs/transforms.md docs/frameworks.md
+git add docs/reference/transforms.md docs/reference/frameworks.md

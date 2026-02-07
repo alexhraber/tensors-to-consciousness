@@ -42,6 +42,10 @@ Primary entrypoint:
 python main.py
 ```
 
+<p align="center">
+  <img src="assets/viz/tui_studio.gif" alt="TUI studio preview" width="86%">
+</p>
+
 On first run it will:
 
 1. Detect framework config
@@ -52,10 +56,11 @@ On first run it will:
 
 Detailed usage lives in:
 
-- [TUI Guide](docs/tui.md)
-- [CLI Guide](docs/cli.md)
-- [Transforms Reference](docs/transforms.md)
-- [Frameworks Reference](docs/frameworks.md)
+- [Docs Index](docs/README.md)
+- [TUI Guide](docs/usage/tui.md)
+- [CLI Guide](docs/usage/cli.md)
+- [Transforms Reference](docs/reference/transforms.md)
+- [Frameworks Reference](docs/reference/frameworks.md)
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
 
@@ -92,16 +97,33 @@ python main.py viz --framework numpy --transforms default
 ```
 
 For full transform details, presets, and nuanced examples, use:
-- [Transforms Reference](docs/transforms.md)
-- [Transform Playbook](docs/transform-playbook.md)
+- [Transforms Reference](docs/reference/transforms.md)
+- [Transform Playbook](docs/guides/transform-playbook.md)
 
 References:
-- [Contributing Guide](CONTRIBUTING.md)
+- [Contributing Guide](docs/development/contributing.md)
 - [Tests Guide](tests/README.md)
 - [CI Tests Workflow](.github/workflows/ci-tests.yml)
 - [CI Contracts Workflow](.github/workflows/ci-contracts.yml)
 - [CI Docs Sync Workflow](.github/workflows/ci-docs-sync.yml)
 - [CI Viz Assets Workflow](.github/workflows/ci-viz-assets.yml)
+
+## Shinkei Progression
+
+<p align="center"><strong>Seed</strong></p>
+<p align="center">
+  <img src="assets/viz/optimization_flow.gif" alt="Shinkei seed progression - optimization flow" width="72%">
+</p>
+
+<p align="center"><strong>Field</strong></p>
+<p align="center">
+  <img src="assets/viz/attention_dynamics.gif" alt="Shinkei field progression - attention dynamics" width="72%">
+</p>
+
+<p align="center"><strong>Surge</strong></p>
+<p align="center">
+  <img src="assets/viz/phase_portraits.gif" alt="Shinkei surge progression - phase portraits" width="72%">
+</p>
 
 ## Notes
 
@@ -111,4 +133,4 @@ References:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [Contributing Guide](docs/development/contributing.md).
