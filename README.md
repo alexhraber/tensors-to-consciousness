@@ -73,6 +73,23 @@ Algorithm definitions and math contracts live under `algos/` (framework-agnostic
 Framework backends live under `frameworks/<framework>/` and provide reusable ops/models utilities.
 Algorithm ordering, complexity ranking, defaults, and execution mapping are centralized in `algos/registry.py`.
 
+### Expanded Transformation Library
+
+The sandbox now includes additional tensor-field mutation families:
+
+- `laplacian_diffusion`
+- `advection_transport`
+- `reaction_diffusion`
+- `spectral_filter`
+- `wave_propagation`
+- `hamiltonian_step`
+- `attention_message_passing`
+- `tensor_decomposition`
+- `topology_regularization`
+- `entropy_flow`
+- `stochastic_process`
+- `constraint_projection`
+
 To scaffold a new abstract algorithm + backend adapters:
 
 ```bash
