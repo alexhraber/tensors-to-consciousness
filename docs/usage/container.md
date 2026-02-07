@@ -19,6 +19,7 @@ Notes:
 - `stdin_open: true` + `tty: true` are enabled for interactive TUI operation.
 - The repository is bind-mounted into `/workspace`.
 - `.config/` is persisted via the `t2c_config` volume.
+- `explorer` service defaults to `python main.py`; passing extra commands overrides that default.
 
 ## 3) Run with GPU passthrough
 
