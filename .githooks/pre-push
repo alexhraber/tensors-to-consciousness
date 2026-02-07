@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${SKIP_ACT:-0}" == "1" ]]; then
+  echo "SKIP_ACT=1 set; skipping act pre-push validation." >&2
+  exit 0
+fi
+
+mise run pre-push

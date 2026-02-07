@@ -44,3 +44,49 @@ def pixel_heatmap(arr: Any, *, width: int, height: int) -> str | None:
         return core.pixel_heatmap(arr, width, height)
     except Exception:
         return None
+
+
+def parse_assignment(expr: str) -> tuple[str, str] | None:
+    core = load_rust_core()
+    if core is None:
+        return None
+    try:
+        value = core.parse_assignment(expr)
+    except Exception:
+        return None
+    if isinstance(value, tuple) and len(value) == 2 and all(isinstance(x, str) for x in value):
+        return value[0], value[1]
+    return None
+
+
+def normalize_platform(value: str | None, *, default: str) -> str | None:
+    core = load_rust_core()
+    if core is None:
+        return None
+    try:
+        out = core.normalize_platform(value, default)
+    except Exception:
+        return None
+    return out if isinstance(out, str) else None
+
+
+def default_venv(framework: str) -> str | None:
+    core = load_rust_core()
+    if core is None:
+        return None
+    try:
+        out = core.default_venv(framework)
+    except Exception:
+        return None
+    return out if isinstance(out, str) else None
+
+
+def frame_patch(prev: str, next_: str) -> str | None:
+    core = load_rust_core()
+    if core is None:
+        return None
+    try:
+        out = core.frame_patch(prev, next_)
+    except Exception:
+        return None
+    return out if isinstance(out, str) else None

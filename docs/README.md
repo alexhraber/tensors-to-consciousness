@@ -24,3 +24,4 @@ This documentation set is structured for both operators and contributors.
 
 - [Contributing](../CONTRIBUTING.md)
 - [Rust Core](development/rust-core.md)
+- [Mise Task Runtime](development/mise.md)

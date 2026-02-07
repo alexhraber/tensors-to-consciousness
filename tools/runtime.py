@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from tools import rust_core
+
 CONFIG_FILE = Path(".config/config.json")
 SUPPORTED_FRAMEWORKS = ("mlx", "jax", "pytorch", "numpy", "keras", "cupy")
 DEFAULT_PLATFORM = "gpu"
@@ -28,10 +30,21 @@ def python_in_venv(venv_dir: Path) -> Path:
 
 def with_config_defaults(config: dict[str, Any] | None = None) -> dict[str, Any]:
     raw = config if isinstance(config, dict) else {}
+    framework = str(raw.get("framework") or DEFAULT_FRAMEWORK)
+    venv = str(raw.get("venv") or f".venv-{framework}")
+    rust_venv = rust_core.default_venv(framework)
+    if "venv" not in raw and rust_venv:
+        venv = rust_venv
+
+    platform = str(raw.get("platform") or DEFAULT_PLATFORM).lower()
+    rust_platform = rust_core.normalize_platform(platform, default=DEFAULT_PLATFORM)
+    if rust_platform:
+        platform = rust_platform
+
     out: dict[str, Any] = {
-        "framework": str(raw.get("framework") or DEFAULT_FRAMEWORK),
-        "venv": str(raw.get("venv") or f".venv-{str(raw.get('framework') or DEFAULT_FRAMEWORK)}"),
-        "platform": str(raw.get("platform") or DEFAULT_PLATFORM).lower(),
+        "framework": framework,
+        "venv": venv,
+        "platform": platform,
         "diagnostics": {
             "log_level": DEFAULT_LOG_LEVEL,
             "debug": DEFAULT_DEBUG,

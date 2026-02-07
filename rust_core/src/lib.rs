@@ -1,5 +1,6 @@
 use numpy::PyReadonlyArrayDyn;
 use pyo3::prelude::*;
+use pyo3::types::PyTuple;
 
 fn viridis(v: f32) -> (u8, u8, u8) {
     let stops: [(f32, f32, f32); 5] = [
@@ -226,9 +227,71 @@ fn pixel_heatmap(arr: PyReadonlyArrayDyn<'_, f32>, width: usize, height: usize) 
     Ok(out)
 }
 
+#[pyfunction]
+fn parse_assignment(py: Python<'_>, expr: &str) -> PyResult<PyObject> {
+    let trimmed = expr.trim();
+    let Some((lhs, rhs)) = trimmed.split_once('=') else {
+        return Ok(py.None());
+    };
+    let key = lhs.trim();
+    let value = rhs.trim();
+    if key.is_empty() || value.is_empty() {
+        return Ok(py.None());
+    }
+    let tuple = PyTuple::new(py, [key.to_string(), value.to_string()])?;
+    Ok(tuple.into_any().unbind())
+}
+
+#[pyfunction]
+fn normalize_platform(raw: Option<&str>, default_platform: &str) -> PyResult<String> {
+    let p = raw.unwrap_or(default_platform).trim().to_ascii_lowercase();
+    if p == "cpu" || p == "gpu" {
+        Ok(p)
+    } else {
+        Ok(default_platform.to_ascii_lowercase())
+    }
+}
+
+#[pyfunction]
+fn default_venv(framework: &str) -> PyResult<String> {
+    Ok(format!(".venv-{}", framework))
+}
+
+#[pyfunction]
+fn frame_patch(prev: &str, next: &str) -> PyResult<String> {
+    if prev.is_empty() {
+        return Ok(format!("\x1b[H\x1b[J{}", next));
+    }
+    if prev == next {
+        return Ok(String::new());
+    }
+
+    let prev_lines: Vec<&str> = prev.split('\n').collect();
+    let next_lines: Vec<&str> = next.split('\n').collect();
+    let mut common = 0usize;
+    let lim = prev_lines.len().min(next_lines.len());
+    while common < lim && prev_lines[common] == next_lines[common] {
+        common += 1;
+    }
+
+    let mut out = String::from("\x1b[H");
+    if common > 0 {
+        out.push_str(&format!("\x1b[{}B", common));
+    }
+    out.push_str("\x1b[J");
+    if common < next_lines.len() {
+        out.push_str(&next_lines[common..].join("\n"));
+    }
+    Ok(out)
+}
+
 #[pymodule]
 fn ttc_rust_core(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(ascii_heatmap, m)?)?;
     m.add_function(wrap_pyfunction!(pixel_heatmap, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_assignment, m)?)?;
+    m.add_function(wrap_pyfunction!(normalize_platform, m)?)?;
+    m.add_function(wrap_pyfunction!(default_venv, m)?)?;
+    m.add_function(wrap_pyfunction!(frame_patch, m)?)?;
     Ok(())
 }

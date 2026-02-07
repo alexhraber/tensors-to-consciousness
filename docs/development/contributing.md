@@ -13,12 +13,15 @@ This project is maintained as an architecture-first exploration platform. Contri
 ## Local Workflow
 
 ```bash
+mise install
+mise run install-test-deps
+python tools/setup_contributor.py
 python tools/install_githooks.py
 python -m pip install pre-commit
 pre-commit install
 python explorer.py
 python explorer.py run --transforms default
-python -m tests
+mise run test-all
 ```
 
 ## Commit Hygiene
@@ -30,11 +33,15 @@ python -m tests
 ## Hooks and Automation
 
 - Repo hook entry: `.githooks/pre-commit`
+- Repo hook entry: `.githooks/pre-push`
 - Installer: `python tools/install_githooks.py`
-- Full pre-commit run: `pre-commit run --all-files`
-- Catalog docs generator: `python tools/generate_catalog_docs.py`
-- Render asset generator: `python tools/generate_render_assets.py`
+- Contributor bootstrap: `python tools/setup_contributor.py` (auto-invoked by `.githooks/pre-commit` when needed)
+- Pre-commit gate: `mise run pre-commit` (same validation chain as Actions, scoped to staged changes)
+- Catalog docs generator: `mise run docs-generate`
+- Render asset generator: `mise run assets-regenerate`
 - Rust core build: `./tools/build_rust_core.sh`
+- Local Actions simulation with `act` (workflow-driven, executes `mise` tasks): `mise run act-ci`
+- Full pre-push gate (hook -> `act` -> workflow -> `mise`): `mise run pre-push` (also runs automatically via `.githooks/pre-push`, and only runs jobs for changed paths)
 
 ## Adding or Updating Framework Backends
 
@@ -64,8 +71,8 @@ Validation commands:
 python explorer.py --list-transforms
 python explorer.py validate
 python explorer.py run --transforms default
-python -m tests --suite unit
-python -m tests --suite integration
+mise run test-unit
+mise run test-integration
 ```
 
 ## Documentation Expectations

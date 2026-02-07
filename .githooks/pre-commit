@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-python tools/generate_catalog_docs.py
-
-git add docs/reference/transforms.md docs/reference/frameworks.md
-
-if command -v pre-commit >/dev/null 2>&1; then
-  pre-commit run --hook-stage pre-commit
-elif python -c "import pre_commit" >/dev/null 2>&1; then
-  python -m pre_commit run --hook-stage pre-commit
-else
-  echo "warning: pre-commit is not installed; skipping .pre-commit-config.yaml checks" >&2
-fi
+python tools/setup_contributor.py --quiet
+mise run pre-commit

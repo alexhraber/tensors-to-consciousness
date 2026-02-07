@@ -1,0 +1,242 @@
+[tools]
+python = "3.14"
+uv = "latest"
+
+[tasks.install-test-deps]
+description = "Install local/CI test and runtime-light dependencies."
+run = '''
+uv pip install --python "$(which python)" -r .github/ci/requirements-test.txt
+'''
+
+[tasks.py-compile]
+description = "Bytecode compile all tracked Python files."
+run = '''
+python -m py_compile $(git ls-files '*.py')
+'''
+
+[tasks.test-unit]
+description = "Run unit tests."
+run = "python -m tests --suite unit"
+
+[tasks.test-integration]
+description = "Run integration tests."
+run = "python -m tests --suite integration"
+
+[tasks.test-all]
+description = "Run all tests."
+run = "python -m tests --suite all"
+
+[tasks.cov-unit]
+description = "Run unit tests with coverage."
+run = '''
+python -m coverage erase
+python -m coverage run -m tests --suite unit
+'''
+
+[tasks.cov-integration]
+description = "Run integration tests with appended coverage."
+run = '''
+python -m coverage run --append -m tests --suite integration
+'''
+
+[tasks.cov-report]
+description = "Enforce and emit coverage outputs."
+run = '''
+python -m coverage report --show-missing --fail-under=75
+python -m coverage xml -o coverage.xml
+'''
+
+[tasks.cli-smoke]
+description = "Smoke-check core CLIs."
+run = '''
+python explorer.py --help
+python -m tools.setup --help
+python -m tools.validate --help
+python -m tools.tui --help
+'''
+
+[tasks.docs-generate]
+description = "Generate reference docs."
+run = "python tools/generate_catalog_docs.py"
+
+[tasks.docs-verify]
+description = "Verify generated docs are committed."
+run = '''
+git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md
+'''
+
+[tasks.contract-transforms]
+description = "Validate transform catalog/registry/definition contract."
+run = '''
+python - <<'PY'
+from transforms.catalog import catalog_framework_interface
+from transforms.definitions import TRANSFORM_DEFINITIONS
+from transforms.registry import TRANSFORM_MAP
+import sys
+
+registry_keys = set(TRANSFORM_MAP.keys())
+definition_keys = set(TRANSFORM_DEFINITIONS.keys())
+
+missing_defs = sorted(registry_keys - definition_keys)
+extra_defs = sorted(definition_keys - registry_keys)
+
+contract = catalog_framework_interface()
+missing_contract = []
+if not contract.get("utils_entrypoints"):
+    missing_contract.append("utils_entrypoints")
+if not contract.get("ops_adapter"):
+    missing_contract.append("ops_adapter")
+
+if missing_defs or extra_defs:
+    print("Transform contract violations:")
+    if missing_defs:
+        print(f" - missing definitions: {missing_defs}")
+    if extra_defs:
+        print(f" - unregistered definitions: {extra_defs}")
+    sys.exit(1)
+if missing_contract:
+    print("Transform interface contract is incomplete:")
+    for key in missing_contract:
+        print(f" - missing: {key}")
+    sys.exit(1)
+print("Transform contract checks passed.")
+PY
+'''
+
+[tasks.contract-framework]
+description = "Validate framework backend contract for FRAMEWORK=<name>."
+run = '''
+python - <<'PY'
+import os
+import pathlib
+import sys
+
+fw = os.environ["FRAMEWORK"]
+root = pathlib.Path("frameworks") / fw
+if not root.exists():
+    print(f"Missing framework directory: {root}")
+    sys.exit(1)
+
+required = ["utils.py", "test_setup.py"]
+missing = [name for name in required if not (root / name).exists()]
+if missing:
+    print(f"{fw}: missing required files:")
+    for name in missing:
+        print(f" - {root / name}")
+    sys.exit(1)
+
+transforms_backend = root / "transforms"
+if not transforms_backend.exists():
+    print(f"{fw}: missing transforms adapter directory: {transforms_backend}")
+    sys.exit(1)
+
+print(f"{fw}: framework contract passed.")
+PY
+'''
+
+[tasks.install-render-system-deps]
+description = "Install Linux packages required for headless capture and validation."
+run = '''
+sudo apt-get update
+sudo apt-get install -y xvfb xterm xdotool ffmpeg
+'''
+
+[tasks.render-verify-assets]
+description = "Validate committed GIF assets."
+run = '''
+for f in assets/render/*.gif; do
+  ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$f"
+done
+'''
+
+[tasks.render-smoke-progressions]
+description = "Smoke-check headless progression capture."
+run = '''
+rm -rf /tmp/render-progressions
+python tools/generate_render_assets.py --output-dir /tmp/render-progressions --frames 24 --fps 12 --width 320 --height 180 --only optimization_flow attention_dynamics phase_portraits --framework numpy
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/optimization_flow.gif
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/attention_dynamics.gif
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/phase_portraits.gif
+'''
+
+[tasks.render-smoke-tui]
+description = "Smoke-check headless TUI capture."
+run = '''
+mkdir -p /tmp/render-headless
+python tools/generate_render_assets.py --output-dir /tmp/render-headless --only tui_explorer --frames 36 --fps 12 --width 320 --height 180 --framework numpy --tui-capture headless
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-headless/tui_explorer.gif
+'''
+
+[tasks.assets-regenerate]
+description = "Regenerate README-linked render assets."
+run = '''
+python tools/generate_render_assets.py \
+  --framework numpy \
+  --only optimization_flow attention_dynamics phase_portraits tui_explorer \
+  --tui-capture headless
+'''
+
+[tasks.act-check]
+description = "Verify act is installed and Docker is available."
+run = '''
+if ! command -v act >/dev/null 2>&1; then
+  echo "act is required for pre-push CI simulation. Install it first: https://nektosact.com/installation/" >&2
+  exit 1
+fi
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required for act-based workflow simulation." >&2
+  exit 1
+fi
+act --version
+docker --version
+'''
+
+[tasks.act-ci]
+description = "Run local GitHub Actions CI simulation through act."
+depends = ["act-check"]
+run = '''
+act workflow_dispatch -W .github/workflows/ci.yml -j test-matrix --matrix python-version:3.14
+act workflow_dispatch -W .github/workflows/ci.yml -j docs-sync
+act workflow_dispatch -W .github/workflows/ci.yml -j transform-contract
+act workflow_dispatch -W .github/workflows/ci.yml -j framework-contract --matrix framework:numpy
+act workflow_dispatch -W .github/workflows/ci.yml -j render-assets
+act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync
+'''
+
+[tasks.act-ci-test-matrix]
+description = "Run local test-matrix job through act."
+depends = ["act-check"]
+run = "act workflow_dispatch -W .github/workflows/ci.yml -j test-matrix --matrix python-version:3.14"
+
+[tasks.act-ci-docs-sync]
+description = "Run local docs-sync job through act."
+depends = ["act-check"]
+run = "act workflow_dispatch -W .github/workflows/ci.yml -j docs-sync"
+
+[tasks.act-ci-transform-contract]
+description = "Run local transform-contract job through act."
+depends = ["act-check"]
+run = "act workflow_dispatch -W .github/workflows/ci.yml -j transform-contract"
+
+[tasks.act-ci-framework-contract-numpy]
+description = "Run local framework-contract (numpy) through act."
+depends = ["act-check"]
+run = "act workflow_dispatch -W .github/workflows/ci.yml -j framework-contract --matrix framework:numpy"
+
+[tasks.act-ci-render-assets]
+description = "Run local render-assets job through act."
+depends = ["act-check"]
+run = "act workflow_dispatch -W .github/workflows/ci.yml -j render-assets"
+
+[tasks.act-ci-assets-sync]
+description = "Run local assets-readme-sync workflow through act."
+depends = ["act-check"]
+run = "act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync"
+
+[tasks.pre-push]
+description = "Pre-push quality gate with path-based job selection (hook -> act -> workflow -> mise)."
+run = "python tools/pre_push_gate.py"
+
+[tasks.pre-commit]
+description = "Pre-commit quality gate with staged-file path selection (hook -> act -> workflow -> mise)."
+run = "python tools/pre_push_gate.py --mode pre-commit"

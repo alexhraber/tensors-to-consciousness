@@ -55,6 +55,14 @@ Local launch:
 python explorer.py
 ```
 
+Local parity with CI (`mise`):
+
+```bash
+mise install
+mise run install-test-deps
+mise run test-all
+```
+
 First-run defaults:
 
 - macOS: `mlx`
@@ -111,5 +119,8 @@ Headless captures of three transform progression examples (real `explorer.py run
 python explorer.py --list-transforms
 python explorer.py run --framework jax --transforms chain_rule,gradient_descent,adam
 python explorer.py render --framework numpy --transforms default
-python -m tests
+mise run test-all
+mise run docs-generate
+mise run assets-regenerate
+mise run pre-push
 ```

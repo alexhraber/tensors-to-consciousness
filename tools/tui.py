@@ -18,7 +18,9 @@ from types import ModuleType
 from transforms.registry import build_tui_profiles
 from transforms.registry import resolve_transform_keys
 from frameworks.engine import FrameworkEngine
+from tools import diagnostics
 from tools import runtime
+from tools import rust_core
 from tools import shinkei
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
@@ -161,9 +163,13 @@ def _quick_edit_state(fd: int, state: shinkei.RenderState, old: list[int]) -> No
         line = input("Quick edit key=value (blank to cancel): ").strip()
     finally:
         tty.setcbreak(fd)
-    if "=" not in line:
-        return
-    key, value = [x.strip() for x in line.split("=", 1)]
+    parsed = rust_core.parse_assignment(line)
+    if parsed is not None:
+        key, value = parsed
+    else:
+        if "=" not in line:
+            return
+        key, value = [x.strip() for x in line.split("=", 1)]
     edits: dict[str, tuple[object, str]] = {
         "seed": (int, "seed"),
         "samples": (int, "samples"),
@@ -223,10 +229,14 @@ def _command_console(
             continue
         if cmd == "set":
             expr = raw[len("set") :].strip()
-            if "=" not in expr:
-                print("Use: set key=value")
-                continue
-            key, value = [x.strip() for x in expr.split("=", 1)]
+            parsed = rust_core.parse_assignment(expr)
+            if parsed is not None:
+                key, value = parsed
+            else:
+                if "=" not in expr:
+                    print("Use: set key=value")
+                    continue
+                key, value = [x.strip() for x in expr.split("=", 1)]
             edits: dict[str, tuple[object, str]] = {
                 "seed": (int, "seed"),
                 "samples": (int, "samples"),
@@ -467,6 +477,51 @@ def _render_header(
     print(_style(bot, fg=(83, 109, 154)))
 
 
+def _header_block(
+    framework: str,
+    platform: str,
+    state: shinkei.RenderState,
+    renderer: str,
+    width: int = 104,
+) -> list[str]:
+    top = "┌" + ("─" * (width - 2)) + "┐"
+    bot = "└" + ("─" * (width - 2)) + "┘"
+    header_line = _frame_line(
+        f" explorer · {framework} · {platform} · view={state.view} · renderer={renderer} ",
+        width=width,
+    )
+    stats_line = _frame_line(
+        f" seed={state.seed} samples={state.samples} grid={state.grid} freq={state.freq:.3f} amp={state.amplitude:.3f} damp={state.damping:.3f} noise={state.noise:.3f} phase={state.phase:.3f} ",
+        width=width,
+    )
+    return [
+        _style(top, fg=(83, 109, 154)),
+        _style(header_line, fg=(208, 224, 252), bold=True),
+        _style(stats_line, fg=(142, 166, 206)),
+        _style(bot, fg=(83, 109, 154)),
+    ]
+
+
+def _draw_text_frame(frame_text: str, prev_frame_text: str | None, telemetry: dict[str, int] | None = None) -> str:
+    patch = rust_core.frame_patch(prev_frame_text or "", frame_text)
+    if patch is not None:
+        if telemetry is not None:
+            telemetry["rust_attempts"] = telemetry.get("rust_attempts", 0) + 1
+            if patch:
+                telemetry["rust_applied"] = telemetry.get("rust_applied", 0) + 1
+            else:
+                telemetry["rust_noop"] = telemetry.get("rust_noop", 0) + 1
+        if patch:
+            sys.stdout.write(patch)
+            sys.stdout.flush()
+        return frame_text
+    if telemetry is not None:
+        telemetry["fallback_full_redraws"] = telemetry.get("fallback_full_redraws", 0) + 1
+    _clear_screen()
+    print(frame_text)
+    return frame_text
+
+
 def _render_landing(framework: str, platform: str, width: int, term_cols: int, term_rows: int) -> None:
     card_w = max(58, min(width, 86))
     top = "┌" + ("─" * (card_w - 2)) + "┐"
@@ -491,6 +546,32 @@ def _render_landing(framework: str, platform: str, width: int, term_cols: int, t
         _style(bot, fg=(83, 109, 154)),
     ]
     _print_centered(lines, term_cols=term_cols)
+
+
+def _landing_frame_text(framework: str, platform: str, width: int, term_cols: int, term_rows: int) -> str:
+    card_w = max(58, min(width, 86))
+    top = "┌" + ("─" * (card_w - 2)) + "┐"
+    bot = "└" + ("─" * (card_w - 2)) + "┘"
+    pad_top = max(1, min(6, (term_rows - 14) // 3))
+
+    framework_text = _style(framework, fg=(126, 214, 255), bold=True)
+    platform_text = _style(platform, fg=(153, 231, 173), bold=True)
+    lines: list[str] = [
+        _style(top, fg=(83, 109, 154)),
+        _frame_line(_style(" TENSORS TO CONSCIOUSNESS ", fg=(234, 241, 255), bold=True), width=card_w),
+        _frame_line(_style(" terminal transform exploration ", fg=(150, 178, 224), dim=True), width=card_w),
+        _frame_line("", width=card_w),
+        _frame_line(f" {framework_text}  ·  {platform_text} ", width=card_w),
+        _frame_line("", width=card_w),
+        _frame_line(f" {_keycap('ENTER', (255, 214, 136))} begin exploring ", width=card_w),
+        _frame_line(
+            f" {_keycap('F')} framework   {_keycap('P')} platform   {_keycap('Q', (255, 189, 189))} quit ",
+            width=card_w,
+        ),
+        _style(bot, fg=(83, 109, 154)),
+    ]
+    centered = [_center_text(line, term_cols) for line in lines]
+    return ("\n" * pad_top) + "\n".join(centered)
 
 
 def _layout_for_view() -> dict[str, int]:
@@ -654,6 +735,8 @@ def _render_interactive(
     transform_selector: str | None = None,
     start_on_landing: bool = True,
 ) -> int:
+    diagnostics.configure_logging()
+    logger = diagnostics.get_logger("tui")
     state.view = shinkei.normalize_view(state.view)
     if not sys.stdin.isatty():
         return shinkei.render_static(np=np, state=state, framework=framework, width=96, height=28)
@@ -688,6 +771,8 @@ def _render_interactive(
     dynamic_lines = 0
     show_details = False
     on_landing = start_on_landing
+    prev_text_frame: str | None = None
+    frame_patch_stats: dict[str, int] = {}
     engine_cache: dict[str, FrameworkEngine] = {}
 
     def _engine_for(framework_name: str) -> FrameworkEngine:
@@ -712,16 +797,15 @@ def _render_interactive(
 
                 if needs_render:
                     if on_landing:
-                        _clear_screen()
                         layout = _layout_for_view()
-                        _render_landing(
+                        landing_frame = _landing_frame_text(
                             framework=active_framework,
                             platform=active_platform,
                             width=layout["header_w"],
                             term_cols=layout["cols"],
                             term_rows=layout["rows"],
                         )
-                        sys.stdout.flush()
+                        prev_text_frame = _draw_text_frame(landing_frame, prev_text_frame, frame_patch_stats)
                         needs_render = False
                         tick_refresh = False
                         dynamic_lines = 0
@@ -786,11 +870,11 @@ def _render_interactive(
                     controls_line = _detailed_controls_line() if show_details else _compact_controls_line()
                     selector_lines = _render_pipeline_selector(transforms, pipeline, script_index)
 
-                    partial_render_only = tick_refresh and motion_enabled and dynamic_lines > 0
+                    partial_render_only = tick_refresh and motion_enabled and dynamic_lines > 0 and use_plots
                     if partial_render_only:
                         _cursor_up(dynamic_lines)
                         _clear_to_end()
-                    else:
+                    elif use_plots:
                         _clear_screen()
                         _render_header(
                             framework=active_framework,
@@ -799,41 +883,83 @@ def _render_interactive(
                             renderer=renderer,
                             width=layout["header_w"],
                         )
-                    print()
-                    print(
-                        _style(
-                            f"transform [{transform['key']}] {transform['title']} · complexity={profile.get('complexity', '?')}",
-                            fg=(200, 220, 255),
-                            bold=True,
-                        )
+                    transform_line = _style(
+                        f"transform [{transform['key']}] {transform['title']} · complexity={profile.get('complexity', '?')}",
+                        fg=(200, 220, 255),
+                        bold=True,
                     )
-                    if show_details:
-                        print(_style(f"formula: {transform['formula']}", fg=(159, 184, 228)))
-                        print(_style(f"description: {transform['description']}", fg=(159, 184, 228)))
-                        print()
                     live = "live" if motion_enabled else "paused"
                     live_color = (153, 231, 173) if motion_enabled else (255, 214, 136)
-                    print(_style(f"live-dynamics: {live} · phase={transform_label}", fg=live_color, bold=True))
-                    print()
-                    if show_details:
-                        for line in selector_lines:
-                            print(_style(line, fg=(155, 180, 222)))
-                    print(_style("pipeline: " + (" -> ".join(pipeline) if pipeline else "(none)"), fg=(136, 208, 251)))
-                    if not show_details:
-                        print(_style("hint: press [h] for transform details and full controls", fg=(140, 160, 192), dim=True))
-                    print()
+                    live_line = _style(f"live-dynamics: {live} · phase={transform_label}", fg=live_color, bold=True)
+                    pipeline_line = _style(
+                        "pipeline: " + (" -> ".join(pipeline) if pipeline else "(none)"),
+                        fg=(136, 208, 251),
+                    )
+                    controls_styled = _style(controls_line, fg=(136, 160, 202))
 
-                    print(render)
                     if use_plots:
+                        print()
+                        print(transform_line)
+                        if show_details:
+                            print(_style(f"formula: {transform['formula']}", fg=(159, 184, 228)))
+                            print(_style(f"description: {transform['description']}", fg=(159, 184, 228)))
+                            print()
+                        print(live_line)
+                        print()
+                        if show_details:
+                            for line in selector_lines:
+                                print(_style(line, fg=(155, 180, 222)))
+                        print(pipeline_line)
+                        if not show_details:
+                            print(_style("hint: press [h] for transform details and full controls", fg=(140, 160, 192), dim=True))
+                        print()
+
+                        print(render)
                         # Keep cursor below kitty image payload before footer text.
                         sys.stdout.write("\n")
-                    print()
-                    print(caption_line)
-                    print(_style(controls_line, fg=(136, 160, 202)))
-                    sys.stdout.flush()
-                    dynamic_lines = _line_count(render) + 1 + _line_count(caption_line) + 1
-                    if use_plots:
-                        dynamic_lines += 1
+                        print()
+                        print(caption_line)
+                        print(controls_styled)
+                        sys.stdout.flush()
+                        dynamic_lines = _line_count(render) + 2 + _line_count(caption_line) + 1
+                        prev_text_frame = None
+                    else:
+                        frame_lines: list[str] = []
+                        frame_lines.extend(
+                            _header_block(
+                                framework=active_framework,
+                                platform=active_platform,
+                                state=state,
+                                renderer=renderer,
+                                width=layout["header_w"],
+                            )
+                        )
+                        frame_lines.append("")
+                        frame_lines.append(transform_line)
+                        if show_details:
+                            frame_lines.append(_style(f"formula: {transform['formula']}", fg=(159, 184, 228)))
+                            frame_lines.append(_style(f"description: {transform['description']}", fg=(159, 184, 228)))
+                            frame_lines.append("")
+                        frame_lines.append(live_line)
+                        frame_lines.append("")
+                        if show_details:
+                            frame_lines.extend(_style(line, fg=(155, 180, 222)) for line in selector_lines)
+                        frame_lines.append(pipeline_line)
+                        if not show_details:
+                            frame_lines.append(
+                                _style(
+                                    "hint: press [h] for transform details and full controls",
+                                    fg=(140, 160, 192),
+                                    dim=True,
+                                )
+                            )
+                        frame_lines.append("")
+                        frame_lines.append(render)
+                        frame_lines.append("")
+                        frame_lines.append(caption_line)
+                        frame_lines.append(controls_styled)
+                        prev_text_frame = _draw_text_frame("\n".join(frame_lines), prev_text_frame, frame_patch_stats)
+                        dynamic_lines = 0
                     needs_render = False
                     tick_refresh = False
                 timeout = LIVE_REFRESH_SECONDS if motion_enabled else 5.0
@@ -950,6 +1076,8 @@ def _render_interactive(
                 tick_refresh = False
                 dynamic_lines = 0
     finally:
+        if diagnostics.debug_enabled():
+            diagnostics.kernel_event(logger, "tui.frame_patch.stats", **frame_patch_stats)
         signal.signal(signal.SIGINT, prev_sigint)
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
         _leave_alt()

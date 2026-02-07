@@ -29,6 +29,16 @@ class RustCoreLoaderTests(unittest.TestCase):
             rust_core.load_rust_core.cache_clear()
             self.assertIsNone(rust_core.load_rust_core())
 
+    def test_parse_assignment_wrapper(self) -> None:
+        class _FakeCore:
+            @staticmethod
+            def parse_assignment(expr: str):
+                return ("seed", "12") if "=" in expr else None
+
+        with patch.object(rust_core, "load_rust_core", return_value=_FakeCore()):
+            self.assertEqual(rust_core.parse_assignment("seed=12"), ("seed", "12"))
+            self.assertIsNone(rust_core.parse_assignment("seed"))
+
 
 if __name__ == "__main__":
     unittest.main()

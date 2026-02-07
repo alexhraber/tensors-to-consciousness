@@ -9,6 +9,9 @@ Current Rust-accelerated paths:
 
 - ASCII heatmap generation
 - Pixel/ANSI heatmap generation
+- Assignment parsing helpers for interactive edits (`key=value`)
+- Runtime platform/venv normalization helpers
+- Frame patch primitive for terminal diffing
 
 Fallback behavior:
 

@@ -15,6 +15,7 @@ on:
       - "tools/tui.py"
       - "transforms/**"
       - ".python-version"
+      - "mise.toml"
       - "Dockerfile"
       - ".github/ci/requirements-test.txt"
       - ".github/workflows/assets-readme-sync.yml"
@@ -32,6 +33,7 @@ on:
       - "tools/tui.py"
       - "transforms/**"
       - ".python-version"
+      - "mise.toml"
       - "Dockerfile"
       - ".github/ci/requirements-test.txt"
       - ".github/workflows/assets-readme-sync.yml"
@@ -56,34 +58,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: "3.14"
+          cache: true
+          install: true
 
       - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb xterm xdotool ffmpeg
+        run: mise run install-render-system-deps
 
       - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install numpy matplotlib
+        run: mise run install-test-deps
 
       - name: Regenerate render assets
-        run: |
-          python tools/generate_render_assets.py \
-            --framework numpy \
-            --only optimization_flow attention_dynamics phase_portraits tui_explorer \
-            --tui-capture headless
+        run: mise run assets-regenerate
 
       - name: Verify generated asset files
-        run: |
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 assets/render/optimization_flow.gif
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 assets/render/attention_dynamics.gif
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 assets/render/phase_portraits.gif
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 assets/render/tui_explorer.gif
+        run: mise run render-verify-assets
 
       - name: Check drift in PR
         if: github.event_name == 'pull_request'

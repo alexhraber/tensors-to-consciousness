@@ -12,6 +12,7 @@ on:
       - "tests/**"
       - "docs/**"
       - "assets/render/**"
+      - "mise.toml"
       - ".github/ci/**"
       - ".github/workflows/**"
   pull_request:
@@ -25,6 +26,7 @@ on:
       - "tests/**"
       - "docs/**"
       - "assets/render/**"
+      - "mise.toml"
       - ".github/ci/**"
       - ".github/workflows/**"
   workflow_dispatch:
@@ -65,6 +67,7 @@ jobs:
             runtime:
               - "explorer.py"
               - ".python-version"
+              - "mise.toml"
               - "transforms/**"
               - "frameworks/**"
               - "tools/**"
@@ -80,6 +83,7 @@ jobs:
               - "tools/generate_render_assets.py"
               - "assets/render/**"
             ci:
+              - "mise.toml"
               - ".github/ci/**"
               - ".github/workflows/**"
 
@@ -100,50 +104,39 @@ jobs:
       - name: Mark job start
         run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          cache: true
+          install: true
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          cache-dependency-glob: ".github/ci/requirements-test.txt"
+      - name: Select Python version
+        run: |
+          mise use -g python@${{ matrix.python-version }}
 
       - name: Toolchain versions
         run: |
+          mise --version
+          mise current
           python --version
-          uv --version
 
       - name: Install test dependencies
-        run: |
-          uv pip install --python "$(which python)" -r .github/ci/requirements-test.txt
+        run: mise run install-test-deps
 
       - name: Bytecode compilation check
-        run: |
-          python -m py_compile $(git ls-files '*.py')
+        run: mise run py-compile
 
       - name: Unit tests with coverage
-        run: |
-          python -m coverage erase
-          python -m coverage run -m tests --suite unit
+        run: mise run cov-unit
 
       - name: Integration tests with coverage
-        run: |
-          python -m coverage run --append -m tests --suite integration
+        run: mise run cov-integration
 
       - name: Coverage gate
-        run: |
-          python -m coverage report --show-missing --fail-under=75
-          python -m coverage xml -o coverage.xml
+        run: mise run cov-report
 
       - name: CLI smoke checks
-        run: |
-          python explorer.py --help
-          python -m tools.setup --help
-          python -m tools.validate --help
-          python -m tools.tui --help
+        run: mise run cli-smoke
 
       - name: Record timing metrics
         if: always()
@@ -209,20 +202,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: "3.14"
+          cache: true
+          install: true
 
       - name: Generate catalog docs
-        run: |
-          set -euo pipefail
-          python tools/generate_catalog_docs.py
+        run: mise run docs-generate
 
       - name: Verify generated docs are committed
-        run: |
-          set -euo pipefail
-          git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md
+        run: mise run docs-verify
 
   transform-contract:
     name: Transform Contract
@@ -234,47 +224,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: "3.14"
+          cache: true
+          install: true
 
       - name: Validate transform catalog/registry/definition contract
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from transforms.catalog import catalog_framework_interface
-          from transforms.definitions import TRANSFORM_DEFINITIONS
-          from transforms.registry import TRANSFORM_MAP
-          import sys
-
-          registry_keys = set(TRANSFORM_MAP.keys())
-          definition_keys = set(TRANSFORM_DEFINITIONS.keys())
-
-          missing_defs = sorted(registry_keys - definition_keys)
-          extra_defs = sorted(definition_keys - registry_keys)
-
-          contract = catalog_framework_interface()
-          missing_contract = []
-          if not contract.get("utils_entrypoints"):
-              missing_contract.append("utils_entrypoints")
-          if not contract.get("ops_adapter"):
-              missing_contract.append("ops_adapter")
-
-          if missing_defs or extra_defs:
-              print("Transform contract violations:")
-              if missing_defs:
-                  print(f" - missing definitions: {missing_defs}")
-              if extra_defs:
-                  print(f" - unregistered definitions: {extra_defs}")
-              sys.exit(1)
-          if missing_contract:
-              print("Transform interface contract is incomplete:")
-              for key in missing_contract:
-                  print(f" - missing: {key}")
-              sys.exit(1)
-          print("Transform contract checks passed.")
-          PY
+        run: mise run contract-transforms
 
   framework-contract:
     name: Framework Contract (${{ matrix.framework }})
@@ -290,42 +247,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: "3.14"
+          cache: true
+          install: true
 
       - name: Verify framework backend contract
         env:
           FRAMEWORK: ${{ matrix.framework }}
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import os
-          import pathlib
-          import sys
-
-          fw = os.environ["FRAMEWORK"]
-          root = pathlib.Path("frameworks") / fw
-          if not root.exists():
-              print(f"Missing framework directory: {root}")
-              sys.exit(1)
-
-          required = ["utils.py", "test_setup.py"]
-          missing = [name for name in required if not (root / name).exists()]
-          if missing:
-              print(f"{fw}: missing required files:")
-              for name in missing:
-                  print(f" - {root / name}")
-              sys.exit(1)
-
-          transforms_backend = root / "transforms"
-          if not transforms_backend.exists():
-              print(f"{fw}: missing transforms adapter directory: {transforms_backend}")
-              sys.exit(1)
-
-          print(f"{fw}: framework contract passed.")
-          PY
+        run: mise run contract-framework
 
   render-assets:
     name: Render Assets Integrity
@@ -340,69 +271,29 @@ jobs:
       - name: Mark job start
         run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: "3.14"
+          cache: true
+          install: true
 
-      - name: Install rendering dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install numpy matplotlib
+      - name: Install render dependencies
+        run: mise run install-test-deps
 
       - name: Install headless capture system deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb xterm xdotool
-
-      - name: Cache FFmpeg (static binary)
-        id: cache-ffmpeg
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/ffmpeg
-          key: ffmpeg-static-${{ runner.os }}-amd64-v7.1.1
-
-      - name: Install FFmpeg (static binary)
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.local/ffmpeg/bin"
-          curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg.tar.xz
-          tar -xJf /tmp/ffmpeg.tar.xz -C /tmp
-          src_dir="$(find /tmp -maxdepth 1 -type d -name 'ffmpeg-*-amd64-static' | head -n 1)"
-          cp "$src_dir/ffmpeg" "$HOME/.local/ffmpeg/bin/ffmpeg"
-          cp "$src_dir/ffprobe" "$HOME/.local/ffmpeg/bin/ffprobe"
-          chmod +x "$HOME/.local/ffmpeg/bin/ffmpeg" "$HOME/.local/ffmpeg/bin/ffprobe"
-
-      - name: Add FFmpeg to PATH
-        run: |
-          echo "$HOME/.local/ffmpeg/bin" >> "$GITHUB_PATH"
+        run: mise run install-render-system-deps
 
       - name: Verify FFmpeg
-        run: |
-          ffmpeg -version
+        run: ffmpeg -version
 
       - name: Validate committed GIF assets
-        run: |
-          for f in assets/render/*.gif; do
-            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$f"
-          done
+        run: mise run render-verify-assets
 
       - name: Headless progression capture smoke check
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/render-progressions
-          python tools/generate_render_assets.py --output-dir /tmp/render-progressions --frames 24 --fps 12 --width 320 --height 180 --only optimization_flow attention_dynamics phase_portraits --framework numpy
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/optimization_flow.gif
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/attention_dynamics.gif
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/phase_portraits.gif
+        run: mise run render-smoke-progressions
 
       - name: Headless TUI capture smoke check
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/render-headless
-          python tools/generate_render_assets.py --output-dir /tmp/render-headless --only tui_explorer --frames 36 --fps 12 --width 320 --height 180 --framework numpy --tui-capture headless
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-headless/tui_explorer.gif
+        run: mise run render-smoke-tui
 
       - name: Record timing metrics
         if: always()

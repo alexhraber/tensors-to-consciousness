@@ -1,0 +1,143 @@
+from __future__ import annotations
+
+import subprocess
+import sys
+import argparse
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _git_output(*args: str) -> str:
+    return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
+
+
+def _best_base_ref() -> str:
+    try:
+        upstream = _git_output("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+        if upstream:
+            return upstream
+    except subprocess.CalledProcessError:
+        pass
+    try:
+        _git_output("rev-parse", "--verify", "origin/main")
+        return "origin/main"
+    except subprocess.CalledProcessError:
+        return "HEAD~1"
+
+
+def _changed_files_for_pre_push(base_ref: str) -> list[str]:
+    try:
+        diff = _git_output("diff", "--name-only", "--diff-filter=ACMR", f"{base_ref}...HEAD")
+        return [line for line in diff.splitlines() if line]
+    except subprocess.CalledProcessError:
+        return []
+
+
+def _changed_files_for_pre_commit() -> list[str]:
+    try:
+        diff = _git_output("diff", "--cached", "--name-only", "--diff-filter=ACMR")
+        return [line for line in diff.splitlines() if line]
+    except subprocess.CalledProcessError:
+        return []
+
+
+def _has_prefix(paths: list[str], *prefixes: str) -> bool:
+    return any(any(path.startswith(prefix) for prefix in prefixes) for path in paths)
+
+
+def _has_exact(paths: list[str], *names: str) -> bool:
+    names_set = set(names)
+    return any(path in names_set for path in paths)
+
+
+def select_act_tasks(paths: list[str]) -> list[str]:
+    runtime = _has_prefix(paths, "transforms/", "frameworks/", "tools/") or _has_exact(
+        paths, "explorer.py", ".python-version", "mise.toml"
+    )
+    tests = _has_prefix(paths, "tests/") or _has_exact(paths, ".github/ci/requirements-test.txt")
+    docs = _has_prefix(paths, "docs/") or _has_exact(
+        paths, "transforms/transforms.json", "tools/generate_catalog_docs.py", "tools/runtime.py"
+    )
+    render = _has_prefix(paths, "assets/render/") or _has_exact(paths, "tools/generate_render_assets.py")
+    ci = _has_prefix(paths, ".github/ci/", ".github/workflows/") or _has_exact(paths, "mise.toml")
+    assets_sync = _has_prefix(paths, "assets/render/", "examples/", "frameworks/", "transforms/") or _has_exact(
+        paths,
+        "README.md",
+        "explorer.py",
+        "tools/generate_render_assets.py",
+        "tools/headless_capture.py",
+        "tools/shinkei.py",
+        "tools/tui.py",
+        ".python-version",
+        "mise.toml",
+        "Dockerfile",
+        ".github/ci/requirements-test.txt",
+        ".github/workflows/assets-readme-sync.yml",
+    )
+
+    tasks: list[str] = []
+    if runtime or tests or ci:
+        tasks.extend(
+            [
+                "act-ci-test-matrix",
+                "act-ci-transform-contract",
+                "act-ci-framework-contract-numpy",
+            ]
+        )
+    if docs or runtime or ci:
+        tasks.append("act-ci-docs-sync")
+    if render or ci:
+        tasks.append("act-ci-render-assets")
+    if assets_sync:
+        tasks.append("act-ci-assets-sync")
+    return tasks
+
+
+def _run_task(task: str) -> None:
+    subprocess.run(["mise", "run", task], cwd=ROOT, check=True)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run path-selected act CI jobs.")
+    parser.add_argument(
+        "--mode",
+        choices=["pre-commit", "pre-push"],
+        default="pre-push",
+        help="Change scope mode: staged files for pre-commit or branch diff for pre-push.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    base_ref = _best_base_ref()
+    paths = (
+        _changed_files_for_pre_commit() if args.mode == "pre-commit" else _changed_files_for_pre_push(base_ref)
+    )
+    tasks = select_act_tasks(paths)
+    if not tasks:
+        if args.mode == "pre-commit":
+            print("[pre-commit] No CI-relevant staged changes; skipping act jobs.")
+        else:
+            print(f"[pre-push] No CI-relevant changes since {base_ref}; skipping act jobs.")
+        return 0
+
+    prefix = "pre-commit" if args.mode == "pre-commit" else "pre-push"
+    if args.mode == "pre-push":
+        print(f"[{prefix}] Base ref: {base_ref}")
+    print(f"[{prefix}] Changed files: {len(paths)}")
+    for task in tasks:
+        print(f"[{prefix}] Running {task}")
+        _run_task(task)
+    print(f"[{prefix}] Completed selected act jobs.")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print("\n[ci-gate] Interrupted.", file=sys.stderr)
+        raise SystemExit(130)
