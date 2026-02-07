@@ -47,6 +47,12 @@ GPU passthrough launch:
 docker compose --profile nvidia run --rm explorer-nvidia
 ```
 
+Apple Silicon (MLX container profile):
+
+```bash
+docker compose --profile apple run --rm explorer-apple
+```
+
 <p align="center">
   <img src="assets/render/tui_explorer.gif" alt="TUI explorer preview" width="86%">
 </p>

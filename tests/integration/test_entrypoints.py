@@ -41,7 +41,7 @@ class SetupFlowIntegrationTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(calls[0][:2], ["uv", "venv"])
         self.assertIn("matplotlib", calls[1])
-        self.assertIn("mlx", calls[1])
+        self.assertTrue(any(dep in calls[1] for dep in ("mlx", "mlx[cpu]")))
         write_config_mock.assert_called_once()
 
 

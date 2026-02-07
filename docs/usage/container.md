@@ -41,11 +41,19 @@ Intel iGPU:
 docker compose --profile intel run --rm explorer-intel
 ```
 
+Apple Silicon (MLX container path):
+
+```bash
+docker compose --profile apple run --rm explorer-apple
+```
+
 Pass-through details:
 
 - `explorer-nvidia` uses `gpus: all` + `/dev/dri` with NVIDIA runtime env vars.
 - `explorer-amd` uses `/dev/dri` + `/dev/kfd` (ROCm-compatible hosts).
 - `explorer-intel` uses `/dev/dri`.
+- `explorer-apple` runs `linux/arm64` and initializes MLX using `mlx[cpu]` inside container.
+- Apple Metal passthrough is not currently available via Docker Desktop Linux containers, so MLX in container mode is CPU-backed.
 
 Example with explicit device selection:
 

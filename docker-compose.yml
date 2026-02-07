@@ -86,5 +86,23 @@ services:
       - ./:/workspace
       - t2c_config:/workspace/.config
 
+  explorer-apple:
+    profiles: ["apple"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tensors-to-consciousness:dev
+    platform: linux/arm64
+    working_dir: /workspace
+    command: ["python", "main.py", "--framework", "mlx"]
+    stdin_open: true
+    tty: true
+    environment:
+      TERM: ${TERM:-xterm-256color}
+      COLORTERM: ${COLORTERM:-truecolor}
+    volumes:
+      - ./:/workspace
+      - t2c_config:/workspace/.config
+
 volumes:
   t2c_config:

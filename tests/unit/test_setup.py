@@ -31,6 +31,16 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn("matplotlib", calls[0])
         self.assertEqual(calls[1][-2:], ["--framework", "jax"])
 
+    def test_mlx_dependency_resolves_to_cpu_backend_on_linux(self) -> None:
+        with patch.object(setup.sys, "platform", "linux"):
+            deps = setup.resolve_framework_deps("mlx")
+        self.assertEqual(deps, ["mlx[cpu]"])
+
+    def test_mlx_dependency_resolves_to_native_backend_on_macos(self) -> None:
+        with patch.object(setup.sys, "platform", "darwin"):
+            deps = setup.resolve_framework_deps("mlx")
+        self.assertEqual(deps, ["mlx"])
+
     def test_setup_one_skip_validate(self) -> None:
         calls: list[list[str]] = []
 
@@ -69,7 +79,7 @@ class SetupScriptTests(unittest.TestCase):
                 # Ensure common deps are always installed before framework deps.
                 dep_chain = install_cmd[install_cmd.index("--upgrade") + 1 :]
                 self.assertEqual(dep_chain[: len(setup.COMMON_DEPS)], setup.COMMON_DEPS)
-                self.assertEqual(dep_chain[len(setup.COMMON_DEPS) :], cfg["deps"])
+                self.assertEqual(dep_chain[len(setup.COMMON_DEPS) :], setup.resolve_framework_deps(framework))
 
     def test_write_active_config_applies_sensible_defaults(self) -> None:
         with patch.object(setup, "save_config") as save_config_mock:
