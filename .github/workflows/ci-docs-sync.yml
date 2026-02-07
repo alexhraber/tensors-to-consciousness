@@ -1,0 +1,51 @@
+name: CI Docs Sync
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - "transforms/transforms.json"
+      - "tools/generate_catalog_docs.py"
+      - "tools/runtime.py"
+      - ".github/workflows/ci-docs-sync.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - "transforms/transforms.json"
+      - "tools/generate_catalog_docs.py"
+      - "tools/runtime.py"
+      - ".github/workflows/ci-docs-sync.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-docs-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docs-sync:
+    name: Docs Sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Generate catalog docs
+        run: |
+          set -euo pipefail
+          python tools/generate_catalog_docs.py
+
+      - name: Verify generated docs are committed
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- docs/transforms.md docs/frameworks.md

@@ -13,7 +13,10 @@
 
 <p>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
-  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-tests.yml"><img alt="CI Tests" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-tests.yml/badge.svg"></a>
+  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-contracts.yml"><img alt="CI Contracts" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-contracts.yml/badge.svg"></a>
+  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-docs-sync.yml"><img alt="CI Docs" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-docs-sync.yml/badge.svg"></a>
+  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-viz-assets.yml"><img alt="CI Viz Assets" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-viz-assets.yml/badge.svg"></a>
   <img alt="Python 3.14" src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white">
   <a href="https://deepwiki.com/alexhraber/tensors-to-consciousness"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
 </p>
@@ -69,8 +72,8 @@ The project currently supports the following frameworks:
 
 ## Transforms
 
-Transform definitions are framework-agnostic and live in `transforms/transforms.json`.
-Framework backends (`frameworks/<framework>/utils.py`) implement the execution contract consumed by the engine.
+Transforms are framework-agnostic math definitions consumed by framework engines.
+Canonical definitions live in `transforms/transforms.json`.
 
 Top 5 core transforms:
 
@@ -80,45 +83,25 @@ Top 5 core transforms:
 - `momentum`
 - `adam`
 
-Use `python main.py --list-transforms` for the full transform catalog.
+Ultra imperative commands:
+
+```bash
+python main.py --list-transforms
+python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
+python main.py viz --framework numpy --transforms default
+```
+
+For full transform details, presets, and nuanced examples, use:
+- [Transforms Reference](docs/transforms.md)
+- [Transform Playbook](docs/transform-playbook.md)
 
 References:
-- [Transform Catalog](transforms/transforms.json)
-- [Examples Catalog](examples/README.md)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Tests Guide](tests/README.md)
-- [CI Workflow](.github/workflows/ci.yml)
-
-Docs generation:
-
-```bash
-python tools/generate_catalog_docs.py
-```
-
-To scaffold a new transform + backend adapters:
-
-```bash
-python tools/scaffold_algo.py --complexity 2 --key rk4_solver --title "RK4 Solver" --formula "x_{t+1}=x_t+..." --description "Fourth-order integration"
-```
-
-Explore transform pipelines:
-
-```bash
-python main.py run --framework jax --transforms chain_rule,gradient_descent,adam
-python main.py viz --framework jax --transforms all
-python main.py --list-transforms
-python -m tools.playground --framework jax --transforms chain_rule,adam --viz
-```
-
-Nuanced input presets:
-
-```bash
-python main.py run --framework jax --transforms chain_rule,momentum,adam --inputs examples/inputs.example.json
-python main.py run --framework numpy --transforms spectral_filter,wave_propagation --inputs examples/inputs.spectral_sweep.json
-python main.py run --framework pytorch --transforms constraint_projection,entropy_flow --inputs examples/inputs.stability_focus.json
-python main.py run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
-python main.py run --framework mlx --transforms tensor_ops,chain_rule,gradient_descent --inputs examples/inputs.framework_matrix.json
-```
+- [CI Tests Workflow](.github/workflows/ci-tests.yml)
+- [CI Contracts Workflow](.github/workflows/ci-contracts.yml)
+- [CI Docs Sync Workflow](.github/workflows/ci-docs-sync.yml)
+- [CI Viz Assets Workflow](.github/workflows/ci-viz-assets.yml)
 
 ## Notes
 
