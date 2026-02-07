@@ -43,8 +43,50 @@ env:
   CI_BUDGET_VIZ_FAIL_SEC: 120
 
 jobs:
+  changes:
+    name: Change Detection
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.filter.outputs.runtime }}
+      tests: ${{ steps.filter.outputs.tests }}
+      docs: ${{ steps.filter.outputs.docs }}
+      viz: ${{ steps.filter.outputs.viz }}
+      ci: ${{ steps.filter.outputs.ci }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            runtime:
+              - "main.py"
+              - ".python-version"
+              - "transforms/**"
+              - "frameworks/**"
+              - "tools/**"
+            tests:
+              - "tests/**"
+              - ".github/ci/requirements-test.txt"
+            docs:
+              - "docs/**"
+              - "transforms/transforms.json"
+              - "tools/generate_catalog_docs.py"
+              - "tools/runtime.py"
+            viz:
+              - "tools/generate_viz_assets.py"
+              - "assets/viz/**"
+            ci:
+              - ".github/ci/**"
+              - ".github/workflows/**"
+
   test-matrix:
     name: Test (Python ${{ matrix.python-version }})
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -144,6 +186,8 @@ jobs:
 
   docs-sync:
     name: Docs Sync
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs == 'true' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -167,6 +211,8 @@ jobs:
 
   transform-contract:
     name: Transform Contract
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -217,6 +263,8 @@ jobs:
 
   framework-contract:
     name: Framework Contract (${{ matrix.framework }})
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.runtime == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -266,6 +314,8 @@ jobs:
 
   viz-assets:
     name: Visualization Assets Integrity
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.viz == 'true' || needs.changes.outputs.ci == 'true'
     runs-on: ubuntu-latest
 
     steps:
