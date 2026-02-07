@@ -99,7 +99,7 @@ Top 5 core transforms:
 - [CI Docs Sync Workflow](.github/workflows/ci-docs-sync.yml)
 - [CI Viz Assets Workflow](.github/workflows/ci-viz-assets.yml)
 
-Ultra imperative commands:
+Core exploration commands:
 
 ```bash
 python main.py --list-transforms
