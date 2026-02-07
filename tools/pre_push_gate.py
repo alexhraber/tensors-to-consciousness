@@ -74,14 +74,30 @@ def select_act_tasks(paths: list[str]) -> list[str]:
         "tools/validate.py",
     )
     tests = _has_prefix(paths, "tests/") or _has_exact(paths, ".github/ci/requirements-test.txt")
+    ci_runtime = _has_prefix(paths, ".github/ci/", ".github/workflows/") or _has_exact(
+        paths, "mise.toml", "tools/pre_push_gate.py"
+    )
     docs_catalog = _has_exact(paths, "transforms/transforms.json", "tools/generate_catalog_docs.py")
-    ci = _has_prefix(paths, ".github/ci/", ".github/workflows/") or _has_exact(paths, "mise.toml")
+
+    transform_contract_inputs = _has_prefix(paths, "transforms/") or _has_exact(
+        paths,
+        "frameworks/engine.py",
+        "tools/runtime.py",
+        "tools/playground.py",
+    )
+    framework_contract_inputs = _has_prefix(paths, "frameworks/") or _has_exact(
+        paths,
+        "tools/setup.py",
+        "tools/runtime.py",
+    )
 
     tasks: list[str] = []
-    if runtime or tests or ci:
+    if runtime or tests or ci_runtime:
         tasks.append("act-ci-test")
-    if runtime or ci:
-        tasks.extend(["act-ci-transform-contract", "act-ci-framework-contract-numpy"])
+    if transform_contract_inputs or ci_runtime:
+        tasks.extend(["act-ci-transform-contract", "act-ci-framework-contract-jax"])
+    elif framework_contract_inputs:
+        tasks.append("act-ci-framework-contract-jax")
     if docs_catalog:
         tasks.append("act-ci-docs-sync")
     return tasks

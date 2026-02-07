@@ -199,7 +199,7 @@ run = '''
 act workflow_dispatch -W .github/workflows/ci.yml -j test --env LOCAL_ACT=true
 act workflow_dispatch -W .github/workflows/ci.yml -j docs-sync --env LOCAL_ACT=true
 act workflow_dispatch -W .github/workflows/ci.yml -j transform-contract --env LOCAL_ACT=true
-act workflow_dispatch -W .github/workflows/ci.yml -j framework-contract --matrix framework:numpy --env LOCAL_ACT=true
+act workflow_dispatch -W .github/workflows/ci.yml -j framework-contract --matrix framework:jax --env LOCAL_ACT=true
 act workflow_dispatch -W .github/workflows/ci.yml -j render-assets --env LOCAL_ACT=true
 act workflow_dispatch -W .github/workflows/assets-readme-sync.yml -j sync --env LOCAL_ACT=true
 '''
@@ -219,10 +219,10 @@ description = "Run local transform-contract job through act."
 depends = ["act-check"]
 run = "act workflow_dispatch -W .github/workflows/ci.yml -j transform-contract --env LOCAL_ACT=true"
 
-[tasks.act-ci-framework-contract-numpy]
-description = "Run local framework-contract (numpy) through act."
+[tasks.act-ci-framework-contract-jax]
+description = "Run local framework-contract (jax) through act."
 depends = ["act-check"]
-run = "act workflow_dispatch -W .github/workflows/ci.yml -j framework-contract --matrix framework:numpy --env LOCAL_ACT=true"
+run = "act workflow_dispatch -W .github/workflows/ci.yml -j framework-contract --matrix framework:jax --env LOCAL_ACT=true"
 
 [tasks.act-ci-render-assets]
 description = "Run local render-assets job through act."

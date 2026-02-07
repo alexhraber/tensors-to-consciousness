@@ -32,13 +32,19 @@ class PrePushGateTests(unittest.TestCase):
     def test_resolve_jobs_parallelizes_act_tasks(self) -> None:
         self.assertEqual(_resolve_jobs("4", ["act-ci-test", "act-ci-docs-sync"]), 2)
 
-    def test_runtime_change_selects_core_jobs(self) -> None:
+    def test_tui_runtime_change_selects_test_job_only(self) -> None:
         tasks = select_act_tasks(["tools/tui.py"])
         self.assertIn("act-ci-test", tasks)
-        self.assertIn("act-ci-transform-contract", tasks)
-        self.assertIn("act-ci-framework-contract-numpy", tasks)
+        self.assertNotIn("act-ci-transform-contract", tasks)
+        self.assertNotIn("act-ci-framework-contract-jax", tasks)
         self.assertNotIn("act-ci-docs-sync", tasks)
         self.assertNotIn("act-ci-assets-sync", tasks)
+
+    def test_framework_change_selects_framework_contract(self) -> None:
+        tasks = select_act_tasks(["frameworks/jax/utils.py"])
+        self.assertIn("act-ci-test", tasks)
+        self.assertIn("act-ci-framework-contract-jax", tasks)
+        self.assertNotIn("act-ci-transform-contract", tasks)
 
     def test_tests_only_change_selects_test_job(self) -> None:
         tasks = select_act_tasks(["tests/unit/test_pre_push_gate.py"])
@@ -60,7 +66,7 @@ class PrePushGateTests(unittest.TestCase):
         tasks = select_act_tasks([".github/workflows/ci.yml"])
         self.assertIn("act-ci-test", tasks)
         self.assertIn("act-ci-transform-contract", tasks)
-        self.assertIn("act-ci-framework-contract-numpy", tasks)
+        self.assertIn("act-ci-framework-contract-jax", tasks)
         self.assertNotIn("act-ci-docs-sync", tasks)
         self.assertNotIn("act-ci-assets-sync", tasks)
 

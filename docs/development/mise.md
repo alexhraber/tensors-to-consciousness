@@ -25,7 +25,7 @@ mise run cov-report
 mise run docs-generate
 mise run docs-verify
 mise run contract-transforms
-FRAMEWORK=numpy mise run contract-framework
+FRAMEWORK=jax mise run contract-framework
 mise run assets-regenerate
 mise run act-ci
 mise run pre-push
