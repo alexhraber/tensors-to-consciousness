@@ -1,0 +1,373 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "main.py"
+      - ".python-version"
+      - "transforms/**"
+      - "frameworks/**"
+      - "tools/**"
+      - "tests/**"
+      - "docs/**"
+      - "assets/viz/**"
+      - ".github/ci/**"
+      - ".github/workflows/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "main.py"
+      - ".python-version"
+      - "transforms/**"
+      - "frameworks/**"
+      - "tools/**"
+      - "tests/**"
+      - "docs/**"
+      - "assets/viz/**"
+      - ".github/ci/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI_BUDGET_TEST_WARN_SEC: 120
+  CI_BUDGET_TEST_FAIL_SEC: 240
+  CI_BUDGET_VIZ_WARN_SEC: 60
+  CI_BUDGET_VIZ_FAIL_SEC: 120
+
+jobs:
+  test-matrix:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Mark job start
+        run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: ".github/ci/requirements-test.txt"
+
+      - name: Toolchain versions
+        run: |
+          python --version
+          uv --version
+
+      - name: Install test dependencies
+        run: |
+          uv pip install --python "$(which python)" -r .github/ci/requirements-test.txt
+
+      - name: Bytecode compilation check
+        run: |
+          python -m py_compile $(git ls-files '*.py')
+
+      - name: Unit tests
+        run: |
+          python -m tests --suite unit
+
+      - name: Integration tests
+        run: |
+          python -m tests --suite integration
+
+      - name: CLI smoke checks
+        run: |
+          python main.py --help
+          python -m tools.setup --help
+          python -m tools.validate --help
+          python -m tools.tui --help
+
+      - name: Record timing metrics
+        if: always()
+        run: |
+          END_TS=$(date +%s)
+          DURATION=$((END_TS - JOB_START_TS))
+          echo "JOB_DURATION_SEC=${DURATION}" >> "$GITHUB_ENV"
+          mkdir -p ci-metrics
+          cat > "ci-metrics/test-matrix-py${{ matrix.python-version }}.json" <<EOF
+          {
+            "job": "test-matrix",
+            "python_version": "${{ matrix.python-version }}",
+            "duration_seconds": ${DURATION},
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "sha": "${{ github.sha }}"
+          }
+          EOF
+          {
+            echo "### CI Timing: test-matrix (py${{ matrix.python-version }})"
+            echo "- Duration: ${DURATION}s"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce test job budget
+        if: always()
+        run: |
+          DUR="${JOB_DURATION_SEC}"
+          WARN="${CI_BUDGET_TEST_WARN_SEC}"
+          FAIL="${CI_BUDGET_TEST_FAIL_SEC}"
+          if [ "$DUR" -gt "$FAIL" ]; then
+            echo "Test job exceeded hard budget: ${DUR}s > ${FAIL}s" >&2
+            exit 1
+          fi
+          if [ "$DUR" -gt "$WARN" ]; then
+            echo "::warning::Test job exceeded warning budget: ${DUR}s > ${WARN}s"
+          fi
+
+      - name: Upload timing metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-timing-test-matrix-py${{ matrix.python-version }}
+          path: ci-metrics/test-matrix-py${{ matrix.python-version }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+  docs-sync:
+    name: Docs Sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Generate catalog docs
+        run: |
+          set -euo pipefail
+          python tools/generate_catalog_docs.py
+
+      - name: Verify generated docs are committed
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md
+
+  transform-contract:
+    name: Transform Contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Validate transform catalog/registry/definition contract
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from transforms.catalog import catalog_framework_interface
+          from transforms.definitions import TRANSFORM_DEFINITIONS
+          from transforms.registry import TRANSFORM_MAP
+          import sys
+
+          registry_keys = set(TRANSFORM_MAP.keys())
+          definition_keys = set(TRANSFORM_DEFINITIONS.keys())
+
+          missing_defs = sorted(registry_keys - definition_keys)
+          extra_defs = sorted(definition_keys - registry_keys)
+
+          contract = catalog_framework_interface()
+          missing_contract = []
+          if not contract.get("utils_entrypoints"):
+              missing_contract.append("utils_entrypoints")
+          if not contract.get("ops_adapter"):
+              missing_contract.append("ops_adapter")
+
+          if missing_defs or extra_defs:
+              print("Transform contract violations:")
+              if missing_defs:
+                  print(f" - missing definitions: {missing_defs}")
+              if extra_defs:
+                  print(f" - unregistered definitions: {extra_defs}")
+              sys.exit(1)
+          if missing_contract:
+              print("Transform interface contract is incomplete:")
+              for key in missing_contract:
+                  print(f" - missing: {key}")
+              sys.exit(1)
+          print("Transform contract checks passed.")
+          PY
+
+  framework-contract:
+    name: Framework Contract (${{ matrix.framework }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: ["mlx", "jax", "pytorch", "numpy", "keras", "cupy"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Verify framework backend contract
+        env:
+          FRAMEWORK: ${{ matrix.framework }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import pathlib
+          import sys
+
+          fw = os.environ["FRAMEWORK"]
+          root = pathlib.Path("frameworks") / fw
+          if not root.exists():
+              print(f"Missing framework directory: {root}")
+              sys.exit(1)
+
+          required = ["utils.py", "test_setup.py"]
+          missing = [name for name in required if not (root / name).exists()]
+          if missing:
+              print(f"{fw}: missing required files:")
+              for name in missing:
+                  print(f" - {root / name}")
+              sys.exit(1)
+
+          transforms_backend = root / "transforms"
+          if not transforms_backend.exists():
+              print(f"{fw}: missing transforms adapter directory: {transforms_backend}")
+              sys.exit(1)
+
+          print(f"{fw}: framework contract passed.")
+          PY
+
+  viz-assets:
+    name: Visualization Assets Integrity
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Mark job start
+        run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install visualization dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy matplotlib
+
+      - name: Cache FFmpeg (static binary)
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/ffmpeg
+          key: ffmpeg-static-${{ runner.os }}-amd64-v7.1.1
+
+      - name: Install FFmpeg (static binary)
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/ffmpeg/bin"
+          curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg.tar.xz
+          tar -xJf /tmp/ffmpeg.tar.xz -C /tmp
+          src_dir="$(find /tmp -maxdepth 1 -type d -name 'ffmpeg-*-amd64-static' | head -n 1)"
+          cp "$src_dir/ffmpeg" "$HOME/.local/ffmpeg/bin/ffmpeg"
+          cp "$src_dir/ffprobe" "$HOME/.local/ffmpeg/bin/ffprobe"
+          chmod +x "$HOME/.local/ffmpeg/bin/ffmpeg" "$HOME/.local/ffmpeg/bin/ffprobe"
+
+      - name: Add FFmpeg to PATH
+        run: |
+          echo "$HOME/.local/ffmpeg/bin" >> "$GITHUB_PATH"
+
+      - name: Verify FFmpeg
+        run: |
+          ffmpeg -version
+
+      - name: Validate committed GIF assets
+        run: |
+          for f in assets/viz/*.gif; do
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$f"
+          done
+
+      - name: Fast deterministic generator check
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/viz-a /tmp/viz-b
+          python tools/generate_viz_assets.py --output-dir /tmp/viz-a --frames 20 --fps 12 --width 320 --height 180
+          python tools/generate_viz_assets.py --output-dir /tmp/viz-b --frames 20 --fps 12 --width 320 --height 180
+          sha256sum /tmp/viz-a/*.gif | sort | awk '{print $1}' > /tmp/viz_hashes_1.txt
+          sha256sum /tmp/viz-b/*.gif | sort | awk '{print $1}' > /tmp/viz_hashes_2.txt
+          diff -u /tmp/viz_hashes_1.txt /tmp/viz_hashes_2.txt
+
+      - name: Record timing metrics
+        if: always()
+        run: |
+          END_TS=$(date +%s)
+          DURATION=$((END_TS - JOB_START_TS))
+          echo "JOB_DURATION_SEC=${DURATION}" >> "$GITHUB_ENV"
+          mkdir -p ci-metrics
+          cat > "ci-metrics/viz-assets.json" <<EOF
+          {
+            "job": "viz-assets",
+            "duration_seconds": ${DURATION},
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "sha": "${{ github.sha }}"
+          }
+          EOF
+          {
+            echo "### CI Timing: viz-assets"
+            echo "- Duration: ${DURATION}s"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce viz job budget
+        if: always()
+        run: |
+          DUR="${JOB_DURATION_SEC}"
+          WARN="${CI_BUDGET_VIZ_WARN_SEC}"
+          FAIL="${CI_BUDGET_VIZ_FAIL_SEC}"
+          if [ "$DUR" -gt "$FAIL" ]; then
+            echo "viz-assets job exceeded hard budget: ${DUR}s > ${FAIL}s" >&2
+            exit 1
+          fi
+          if [ "$DUR" -gt "$WARN" ]; then
+            echo "::warning::viz-assets job exceeded warning budget: ${DUR}s > ${WARN}s"
+          fi
+
+      - name: Upload timing metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-timing-viz-assets
+          path: ci-metrics/viz-assets.json
+          if-no-files-found: error
+          retention-days: 30

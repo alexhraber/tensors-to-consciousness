@@ -13,10 +13,7 @@
 
 <p>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
-  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-tests.yml"><img alt="CI Tests" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-tests.yml/badge.svg"></a>
-  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-contracts.yml"><img alt="CI Contracts" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-contracts.yml/badge.svg"></a>
-  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-docs-sync.yml"><img alt="CI Docs" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-docs-sync.yml/badge.svg"></a>
-  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-viz-assets.yml"><img alt="CI Viz Assets" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci-viz-assets.yml/badge.svg"></a>
+  <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Python 3.14" src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white">
   <a href="https://deepwiki.com/alexhraber/tensors-to-consciousness"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
 </p>
@@ -94,10 +91,7 @@ Top 5 core transforms:
 - [Transform Playbook](docs/guides/transform-playbook.md)
 - [Contributing Guide](docs/development/contributing.md)
 - [Tests Guide](tests/README.md)
-- [CI Tests Workflow](.github/workflows/ci-tests.yml)
-- [CI Contracts Workflow](.github/workflows/ci-contracts.yml)
-- [CI Docs Sync Workflow](.github/workflows/ci-docs-sync.yml)
-- [CI Viz Assets Workflow](.github/workflows/ci-viz-assets.yml)
+- [CI Workflow](.github/workflows/ci.yml)
 
 Core exploration commands:
 
