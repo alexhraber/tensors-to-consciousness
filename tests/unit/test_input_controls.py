@@ -23,7 +23,7 @@ class InputControlsTests(unittest.TestCase):
             self.input_controls.metadata_for_scope("jax", {"x": object()})
 
     def test_generated_metadata_and_render_meta_override(self) -> None:
-        with patch.dict(os.environ, {"TTC_INPUTS": "{}"}, clear=False):
+        with patch.dict(os.environ, {"INPUTS": "{}"}, clear=False):
             _ = self.input_controls.tune_normal("jax", (2, 2))
         generated = None
 
@@ -62,7 +62,7 @@ class InputControlsTests(unittest.TestCase):
                 }
             },
         }
-        with patch.dict(os.environ, {"TTC_INPUTS": json.dumps(config)}, clear=False):
+        with patch.dict(os.environ, {"INPUTS": json.dumps(config)}, clear=False):
             self.input_controls._load_config.cache_clear()
             sample_cfg = self.input_controls.tune_normal("jax", (2, 2))
         self.assertEqual(sample_cfg["std"], 4.0)
@@ -84,7 +84,7 @@ class InputControlsTests(unittest.TestCase):
                 }
             }
         }
-        with patch.dict(os.environ, {"TTC_INPUTS": json.dumps(cfg)}, clear=False):
+        with patch.dict(os.environ, {"INPUTS": json.dumps(cfg)}, clear=False):
             self.input_controls._load_config.cache_clear()
             tuned = _call_without_lhs()
         self.assertEqual(tuned["shape"], (11,))

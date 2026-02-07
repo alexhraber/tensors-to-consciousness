@@ -11,8 +11,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable
 
-from tools import runtime
-
 EXPLORER_VIEW = "explore"
 
 
@@ -74,9 +72,9 @@ def _supports_kitty_graphics() -> bool:
 
 
 def _supports_inline_image_graphics() -> bool:
-    if runtime.env_get("TTC_RENDER_DISABLE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
+    if os.environ.get("RENDER_DISABLE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return False
-    if runtime.env_get("TTC_RENDER_FORCE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
+    if os.environ.get("RENDER_FORCE_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return True
     if not sys.stdout.isatty():
         return False
@@ -90,7 +88,7 @@ def _supports_inline_image_graphics() -> bool:
     if term_program == "kitty":
         return True
     if term_program == "ghostty" or "ghostty" in term:
-        return runtime.env_get("TTC_RENDER_GHOSTTY_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}
+        return os.environ.get("RENDER_GHOSTTY_INLINE", "").strip().lower() in {"1", "true", "yes", "on"}
 
     return False
 
@@ -513,7 +511,7 @@ def _coerce_float(data: dict[str, object], key: str, default: float, lo: float, 
 def build_state(view: str | None = None, inputs: str | None = None) -> RenderState:
     normalized_view = normalize_view(view)
     merged = _load_inputs_blob(inputs)
-    env_blob = runtime.env_get("TTC_INPUTS", "").strip()
+    env_blob = os.environ.get("INPUTS", "").strip()
     if env_blob:
         merged = {**merged, **_load_inputs_blob(env_blob)}
     return RenderState(
@@ -652,7 +650,7 @@ def render_stage(
     limit: int = 3,
 ) -> None:
     np = _np_module()
-    if runtime.env_get("TTC_RENDER", "1").strip().lower() in {"0", "false", "off", "no"}:
+    if os.environ.get("RENDER", "1").strip().lower() in {"0", "false", "off", "no"}:
         return
 
     candidates: list[tuple[str, object]] = []
@@ -673,7 +671,7 @@ def render_stage(
         return
 
     candidates.sort(key=lambda item: item[1].size, reverse=True)
-    style = runtime.env_get("TTC_RENDER_STYLE", "plots").strip().lower()
+    style = os.environ.get("RENDER_STYLE", "plots").strip().lower()
     use_graphics = style != "ascii" and _supports_graphical_terminal()
     kitty_ok = _supports_kitty_graphics()
     inline_image_ok = _supports_inline_image_graphics()
@@ -704,7 +702,7 @@ def render_stage(
     else:
         chosen = "plots" if inline_image_ok and kitty_ok else ("heatmap" if use_graphics else "ascii")
 
-    if runtime.env_get("TTC_RENDER_TRACE", "1").strip().lower() in {"1", "true", "yes", "on"}:
+    if os.environ.get("RENDER_TRACE", "1").strip().lower() in {"1", "true", "yes", "on"}:
         print(f"[RENDER renderer={chosen}]")
         if chosen != "plots":
             print("[RENDER hint] Plot rendering unavailable; using synthesized fallback.")

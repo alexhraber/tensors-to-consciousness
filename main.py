@@ -141,7 +141,7 @@ def main() -> int:
         framework = DEFAULT_FRAMEWORK
 
     if inputs:
-        env["TTC_INPUTS"] = inputs
+        env["INPUTS"] = inputs
 
     try:
         config, setup_ran = ensure_setup_if_needed(

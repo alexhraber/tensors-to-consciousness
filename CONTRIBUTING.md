@@ -68,6 +68,6 @@ python main.py run --transforms default
 
 ## Hygiene
 
-- Do not commit generated runtime state (`.ttc/`, `.venv/`, `out/`, `__pycache__/`).
+- Do not commit generated runtime state (`.config/`, `.venv/`, `out/`, `__pycache__/`).
 - Keep frameworks runnable with direct `python <script>.py`.
 - Prefer small, focused commits with clear messages.

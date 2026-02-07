@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import select
 import shutil
 import subprocess
@@ -20,6 +21,7 @@ from frameworks.engine import FrameworkEngine
 from tools import runtime
 from tools import shinkei
 
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 LIVE_TRANSFORMS = (
     "signal warp",
     "field coupling",
@@ -189,7 +191,7 @@ def _command_console(
     print("\nCommand console (type `help`). `back` returns to explorer, `quit` exits.")
     while True:
         try:
-            raw = input("ttc> ").strip()
+            raw = input("explore> ").strip()
         except EOFError:
             raw = "back"
         if not raw:
@@ -370,7 +372,7 @@ def _platform_selector(fd: int, current: str) -> str | None:
 
 
 def _platform_env(framework: str, platform: str) -> dict[str, str]:
-    env: dict[str, str] = {"TTC_PLATFORM": platform}
+    env: dict[str, str] = {"PLATFORM": platform}
     if framework == "jax":
         env["JAX_PLATFORM_NAME"] = platform
     if framework in {"pytorch", "keras", "cupy"} and platform == "cpu":
@@ -390,7 +392,14 @@ def _theme_enabled() -> bool:
     return shinkei._supports_graphical_terminal() and not os.environ.get("NO_COLOR")
 
 
-def _style(text: str, *, fg: tuple[int, int, int] | None = None, bold: bool = False, dim: bool = False) -> str:
+def _style(
+    text: str,
+    *,
+    fg: tuple[int, int, int] | None = None,
+    bg: tuple[int, int, int] | None = None,
+    bold: bool = False,
+    dim: bool = False,
+) -> str:
     if not _theme_enabled():
         return text
     parts: list[str] = []
@@ -401,9 +410,32 @@ def _style(text: str, *, fg: tuple[int, int, int] | None = None, bold: bool = Fa
     if fg is not None:
         r, g, b = fg
         parts.append(f"38;2;{r};{g};{b}")
+    if bg is not None:
+        r, g, b = bg
+        parts.append(f"48;2;{r};{g};{b}")
     if not parts:
         return text
     return f"\x1b[{';'.join(parts)}m{text}\x1b[0m"
+
+
+def _visible_len(text: str) -> int:
+    return len(_ANSI_RE.sub("", text))
+
+
+def _center_text(text: str, width: int) -> str:
+    visible = _visible_len(text)
+    if visible >= width:
+        return text
+    return (" " * ((width - visible) // 2)) + text
+
+
+def _print_centered(lines: list[str], term_cols: int) -> None:
+    for line in lines:
+        print(_center_text(line, term_cols))
+
+
+def _keycap(label: str, tone: tuple[int, int, int] = (210, 224, 245)) -> str:
+    return _style(f" {label} ", fg=(18, 24, 34), bg=tone, bold=True)
 
 
 def _render_header(
@@ -431,25 +463,30 @@ def _render_header(
     print(bot)
 
 
-def _render_landing(framework: str, platform: str, width: int) -> None:
-    top = "┌" + ("─" * (width - 2)) + "┐"
-    bot = "└" + ("─" * (width - 2)) + "┘"
-    print(_style(top, fg=(88, 118, 168)))
-    print(_frame_line(_style(" tensors-to-consciousness ", fg=(225, 236, 255), bold=True), width=width))
-    print(_frame_line(_style(" interactive transform exploration ", fg=(150, 178, 224)), width=width))
-    print(_frame_line("", width=width))
+def _render_landing(framework: str, platform: str, width: int, term_cols: int, term_rows: int) -> None:
+    card_w = max(58, min(width, 86))
+    top = "┌" + ("─" * (card_w - 2)) + "┐"
+    bot = "└" + ("─" * (card_w - 2)) + "┘"
+    pad_top = max(1, min(6, (term_rows - 14) // 3))
+    print("\n" * pad_top, end="")
+
     framework_text = _style(framework, fg=(126, 214, 255), bold=True)
     platform_text = _style(platform, fg=(153, 231, 173), bold=True)
-    print(_frame_line(f" framework: {framework_text}    platform: {platform_text} ", width=width))
-    print(_frame_line("", width=width))
-    print(_frame_line(_style(" [enter] begin exploring ", fg=(255, 211, 130), bold=True), width=width))
-    print(
+    lines: list[str] = [
+        _style(top, fg=(83, 109, 154)),
+        _frame_line(_style(" TENSORS TO CONSCIOUSNESS ", fg=(234, 241, 255), bold=True), width=card_w),
+        _frame_line(_style(" terminal transform exploration ", fg=(150, 178, 224), dim=True), width=card_w),
+        _frame_line("", width=card_w),
+        _frame_line(f" {framework_text}  ·  {platform_text} ", width=card_w),
+        _frame_line("", width=card_w),
+        _frame_line(f" {_keycap('ENTER', (255, 214, 136))} begin exploring ", width=card_w),
         _frame_line(
-            _style(" [f] switch framework   [p] switch platform   [q] quit ", fg=(140, 160, 192), dim=True),
-            width=width,
-        )
-    )
-    print(_style(bot, fg=(88, 118, 168)))
+            f" {_keycap('F')} framework   {_keycap('P')} platform   {_keycap('Q', (255, 189, 189))} quit ",
+            width=card_w,
+        ),
+        _style(bot, fg=(83, 109, 154)),
+    ]
+    _print_centered(lines, term_cols=term_cols)
 
 
 def _layout_for_view() -> dict[str, int]:
@@ -462,6 +499,8 @@ def _layout_for_view() -> dict[str, int]:
     plot_h = max(20, min(rows - 12, 32))
 
     return {
+        "cols": cols,
+        "rows": rows,
         "header_w": header_w,
         "plot_w": plot_w,
         "plot_h": plot_h,
@@ -645,52 +684,67 @@ def _render_interactive(
 
     try:
         while True:
-            if needs_render:
-                if on_landing:
-                    _clear_screen()
-                    layout = _layout_for_view()
-                    _render_landing(
-                        framework=active_framework,
-                        platform=active_platform,
-                        width=layout["header_w"],
-                    )
-                    sys.stdout.flush()
-                    needs_render = False
-                    tick_refresh = False
-                    dynamic_lines = 0
-                    continue
-
-                profile = SCRIPT_PROFILES[script_index]
-                transform = transforms[script_index]
-                render_state = state
-                transform_label = "steady"
-                if motion_enabled:
-                    render_state, transform_label = _live_motion_state(state, motion_tick)
-                engine = _engine_for(active_framework)
-                active_pipeline = tuple(pipeline)
-                result = engine.run_pipeline(active_pipeline, size=render_state.grid, steps=1)
-                arr = engine.to_numpy(result.final_tensor)
-                if arr is None:
-                    arr, stage, caption = shinkei.stage_payload(np, render_state)
-                    arr_f = np.asarray(arr, dtype=np.float32)
-                else:
-                    stage = "+".join(active_pipeline) if active_pipeline else "field_init"
-                    caption = (
-                        f"{len(active_pipeline)} transform(s) executed on {active_framework} backend: "
-                        f"{' -> '.join(active_pipeline) if active_pipeline else '(none)'}."
-                    )
-                    arr_f = np.asarray(arr, dtype=np.float32)
-                renderer = shinkei.renderer_name(use_plots, use_heatmap)
-                layout = _layout_for_view()
-
-                if use_plots:
-                    png = shinkei._matplotlib_plot_png(arr_f, stage=stage, tensor_name=active_framework)
-                    if png:
-                        render = shinkei._kitty_from_png_bytes(
-                            png,
-                            cells_w=layout["plot_w"],
-                            cells_h=layout["plot_h"],
+            try:
+                if needs_render:
+                    if on_landing:
+                        _clear_screen()
+                        layout = _layout_for_view()
+                        _render_landing(
+                            framework=active_framework,
+                            platform=active_platform,
+                            width=layout["header_w"],
+                            term_cols=layout["cols"],
+                            term_rows=layout["rows"],
                         )
+                        sys.stdout.flush()
+                        needs_render = False
+                        tick_refresh = False
+                        dynamic_lines = 0
+                        continue
+
+                    profile = SCRIPT_PROFILES[script_index]
+                    transform = transforms[script_index]
+                    render_state = state
+                    transform_label = "steady"
+                    if motion_enabled:
+                        render_state, transform_label = _live_motion_state(state, motion_tick)
+                    engine = _engine_for(active_framework)
+                    active_pipeline = tuple(pipeline)
+                    result = engine.run_pipeline(active_pipeline, size=render_state.grid, steps=1)
+                    arr = engine.to_numpy(result.final_tensor)
+                    if arr is None:
+                        arr, stage, caption = shinkei.stage_payload(np, render_state)
+                        arr_f = np.asarray(arr, dtype=np.float32)
+                    else:
+                        stage = "+".join(active_pipeline) if active_pipeline else "field_init"
+                        caption = (
+                            f"{len(active_pipeline)} transform(s) executed on {active_framework} backend: "
+                            f"{' -> '.join(active_pipeline) if active_pipeline else '(none)'}."
+                        )
+                        arr_f = np.asarray(arr, dtype=np.float32)
+                    renderer = shinkei.renderer_name(use_plots, use_heatmap)
+                    layout = _layout_for_view()
+
+                    if use_plots:
+                        png = shinkei._matplotlib_plot_png(arr_f, stage=stage, tensor_name=active_framework)
+                        if png:
+                            render = shinkei._kitty_from_png_bytes(
+                                png,
+                                cells_w=layout["plot_w"],
+                                cells_h=layout["plot_h"],
+                            )
+                        elif use_heatmap:
+                            render = shinkei._pixel_heatmap(
+                                arr_f,
+                                width=layout["plot_w"],
+                                height=layout["plot_h"],
+                            )
+                        else:
+                            render = shinkei._ascii_heatmap(
+                                arr_f,
+                                width=layout["ascii_w"],
+                                height=layout["ascii_h"],
+                            )
                     elif use_heatmap:
                         render = shinkei._pixel_heatmap(
                             arr_f,
@@ -703,81 +757,124 @@ def _render_interactive(
                             width=layout["ascii_w"],
                             height=layout["ascii_h"],
                         )
-                elif use_heatmap:
-                    render = shinkei._pixel_heatmap(
-                        arr_f,
-                        width=layout["plot_w"],
-                        height=layout["plot_h"],
-                    )
-                else:
-                    render = shinkei._ascii_heatmap(
-                        arr_f,
-                        width=layout["ascii_w"],
-                        height=layout["ascii_h"],
-                    )
-                caption_line = shinkei._format_caption(caption)
-                controls_line = _detailed_controls_line() if show_details else _compact_controls_line()
-                selector_lines = _render_pipeline_selector(transforms, pipeline, script_index)
+                    caption_line = shinkei._format_caption(caption)
+                    controls_line = _detailed_controls_line() if show_details else _compact_controls_line()
+                    selector_lines = _render_pipeline_selector(transforms, pipeline, script_index)
 
-                partial_render_only = tick_refresh and motion_enabled and dynamic_lines > 0
-                if partial_render_only:
-                    _cursor_up(dynamic_lines)
-                    _clear_to_end()
-                else:
-                    _clear_screen()
-                    _render_header(
-                        framework=active_framework,
-                        platform=active_platform,
-                        state=state,
-                        renderer=renderer,
-                        width=layout["header_w"],
-                    )
-                    print()
-                    print(
-                        f"transform [{transform['key']}] {transform['title']} · complexity={profile.get('complexity', '?')}"
-                    )
-                    if show_details:
-                        print(f"formula: {transform['formula']}")
-                        print(f"description: {transform['description']}")
+                    partial_render_only = tick_refresh and motion_enabled and dynamic_lines > 0
+                    if partial_render_only:
+                        _cursor_up(dynamic_lines)
+                        _clear_to_end()
+                    else:
+                        _clear_screen()
+                        _render_header(
+                            framework=active_framework,
+                            platform=active_platform,
+                            state=state,
+                            renderer=renderer,
+                            width=layout["header_w"],
+                        )
                         print()
-                    live = "live" if motion_enabled else "paused"
-                    print(f"live-dynamics: {live} · phase={transform_label}")
-                    print()
-                    if show_details:
-                        for line in selector_lines:
-                            print(line)
-                    print("pipeline: " + (" -> ".join(pipeline) if pipeline else "(none)"))
-                    if not show_details:
-                        print("hint: press [h] for transform details and full controls")
-                    print()
+                        print(
+                            f"transform [{transform['key']}] {transform['title']} · complexity={profile.get('complexity', '?')}"
+                        )
+                        if show_details:
+                            print(f"formula: {transform['formula']}")
+                            print(f"description: {transform['description']}")
+                            print()
+                        live = "live" if motion_enabled else "paused"
+                        print(f"live-dynamics: {live} · phase={transform_label}")
+                        print()
+                        if show_details:
+                            for line in selector_lines:
+                                print(line)
+                        print("pipeline: " + (" -> ".join(pipeline) if pipeline else "(none)"))
+                        if not show_details:
+                            print("hint: press [h] for transform details and full controls")
+                        print()
 
-                print(render)
-                if use_plots:
-                    # Keep cursor below kitty image payload before footer text.
-                    sys.stdout.write("\n")
-                print()
-                print(caption_line)
-                print(controls_line)
-                sys.stdout.flush()
-                dynamic_lines = _line_count(render) + 1 + _line_count(caption_line) + 1
-                if use_plots:
-                    dynamic_lines += 1
-                needs_render = False
-                tick_refresh = False
-
-            timeout = LIVE_REFRESH_SECONDS if motion_enabled else 5.0
-            ch = _read_char(fd, timeout_s=timeout)
-            if not ch:
-                if motion_enabled:
-                    motion_tick += 1
+                    print(render)
+                    if use_plots:
+                        # Keep cursor below kitty image payload before footer text.
+                        sys.stdout.write("\n")
+                    print()
+                    print(caption_line)
+                    print(controls_line)
+                    sys.stdout.flush()
+                    dynamic_lines = _line_count(render) + 1 + _line_count(caption_line) + 1
+                    if use_plots:
+                        dynamic_lines += 1
+                    needs_render = False
+                    tick_refresh = False
+                timeout = LIVE_REFRESH_SECONDS if motion_enabled else 5.0
+                ch = _read_char(fd, timeout_s=timeout)
+                if not ch:
+                    if motion_enabled:
+                        motion_tick += 1
+                        needs_render = True
+                        tick_refresh = True
+                    continue
+                if ch == "q":
+                    break
+                if on_landing:
+                    if ch in {"\r", "\n"}:
+                        on_landing = False
+                        needs_render = True
+                        tick_refresh = False
+                    elif ch == "f":
+                        chosen = _framework_selector(fd, active_framework)
+                        if chosen and chosen != active_framework:
+                            active_framework = chosen
+                            _persist_framework(active_framework)
+                        needs_render = True
+                        tick_refresh = False
+                    elif ch == "p":
+                        chosen_platform = _platform_selector(fd, active_platform)
+                        if chosen_platform and chosen_platform != active_platform:
+                            active_platform = chosen_platform
+                            _persist_platform(active_platform)
+                        needs_render = True
+                        tick_refresh = False
+                    continue
+                if ch == "n":
+                    script_index = _next_script_index(script_index, direction=1)
+                    _apply_profile_to_state(state, script_index)
                     needs_render = True
-                    tick_refresh = True
-                continue
-            if ch == "q":
-                break
-            if on_landing:
-                if ch in {"\r", "\n"}:
-                    on_landing = False
+                    tick_refresh = False
+                elif ch == "b":
+                    script_index = _next_script_index(script_index, direction=-1)
+                    _apply_profile_to_state(state, script_index)
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "x":
+                    key = str(transforms[script_index]["key"])
+                    _toggle_pipeline_key(pipeline, key)
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "[":
+                    key = str(transforms[script_index]["key"])
+                    _move_pipeline_key(pipeline, key, direction=-1)
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "]":
+                    key = str(transforms[script_index]["key"])
+                    _move_pipeline_key(pipeline, key, direction=1)
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "r":
+                    state.seed = (state.seed + 1) % 2_000_000_000
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == " ":
+                    motion_enabled = not motion_enabled
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "h":
+                    show_details = not show_details
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == "i":
+                    _guided_edit_state(fd, state, old)
                     needs_render = True
                     tick_refresh = False
                 elif ch == "f":
@@ -794,71 +891,24 @@ def _render_interactive(
                         _persist_platform(active_platform)
                     needs_render = True
                     tick_refresh = False
-                continue
-            if ch == "n":
-                script_index = _next_script_index(script_index, direction=1)
-                _apply_profile_to_state(state, script_index)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "b":
-                script_index = _next_script_index(script_index, direction=-1)
-                _apply_profile_to_state(state, script_index)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "x":
-                key = str(transforms[script_index]["key"])
-                _toggle_pipeline_key(pipeline, key)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "[":
-                key = str(transforms[script_index]["key"])
-                _move_pipeline_key(pipeline, key, direction=-1)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "]":
-                key = str(transforms[script_index]["key"])
-                _move_pipeline_key(pipeline, key, direction=1)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "r":
-                state.seed = (state.seed + 1) % 2_000_000_000
-                needs_render = True
-                tick_refresh = False
-            elif ch == " ":
-                motion_enabled = not motion_enabled
-                needs_render = True
-                tick_refresh = False
-            elif ch == "h":
-                show_details = not show_details
-                needs_render = True
-                tick_refresh = False
-            elif ch == "i":
-                _guided_edit_state(fd, state, old)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "f":
-                chosen = _framework_selector(fd, active_framework)
-                if chosen and chosen != active_framework:
-                    active_framework = chosen
-                    _persist_framework(active_framework)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "p":
-                chosen_platform = _platform_selector(fd, active_platform)
-                if chosen_platform and chosen_platform != active_platform:
-                    active_platform = chosen_platform
-                    _persist_platform(active_platform)
-                needs_render = True
-                tick_refresh = False
-            elif ch == "e":
-                _quick_edit_state(fd, state, old)
-                needs_render = True
-                tick_refresh = False
-            elif ch == ":":
-                if not _command_console(fd, old, state, active_framework, active_platform):
+                elif ch == "e":
+                    _quick_edit_state(fd, state, old)
+                    needs_render = True
+                    tick_refresh = False
+                elif ch == ":":
+                    if not _command_console(fd, old, state, active_framework, active_platform):
+                        break
+                    needs_render = True
+                    tick_refresh = False
+            except KeyboardInterrupt:
+                if on_landing:
                     break
+                on_landing = True
+                motion_enabled = False
+                show_details = False
                 needs_render = True
                 tick_refresh = False
+                dynamic_lines = 0
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
         _leave_alt()

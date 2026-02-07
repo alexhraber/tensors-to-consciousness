@@ -1,6 +1,6 @@
 # Examples
 
-Input presets for `--inputs` / `TTC_INPUTS`.
+Input presets for `--inputs` / `INPUTS`.
 
 ## Files
 

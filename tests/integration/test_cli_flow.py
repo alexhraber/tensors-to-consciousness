@@ -210,7 +210,7 @@ class AppFlowIntegrationTests(unittest.TestCase):
                         rc = app.main()
         self.assertEqual(rc, 0)
         env = run_cmd_mock.call_args.kwargs["env"]
-        self.assertEqual(env.get("TTC_INPUTS"), "examples/inputs.example.json")
+        self.assertEqual(env.get("INPUTS"), "examples/inputs.example.json")
 
     def test_app_main_executes_selected_algo_module(self) -> None:
         args = argparse.Namespace(
