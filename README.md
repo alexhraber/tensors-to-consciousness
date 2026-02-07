@@ -35,12 +35,12 @@ This repository contains 7 theory-first chapters implemented across peer framewo
 
 Top-level operational commands:
 
-- `python setup.py <framework>`: install + validate selected framework and save active selection
+- `python -m tools.setup <framework>`: install + validate selected framework and save active selection
 - `python t2c.py <target>`: run targets (`validate`, `0..6`, `all`) for active framework and auto-setup if needed
 
 The standard workflow is:
 
-1. `python setup.py <framework>`
+1. `python -m tools.setup <framework>`
 2. `python t2c.py validate`
 3. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
 
@@ -68,7 +68,7 @@ source env/bin/activate
 ### 2) Setup framework (pick once)
 
 ```bash
-python setup.py mlx
+python -m tools.setup mlx
 # or: jax | pytorch | numpy | keras | cupy
 ```
 
@@ -80,12 +80,18 @@ python t2c.py 0
 python t2c.py all
 ```
 
-## Primary Setup Script
-
-`setup.py` is the only setup entrypoint.
+### 4) Run top-level operational tests
 
 ```bash
-python setup.py <framework>
+python test.py
+```
+
+## Primary Setup Script
+
+`python -m tools.setup` is the only setup entrypoint.
+
+```bash
+python -m tools.setup <framework>
 ```
 
 Supported values:
@@ -108,14 +114,14 @@ What setup does:
 Useful options:
 
 ```bash
-python setup.py jax --venv .venv-jax
-python setup.py cupy --skip-validate
-python setup.py all
+python -m tools.setup jax --venv .venv-jax
+python -m tools.setup cupy --skip-validate
+python -m tools.setup all
 ```
 
 ## Runtime Entrypoint
 
-`t2c.py` is the single runtime entrypoint. It reads `.t2c/config.json`, and if the configured venv is missing, it runs `setup.py` automatically before executing your target.
+`t2c.py` is the single runtime entrypoint. It reads `.t2c/config.json`, and if the configured venv is missing, it runs `python -m tools.setup` automatically before executing your target.
 
 ```bash
 python t2c.py 0
@@ -151,18 +157,19 @@ All framework scripts live under `scripts/<framework>/`.
 
 | Framework | Setup | Validation | Chapters |
 |---|---|---|---|
-| MLX | `python setup.py mlx` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| JAX | `python setup.py jax` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| PyTorch | `python setup.py pytorch` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| NumPy | `python setup.py numpy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| Keras | `python setup.py keras` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| CuPy | `python setup.py cupy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| MLX | `python -m tools.setup mlx` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| JAX | `python -m tools.setup jax` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| PyTorch | `python -m tools.setup pytorch` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| NumPy | `python -m tools.setup numpy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| Keras | `python -m tools.setup keras` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+| CuPy | `python -m tools.setup cupy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
 
 ## Notes
 
 - `numpy` and `cupy` use finite-difference gradients in autodiff-heavy sections.
 - `keras` mixes gradient tape and numerical approximations in selected sections.
 - CuPy install in setup defaults to `cupy-cuda12x`; use a wheel matching your CUDA runtime.
+- `python test.py` validates setup/runtime orchestration and CLI behavior (not framework theory correctness).
 
 ## Contributing
 

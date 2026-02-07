@@ -73,7 +73,7 @@ def ensure_setup_if_needed(
 
     if framework is None:
         raise RuntimeError(
-            "No active framework configured. Run `python setup.py <framework>` once "
+            "No active framework configured. Run `python -m tools.setup <framework>` once "
             "or pass `--framework`."
         )
 
@@ -85,11 +85,11 @@ def ensure_setup_if_needed(
 
     if not allow_setup:
         raise RuntimeError(
-            f"Setup needed for framework '{framework}'. Run `python setup.py {framework}` first."
+            f"Setup needed for framework '{framework}'. Run `python -m tools.setup {framework}` first."
         )
 
     run_cmd(
-        [sys.executable, "setup.py", framework, "--venv", str(venv_dir), "--skip-validate"],
+        [sys.executable, "-m", "tools.setup", framework, "--venv", str(venv_dir), "--skip-validate"],
         env=env,
     )
     return {"framework": framework, "venv": str(venv_dir)}

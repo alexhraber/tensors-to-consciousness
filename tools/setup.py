@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from tools.runtime import SUPPORTED_FRAMEWORKS, python_in_venv
+from .runtime import SUPPORTED_FRAMEWORKS, python_in_venv
 
 FRAMEWORK_CONFIG = {
     "mlx": {
@@ -96,7 +96,7 @@ def main() -> int:
         print("Error: `uv` is required but was not found in PATH.", file=sys.stderr)
         return 1
 
-    repo_root = Path(__file__).resolve().parent
+    repo_root = Path(__file__).resolve().parents[1]
     os.chdir(repo_root)
 
     venv_dir = Path(args.venv)
