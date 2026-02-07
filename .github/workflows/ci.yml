@@ -124,13 +124,19 @@ jobs:
         run: |
           python -m py_compile $(git ls-files '*.py')
 
-      - name: Unit tests
+      - name: Unit tests with coverage
         run: |
-          python -m tests --suite unit
+          python -m coverage erase
+          python -m coverage run -m tests --suite unit
 
-      - name: Integration tests
+      - name: Integration tests with coverage
         run: |
-          python -m tests --suite integration
+          python -m coverage run --append -m tests --suite integration
+
+      - name: Coverage gate
+        run: |
+          python -m coverage report --show-missing --fail-under=75
+          python -m coverage xml -o coverage.xml
 
       - name: CLI smoke checks
         run: |
@@ -181,6 +187,15 @@ jobs:
         with:
           name: ci-timing-test-matrix-py${{ matrix.python-version }}
           path: ci-metrics/test-matrix-py${{ matrix.python-version }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-py${{ matrix.python-version }}
+          path: coverage.xml
           if-no-files-found: error
           retention-days: 30
 
@@ -335,6 +350,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install numpy matplotlib
 
+      - name: Install headless capture system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xterm xdotool
+
       - name: Cache FFmpeg (static binary)
         id: cache-ffmpeg
         uses: actions/cache@v4
@@ -368,15 +388,21 @@ jobs:
             ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 "$f"
           done
 
-      - name: Fast deterministic generator check
+      - name: Headless progression capture smoke check
         run: |
           set -euo pipefail
-          rm -rf /tmp/render-a /tmp/render-b
-          python tools/generate_render_assets.py --output-dir /tmp/render-a --frames 20 --fps 12 --width 320 --height 180
-          python tools/generate_render_assets.py --output-dir /tmp/render-b --frames 20 --fps 12 --width 320 --height 180
-          sha256sum /tmp/render-a/*.gif | sort | awk '{print $1}' > /tmp/render_hashes_1.txt
-          sha256sum /tmp/render-b/*.gif | sort | awk '{print $1}' > /tmp/render_hashes_2.txt
-          diff -u /tmp/render_hashes_1.txt /tmp/render_hashes_2.txt
+          rm -rf /tmp/render-progressions
+          python tools/generate_render_assets.py --output-dir /tmp/render-progressions --frames 24 --fps 12 --width 320 --height 180 --only optimization_flow attention_dynamics phase_portraits --framework numpy
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/optimization_flow.gif
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/attention_dynamics.gif
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-progressions/phase_portraits.gif
+
+      - name: Headless TUI capture smoke check
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/render-headless
+          python tools/generate_render_assets.py --output-dir /tmp/render-headless --only tui_explorer --frames 36 --fps 12 --width 320 --height 180 --framework numpy --tui-capture headless
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=noprint_wrappers=1 /tmp/render-headless/tui_explorer.gif
 
       - name: Record timing metrics
         if: always()

@@ -19,6 +19,16 @@ python explorer.py run --framework pytorch --transforms constraint_projection,en
 python explorer.py run --framework keras --transforms reaction_diffusion,stochastic_process --inputs examples/inputs.noise_storm.json
 ```
 
+## Headless Progression Examples
+
+These transform progressions back the three README render GIFs:
+
+```bash
+python explorer.py run --framework numpy --transforms tensor_ops,chain_rule,gradient_descent,momentum,adam --inputs examples/inputs.example.json
+python explorer.py run --framework numpy --transforms forward_pass,activation_flow,attention_surface,attention_message_passing --inputs examples/inputs.framework_matrix.json
+python explorer.py run --framework numpy --transforms laplacian_diffusion,reaction_diffusion,spectral_filter,wave_propagation,entropy_flow --inputs examples/inputs.spectral_sweep.json
+```
+
 Inline JSON also works:
 
 ```bash

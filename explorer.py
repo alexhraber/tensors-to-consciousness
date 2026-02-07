@@ -12,14 +12,22 @@ from pathlib import Path
 from transforms.registry import list_transform_keys
 from transforms.registry import resolve_transform_keys
 from tools import diagnostics
-from tools.runtime import SUPPORTED_FRAMEWORKS, load_config, python_in_venv
+from tools.runtime import (
+    SUPPORTED_FRAMEWORKS,
+    default_framework_for_platform,
+    load_config,
+    python_in_venv,
+)
 
-DEFAULT_FRAMEWORK = "numpy"
+DEFAULT_FRAMEWORK = default_framework_for_platform()
 
 
 def run_cmd(cmd: list[str], env: dict[str, str]) -> None:
     print(f"+ {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, env=env)
+    try:
+        subprocess.run(cmd, check=True, env=env)
+    except KeyboardInterrupt as exc:
+        raise SystemExit(130) from exc
 
 
 def _default_venv_for_framework(framework: str) -> Path:

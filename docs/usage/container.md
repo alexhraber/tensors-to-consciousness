@@ -1,100 +1,58 @@
-# Container + SSH Usage
+# Container Guide
 
-This project can run fully inside Docker while keeping the interactive explorer usable over SSH terminal sessions.
+Run the platform fully in Docker while preserving TTY interactivity for remote terminals.
 
-## 1) Build the image
+## Build
 
 ```bash
 docker compose build explorer
 ```
 
-## 2) Run the explorer in container
+## Launch
 
 ```bash
 docker compose run --rm explorer
 ```
 
-Notes:
+Service behavior:
 
-- `stdin_open: true` + `tty: true` are enabled for interactive TUI operation.
-- The repository is bind-mounted into `/workspace`.
-- `.config/` is persisted via the `t2c_config` volume.
-- `explorer` service defaults to `python explorer.py`; passing extra commands overrides that default.
+- interactive TTY is enabled (`stdin_open: true`, `tty: true`)
+- repository is mounted at `/workspace`
+- configuration persists in a named volume
+- service default command is `python explorer.py`
 
-## 3) Run with GPU passthrough
-
-NVIDIA:
+## Hardware Profiles
 
 ```bash
 docker compose --profile nvidia run --rm explorer-nvidia
-```
-
-AMD ROCm:
-
-```bash
 docker compose --profile amd run --rm explorer-amd
-```
-
-Intel iGPU:
-
-```bash
 docker compose --profile intel run --rm explorer-intel
-```
-
-Apple Silicon (MLX container path):
-
-```bash
 docker compose --profile apple run --rm explorer-apple
 ```
 
-Pass-through details:
+Notes:
 
-- `explorer-nvidia` uses `gpus: all` + `/dev/dri` with NVIDIA runtime env vars.
-- `explorer-amd` uses `/dev/dri` + `/dev/kfd` (ROCm-compatible hosts).
-- `explorer-intel` uses `/dev/dri`.
-- `explorer-apple` runs `linux/arm64` and initializes MLX using `mlx[cpu]` inside container.
-- Apple Metal passthrough is not currently available via Docker Desktop Linux containers, so MLX in container mode is CPU-backed.
+- `explorer-nvidia`: `gpus: all` plus NVIDIA runtime vars
+- `explorer-amd`: `/dev/dri` + `/dev/kfd` for ROCm-compatible hosts
+- `explorer-intel`: `/dev/dri`
+- `explorer-apple`: `linux/arm64` with CPU-backed MLX in container mode
 
-Example with explicit device selection:
-
-```bash
-NVIDIA_VISIBLE_DEVICES=0 docker compose --profile nvidia run --rm explorer-nvidia
-```
-
-## 4) Run over SSH (including Telescope/terminal multiplexers)
-
-From your local machine:
+## SSH Usage
 
 ```bash
 ssh <host> "cd /path/to/tensors-to-consciousness && docker compose run --rm explorer"
 ```
 
-GPU over SSH:
-
-```bash
-ssh <host> "cd /path/to/tensors-to-consciousness && docker compose --profile nvidia run --rm explorer-nvidia"
-```
-
-If your terminal path cannot display advanced render styles well, force an ASCII rendering fallback:
+ASCII fallback for constrained terminals:
 
 ```bash
 ssh <host> "cd /path/to/tensors-to-consciousness && docker compose run --rm -e RENDER_STYLE=ascii explorer"
 ```
 
-Telescope note:
-
-- This workflow is compatible with Telescope-driven remote terminals because the container run is TTY-attached (`stdin_open: true`, `tty: true`).
-
-## 5) One-off command examples
+## One-Off Commands
 
 ```bash
 docker compose run --rm explorer python explorer.py --list-transforms
 docker compose run --rm explorer python explorer.py run --framework numpy --transforms default
 docker compose run --rm explorer python -m tests --suite unit
-```
-
-## 6) Cleanup
-
-```bash
-docker compose down --volumes
 ```

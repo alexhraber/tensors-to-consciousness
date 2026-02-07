@@ -1,48 +1,47 @@
 # TUI Guide
 
-The primary experience is the interactive explorer:
+The TUI is the primary operator interface.
+
+Launch:
 
 ```bash
 python explorer.py
 ```
 
-`explorer.py` auto-detects setup, validates, and launches the TUI.
-If no framework config exists yet, it defaults to `numpy` (no onboarding prompt).
+If no prior config exists, the default framework is:
 
-## Controls
+- `mlx` on macOS
+- `numpy` on other platforms
+
+## Operator Controls
 
 - `n` / `b`: move transform cursor next/back
-- `x`: toggle transform include/exclude in active chain
-- `[` / `]`: move selected transform up/down in chain precedence
-- `f`: framework selector modal
-- `p`: compute platform selector (`cpu` / `gpu`)
+- `x`: include or exclude focused transform from the active chain
+- `[` / `]`: shift selected transform precedence up/down
+- `f`: open framework selector
+- `p`: open compute platform selector (`cpu` / `gpu`)
 - `i`: guided parameter input
 - `e`: quick `key=value` parameter edit
-- `space`: pause/resume live dynamics motion
+- `space`: pause/resume live dynamics
 - `:`: command console (`run`, `set`, `show`, `help`)
 - `h`: toggle compact/full detail layout
 - `r`: reseed
 - `q`: quit
 
-## Explorer Flow
+## Operational Pattern
 
-The explorer runs as one continuous view.
-Transform chains, parameter edits, and live dynamics are toggles within the same screen.
+The explorer is a continuous view:
 
-## Start with a Specific Transform Set
+1. select transforms
+2. order precedence
+3. tune parameters
+4. execute and inspect output
+
+## Start With a Preselected Chain
 
 ```bash
 python explorer.py render --transforms gradient_descent,momentum,adam --transform momentum
 ```
 
-Top 5 core transforms:
-- `tensor_ops`
-- `chain_rule`
-- `gradient_descent`
-- `momentum`
-- `adam`
-
-- `--transforms`: comma-separated transform keys, or `default`/`all`
-- `--transform`: key/title to focus initially
-
-For non-interactive command usage, see `docs/usage/cli.md`.
+- `--transforms`: comma-separated keys, `default`, or `all`
+- `--transform`: initial focused key or title fragment

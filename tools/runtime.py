@@ -2,15 +2,22 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
 CONFIG_FILE = Path(".config/config.json")
 SUPPORTED_FRAMEWORKS = ("mlx", "jax", "pytorch", "numpy", "keras", "cupy")
-DEFAULT_FRAMEWORK = "numpy"
 DEFAULT_PLATFORM = "gpu"
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_DEBUG = False
+
+
+def default_framework_for_platform(platform: str | None = None) -> str:
+    return "mlx" if (platform or sys.platform) == "darwin" else "numpy"
+
+
+DEFAULT_FRAMEWORK = default_framework_for_platform()
 
 
 def python_in_venv(venv_dir: Path) -> Path:

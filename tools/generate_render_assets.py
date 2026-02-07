@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate README rendering GIF assets via framework engine + shinkei rendering."""
+"""Generate README GIF assets using reproducible headless captures."""
 
 from __future__ import annotations
 
@@ -15,7 +15,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from frameworks.engine import FrameworkEngine
+from tools.headless_capture import (
+    HeadlessCaptureError,
+    capture_transform_progression_gif,
+    capture_tui_session_gif,
+)
 from tools import shinkei
 
 
@@ -255,6 +259,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--height", type=int, default=270, help="Frame height.")
     parser.add_argument("--framework", default="numpy", help="Framework backend used for pipeline renders.")
     parser.add_argument(
+        "--tui-capture",
+        choices=["headless", "synthetic"],
+        default="headless",
+        help="TUI asset source. 'headless' captures real TUI via Xvfb/ffmpeg (default).",
+    )
+    parser.add_argument(
         "--only",
         nargs="+",
         choices=["optimization_flow", "attention_dynamics", "phase_portraits", "tui_explorer"],
@@ -267,22 +277,23 @@ def main() -> int:
     if shutil.which("ffmpeg") is None:
         raise RuntimeError("ffmpeg is required but not found in PATH.")
 
-    try:
-        import matplotlib  # noqa: F401
-        import numpy  # noqa: F401
-    except ModuleNotFoundError as exc:
-        raise RuntimeError(
-            "numpy and matplotlib are required for visual asset generation."
-        ) from exc
-
     args = parse_args()
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    pipeline_specs: dict[str, tuple[tuple[str, ...], int, int]] = {
-        "optimization_flow": (("gradient_descent", "momentum"), 74, 1),
-        "attention_dynamics": (("attention_surface", "activation_flow"), 78, 1),
-        "phase_portraits": (("wave_propagation", "spectral_filter"), 82, 1),
+    progression_specs: dict[str, dict[str, str | None]] = {
+        "optimization_flow": {
+            "transforms": "tensor_ops,chain_rule,gradient_descent,momentum,adam",
+            "inputs": "examples/inputs.example.json",
+        },
+        "attention_dynamics": {
+            "transforms": "forward_pass,activation_flow,attention_surface,attention_message_passing",
+            "inputs": "examples/inputs.framework_matrix.json",
+        },
+        "phase_portraits": {
+            "transforms": "laplacian_diffusion,reaction_diffusion,spectral_filter,wave_propagation,entropy_flow",
+            "inputs": "examples/inputs.spectral_sweep.json",
+        },
     }
 
     all_assets = ["optimization_flow", "attention_dynamics", "phase_portraits", "tui_explorer"]
@@ -290,40 +301,50 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="t2c_render_") as td:
         tmp = Path(td)
-        engine: FrameworkEngine | None = None
 
         for name in selected:
-            frames_dir = tmp / name
-            frames_dir.mkdir(parents=True, exist_ok=True)
-
             if name == "tui_explorer":
-                for i in range(args.frames):
-                    rgb = render_tui_explorer(i, args.width, args.height)
-                    write_ppm(frames_dir / f"{i:03d}.ppm", args.width, args.height, rgb)
-                encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.ppm")
-                print(f"wrote {out_dir / f'{name}.gif'}")
+                frames_dir = tmp / name
+                frames_dir.mkdir(parents=True, exist_ok=True)
+                output_gif = out_dir / f"{name}.gif"
+                if args.tui_capture == "headless":
+                    try:
+                        capture_tui_session_gif(
+                            output_gif=output_gif,
+                            python_exe=sys.executable,
+                            framework=args.framework,
+                            transforms="default",
+                            width=max(1280, args.width * 2),
+                            height=max(720, args.height * 2),
+                            fps=args.fps,
+                            duration_s=max(6.0, min(14.0, args.frames / max(1, args.fps))),
+                        )
+                    except HeadlessCaptureError as exc:
+                        raise RuntimeError(str(exc)) from exc
+                else:
+                    for i in range(args.frames):
+                        rgb = render_tui_explorer(i, args.width, args.height)
+                        write_ppm(frames_dir / f"{i:03d}.ppm", args.width, args.height, rgb)
+                    encode_gif(frames_dir, output_gif, args.fps, "%03d.ppm")
+                print(f"wrote {output_gif}")
                 continue
 
-            if engine is None:
-                engine = FrameworkEngine(args.framework)
-
-            pipeline, base_size, base_steps = pipeline_specs[name]
-            for i in range(args.frames):
-                size = max(52, min(132, base_size + ((i % 6) - 3)))
-                steps = max(1, min(2, base_steps + (i % 2)))
-                stage = f"{name}:f{i:03d}:s{steps}"
-                png = _render_pipeline_png(
-                    engine,
-                    pipeline=pipeline,
-                    size=size,
-                    steps=steps,
-                    stage=stage,
-                    width_px=max(640, args.width * 2),
-                    height_px=max(360, args.height * 2),
+            spec = progression_specs[name]
+            try:
+                capture_transform_progression_gif(
+                    output_gif=out_dir / f"{name}.gif",
+                    python_exe=sys.executable,
+                    framework=args.framework,
+                    transforms=str(spec["transforms"]),
+                    inputs=spec["inputs"],
+                    width=max(1280, args.width * 2),
+                    height=max(720, args.height * 2),
+                    fps=args.fps,
+                    duration_s=max(6.0, min(14.0, args.frames / max(1, args.fps))),
+                    title=f"ttc-{name}",
                 )
-                (frames_dir / f"{i:03d}.png").write_bytes(png)
-
-            encode_gif(frames_dir, out_dir / f"{name}.gif", args.fps, "%03d.png")
+            except HeadlessCaptureError as exc:
+                raise RuntimeError(str(exc)) from exc
             print(f"wrote {out_dir / f'{name}.gif'}")
 
     return 0

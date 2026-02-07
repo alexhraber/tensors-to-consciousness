@@ -6,7 +6,7 @@ This page holds practical transform usage details that are intentionally kept ou
 
 - Transform catalog JSON: `transforms/transforms.json`
 - Generated transform reference: [Transforms Reference](../reference/transforms.md)
-- Example inputs catalog: [examples/README.md](../examples/README.md)
+- Example inputs catalog: [examples/README.md](../../examples/README.md)
 
 ## Generate Docs
 

@@ -5,12 +5,19 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import subprocess
 
 import explorer as app
 from tools import runtime
 
 
 class AppFlowIntegrationTests(unittest.TestCase):
+    def test_run_cmd_interrupt_exits_cleanly(self) -> None:
+        with patch.object(subprocess, "run", side_effect=KeyboardInterrupt):
+            with self.assertRaises(SystemExit) as exc:
+                app.run_cmd(["python", "-V"], env={})
+        self.assertEqual(exc.exception.code, 130)
+
     def test_ensure_setup_not_needed(self) -> None:
         env: dict[str, str] = {}
         with tempfile.TemporaryDirectory() as td:

@@ -1,18 +1,18 @@
-# Diagnostics + Logging
+# Diagnostics and Logging
 
-Diagnostics are configurable from both environment variables and `.config/config.json`.
+Diagnostics can be controlled by config and environment variables.
 
-Default behavior:
+Default diagnostics profile:
 
-- Logging level: `INFO`
-- Debug tracing: `off`
+- `log_level=INFO`
+- `debug=false`
 
-## Config file defaults
+## Config Defaults
 
 ```json
 {
-  "framework": "numpy",
-  "venv": ".venv-numpy",
+  "framework": "<platform default>",
+  "venv": ".venv-<framework>",
   "platform": "gpu",
   "diagnostics": {
     "log_level": "INFO",
@@ -21,16 +21,14 @@ Default behavior:
 }
 ```
 
-Notes:
+Framework default by platform:
 
-- The config is normalized with sensible defaults when written by tooling.
-- Diagnostics keys can be set under `diagnostics.*`.
+- macOS: `mlx`
+- other platforms: `numpy`
 
-## Environment overrides
+## Environment Overrides
 
-Supported environment variables:
-
-- `LOG_LEVEL`: one of `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`
+- `LOG_LEVEL`: `CRITICAL|ERROR|WARNING|INFO|DEBUG`
 - `DEBUG`: `1/0`, `true/false`, `on/off`, `yes/no`
 
 Examples:
@@ -42,6 +40,6 @@ DEBUG=1 LOG_LEVEL=DEBUG python explorer.py run --framework numpy --transforms de
 
 ## Precedence
 
-1. Environment variables (`LOG_LEVEL`, `DEBUG`)
-2. Config JSON (`diagnostics.log_level`, `diagnostics.debug`)
-3. Built-in defaults (`INFO`, `debug=false`)
+1. environment variables
+2. `.config/config.json` diagnostics keys
+3. runtime defaults

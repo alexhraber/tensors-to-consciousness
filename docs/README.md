@@ -1,16 +1,20 @@
 # Documentation
 
-## Usage
+This documentation set is structured for both operators and contributors.
 
+## Start Here
+
+- [Architecture and Contracts](reference/architecture.md)
 - [TUI Guide](usage/tui.md)
 - [CLI Guide](usage/cli.md)
-- [Container + SSH Guide](usage/container.md)
-- [Diagnostics + Logging](usage/diagnostics.md)
+- [Container Guide](usage/container.md)
+- [Diagnostics and Logging](usage/diagnostics.md)
+- [Render Asset Generation](usage/assets.md)
 
-## Reference
+## References
 
-- [Transforms Reference](reference/transforms.md)
-- [Frameworks Reference](reference/frameworks.md)
+- [Transform Catalog](reference/transforms.md)
+- [Supported Frameworks](reference/frameworks.md)
 
 ## Guides
 
@@ -19,3 +23,4 @@
 ## Development
 
 - [Contributing](../CONTRIBUTING.md)
+- [Rust Core](development/rust-core.md)

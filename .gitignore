@@ -33,6 +33,10 @@ pip-wheel-metadata/
 .eggs/
 *.egg
 wheelhouse/
+target/
+.maturin/
+*.so
+*.pyd
 
 # ------------------------------
 # Coverage and test artifacts
