@@ -4,16 +4,76 @@ set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
+# Policy guard (bash-only; avoids building Rust just to reject invalid pushes).
+branch="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "$branch" == "main" || "$branch" == "master" ]]; then
+  if [[ "${ALLOW_MAIN_PUSH:-0}" != "1" ]]; then
+    echo "Direct pushes to main/master are blocked. Push a feature branch and open a PR, or set ALLOW_MAIN_PUSH=1." >&2
+    exit 1
+  fi
+else
+  if [[ "$branch" != "HEAD" ]]; then
+    pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)/[a-z0-9]+(-[a-z0-9]+)*$'
+    if [[ ! "$branch" =~ $pattern ]]; then
+      echo "Branch name must match 'type/scope-short-topic' with lowercase kebab-case." >&2
+      echo "Examples: fix/ci-act-container-collision, docs/readme-minimal-refresh" >&2
+      exit 1
+    fi
+  fi
+fi
+
 if [[ "${SKIP_ACT:-0}" == "1" ]]; then
   echo "SKIP_ACT=1 set; skipping local CI validation." >&2
+  exit 0
+fi
+
+# Fast change detection: only build binaries/images if the diff can affect CI jobs.
+base_ref="$(git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || true)"
+if [[ -z "$base_ref" ]]; then
+  if git rev-parse --verify origin/main >/dev/null 2>&1; then
+    base_ref="origin/main"
+  else
+    base_ref="HEAD~1"
+  fi
+fi
+
+changed="$(git diff --name-only --diff-filter=ACMR "$base_ref...HEAD" 2>/dev/null || true)"
+if [[ -z "$changed" ]]; then
+  exit 0
+fi
+
+# Docs-only changes: no local CI gate.
+docs_only=1
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  if [[ "$f" != docs/* && "$f" != *.md ]]; then
+    docs_only=0
+    break
+  fi
+done <<<"$changed"
+if [[ "$docs_only" == "1" ]]; then
+  exit 0
+fi
+
+# CI-relevant scopes (mirror the workflow path filters).
+needs_gate=0
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  case "$f" in
+    explorer.py|.python-version|mise.toml|Cargo.toml|Cargo.lock|Dockerfile|docker-compose.yml|.dockerignore) needs_gate=1 ;;
+    crates/*|transforms/*|frameworks/*|tools/*|tests/*|.github/ci/*|.github/workflows/*) needs_gate=1 ;;
+  esac
+  if [[ "$needs_gate" == "1" ]]; then
+    break
+  fi
+done <<<"$changed"
+if [[ "$needs_gate" != "1" ]]; then
   exit 0
 fi
 
 if [[ ! -x ./target/debug/explorer ]]; then
   cargo build -p explorer >/dev/null
 fi
-
-./target/debug/explorer ops git-policy --hook pre-push
 
 # Default to saturating local cores unless explicitly overridden.
 export CI_GATE_JOBS="${CI_GATE_JOBS:-nproc}"

@@ -13,11 +13,10 @@ class OpsContractTests(unittest.TestCase):
         self.assertIn("explorer ops git-policy --hook pre-commit", pre_commit)
         self.assertIn("explorer ops bootstrap", pre_commit)
 
-        self.assertIn("explorer ops git-policy --hook pre-push", pre_push)
+        # pre-push policy is enforced in bash to avoid building Rust for docs-only diffs.
         self.assertIn("explorer ops pre-push-gate", pre_push)
 
     def test_mise_tasks_use_rust_ops(self) -> None:
         mise = (ROOT / "mise.toml").read_text(encoding="utf-8")
         self.assertIn("explorer ops pre-push-gate", mise)
         self.assertIn("explorer ops submit-pr", mise)
-
