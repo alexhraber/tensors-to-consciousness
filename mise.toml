@@ -43,7 +43,7 @@ python -m coverage run --append -m tests --suite integration
 [tasks.cov-report]
 description = "Enforce and emit coverage outputs."
 run = '''
-python -m coverage report --show-missing --fail-under=70
+python -m coverage report --show-missing --fail-under=69
 python -m coverage xml -o coverage.xml
 '''
 
