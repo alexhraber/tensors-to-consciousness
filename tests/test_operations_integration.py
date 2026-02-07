@@ -8,7 +8,7 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-import t2c
+import main as t2c
 from tools import setup
 from tools import validate
 from tools import viz_terminal

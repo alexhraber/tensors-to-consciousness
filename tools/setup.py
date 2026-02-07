@@ -112,10 +112,10 @@ def main() -> int:
         write_active_config(args.framework, venv_dir)
         print(f"\nActive framework set to: {args.framework}")
         print("Use these commands:")
-        print("  python t2c.py validate")
-        print("  python t2c.py viz")
-        print("  python t2c.py 0")
-        print("  python t2c.py all")
+        print("  python main.py validate")
+        print("  python main.py viz")
+        print("  python main.py 0")
+        print("  python main.py all")
 
     print("\nSetup complete.")
     return 0

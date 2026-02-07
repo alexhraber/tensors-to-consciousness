@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import t2c
+import main as t2c
 from tools import runtime
 from tools import setup
 

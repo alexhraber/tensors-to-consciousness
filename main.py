@@ -90,7 +90,7 @@ def ensure_setup_if_needed(
     if framework is None:
         raise RuntimeError(
             "No active framework configured. Run a t2c command with "
-            "`--framework <framework>` once (example: `python t2c.py validate --framework jax`)."
+            "`--framework <framework>` once (example: `python main.py validate --framework jax`)."
         )
 
     requested_differs = framework_overridden and framework != config.get("framework")
@@ -102,7 +102,7 @@ def ensure_setup_if_needed(
     if not allow_setup:
         raise RuntimeError(
             f"Setup needed for framework '{framework}'. Re-run with setup enabled or run "
-            f"`python t2c.py validate --framework {framework}`."
+            f"`python main.py validate --framework {framework}`."
         )
 
     run_cmd(
@@ -130,7 +130,7 @@ def main() -> int:
         if not sys.stdin.isatty():
             print(
                 "No framework configured. Re-run with --framework <framework> "
-                "(example: python t2c.py --framework jax).",
+                "(example: python main.py --framework jax).",
                 file=sys.stderr,
             )
             return 1

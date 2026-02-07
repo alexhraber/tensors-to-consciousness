@@ -22,24 +22,26 @@
 
 ---
 
-## CLI-First Research Workflow
+## CLI-First
 
-This project is intentionally CLI-native.
-
-- No notebook dependency for normal operation
-- Single public entrypoint (`t2c.py`)
-- Setup is inferred and executed automatically from config + CLI inputs
-
-Primary command:
+This is a CLI-native open-source research project with one public entrypoint:
 
 ```bash
-python t2c.py <target>
+python main.py
 ```
 
-Manual paths and advanced options are available via:
+First run pipeline:
+
+1. Detect framework config
+2. Prompt for framework if missing
+3. Auto-setup environment + dependencies
+4. Validate the framework track
+5. Run all research modules
+
+For manual/advanced control:
 
 ```bash
-python t2c.py --help
+python main.py --help
 ```
 
 ## Visualization Preview
@@ -50,9 +52,15 @@ python t2c.py --help
   <img src="assets/viz/phase_portraits.gif" alt="Phase portrait visualization" width="32%">
 </p>
 
-## Overview
+Maintainers can regenerate visualization GIFs with:
 
-This repository contains 7 theory-first research modules implemented across peer framework tracks:
+```bash
+python tools/generate_viz_assets.py
+```
+
+## Research Tracks
+
+Framework tracks are implemented under `scripts/<framework>/`:
 
 - `mlx`
 - `jax`
@@ -61,128 +69,19 @@ This repository contains 7 theory-first research modules implemented across peer
 - `keras`
 - `cupy`
 
-Top-level operational command:
+Targets available through `main.py` include:
 
-- `python t2c.py <target>`: run targets (`validate`, `viz`, `0..6`, `all`); setup auto-runs when required
-
-The standard workflow is:
-
-1. `python t2c.py` (first run prompts for framework, auto-validates, then runs `all`)
-2. `python t2c.py viz`
-3. Fine-tuned execution via `python t2c.py --help`
-
-## Research Module Sequence
-
-| # | Research Module | Focus |
-|---|---|---|
-| 0 | Computational Primitives | Tensors, operations, reductions |
-| 1 | Automatic Differentiation | Chain rule, gradients, backpropagation theory |
-| 2 | Optimization Theory | Gradient descent, momentum, adaptive methods |
-| 3 | Neural Network Theory | Universal approximation, information flow |
-| 4 | Advanced Theory | Manifolds, attention, Riemannian optimization |
-| 5 | Research Frontiers | Meta-learning, scaling laws, lottery tickets, grokking |
-| 6 | Theoretical Limits | Information geometry, consciousness, quantum-inspired computation |
-
-## Quickstart
-
-### 1) Create environment
-
-```bash
-python -m venv env
-source env/bin/activate
-```
-
-### 2) First run (fully automated pipeline)
-
-```bash
-python t2c.py
-```
-
-First run behavior:
-
-1. Detect whether framework config already exists
-2. Prompt for framework selection if it does not
-3. Auto-run setup if required
-4. Run validation
-5. Run all research modules
-
-### 3) Run commands
-
-```bash
-python t2c.py validate
-python t2c.py viz
-python t2c.py 0
-python t2c.py all
-```
-
-### 4) Run top-level operational tests
-
-```bash
-python -m tests
-```
-
-## Runtime Entrypoint
-
-`t2c.py` is the single runtime entrypoint. It reads `.t2c/config.json`; if framework config or venv is missing, it bootstraps setup automatically based on your `--framework` input.
-
-```bash
-python t2c.py 0
-python t2c.py 1
-python t2c.py 2
-python t2c.py 3
-python t2c.py 4
-python t2c.py 5
-python t2c.py 6
-python t2c.py all
-python t2c.py viz
-python t2c.py --help
-```
-
-Optional overrides:
-
-```bash
-python t2c.py 0 --framework jax
-python t2c.py all --venv .venv-jax
-python t2c.py 0 --no-setup
-```
-
-Framework scripts still exist and are used by `t2c.py` internally:
-
-- `scripts/mlx/*`
-- `scripts/jax/*`
-- `scripts/pytorch/*`
-- `scripts/numpy/*`
-- `scripts/keras/*`
-- `scripts/cupy/*`
-
-## Framework Tracks
-
-All framework scripts live under `scripts/<framework>/`.
-
-| Framework | Zero-Config First Run | Validation | Research Modules |
-|---|---|---|---|
-| MLX | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| JAX | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| PyTorch | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| NumPy | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| Keras | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-| CuPy | `python t2c.py` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
-
-## Terminal Visualization
-
-`python t2c.py viz` renders a Matplotlib chart directly in your terminal as ASCII.
-
-- Works over SSH/headless sessions (no GUI required)
-- Uses Matplotlib backend rendering, then converts the figure to terminal characters
-- Great for quick signal checks while staying in CLI workflows
+- `validate`
+- `viz`
+- `0..6`
+- `all`
 
 ## Notes
 
+- `python -m tests` validates CLI/setup/runtime operations.
 - `numpy` and `cupy` use finite-difference gradients in autodiff-heavy sections.
 - `keras` mixes gradient tape and numerical approximations in selected sections.
-- CuPy install in setup defaults to `cupy-cuda12x`; use a wheel matching your CUDA runtime.
-- `python -m tests` validates setup/runtime orchestration and CLI behavior (not framework theory correctness).
 
 ## Contributing
 
-See `CONTRIBUTING.md` for backend and framework-track contribution workflow.
+See `CONTRIBUTING.md`.

@@ -6,13 +6,13 @@ The repo is framework-track based.
 
 - Source implementations live in `scripts/<framework>/`
 - Operational commands are:
-  - `t2c.py` (single public entrypoint; setup is auto-triggered)
+  - `main.py` (single public entrypoint; setup is auto-triggered)
 
 ## Local workflow
 
 ```bash
-python t2c.py
-python t2c.py all
+python main.py
+python main.py all
 python -m tests
 ```
 
@@ -44,21 +44,21 @@ Requirements:
 When adding/changing frameworks:
 
 1. Update `tools/setup.py` framework map (`deps`, `validate` script).
-2. Ensure `t2c.py` can resolve the framework name and scripts.
+2. Ensure `main.py` can resolve the framework name and scripts.
 3. Validate setup + run path:
 
 ```bash
-python t2c.py
-python t2c.py validate
-python t2c.py 0
+python main.py
+python main.py validate
+python main.py 0
 ```
 
 ## Documentation expectations
 
 - Keep `README.md` aligned with actual setup/run behavior.
-- Keep examples aligned with the operational command (`t2c.py`).
+- Keep examples aligned with the operational command (`main.py`).
 - If visualization previews change, regenerate GIF assets with `python tools/generate_viz_assets.py`.
-- Keep advanced usage discoverable through `python t2c.py --help`.
+- Keep advanced usage discoverable through `python main.py --help`.
 
 ## Hygiene
 
