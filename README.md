@@ -49,8 +49,8 @@ On first run it will:
 
 Detailed usage lives in:
 
-- `docs/tui.md`
-- `docs/cli.md`
+- [TUI Guide](docs/tui.md)
+- [CLI Guide](docs/cli.md)
 
 Toolchain baseline: Python `3.14` + `uv` (latest stable).
 
@@ -80,6 +80,12 @@ Top 5 core transforms:
 
 Use `python main.py --list-transforms` for the full transform catalog.
 
+References:
+- [Transform Catalog (`algos/transforms.json`)](algos/transforms.json)
+- [Contributing Guide](CONTRIBUTING.md)
+- [Tests Guide](tests/README.md)
+- [CI Workflow](.github/workflows/ci.yml)
+
 To scaffold a new transform + backend adapters:
 
 ```bash
@@ -103,4 +109,4 @@ python -m tools.playground --framework jax --transforms chain_rule,adam --viz
 
 ## Contributing
 
-See `CONTRIBUTING.md`.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
