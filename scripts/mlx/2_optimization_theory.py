@@ -1,5 +1,6 @@
 # 2_optimization_theory.py
 import mlx.core as mx
+from utils import viz_stage
 
 print("🎯 OPTIMIZATION THEORY")
 print("=" * 50)
@@ -33,6 +34,7 @@ for i in range(20):
         print(f"Step {i+1}: x = {x:.6f}, f(x) = {quadratic_bowl(x):.6f}")
 
 # 2. MOMENTUM: Physics-inspired optimization
+viz_stage("stage_1", locals())
 print("\n--- Momentum Methods ---")
 
 def gradient_descent_with_momentum(func, x_start, lr, momentum, steps):
@@ -59,6 +61,7 @@ print(f"Vanilla GD final: x = {final_vanilla:.6f}")
 print(f"Momentum GD final: x = {final_momentum:.6f}")
 
 # 3. ADAPTIVE LEARNING RATES: Adam concept
+viz_stage("stage_2", locals())
 print("\n--- Adaptive Optimization (Adam concept) ---")
 
 def simple_adam_step(x, grad, m, v, t, lr=0.001, beta1=0.9, beta2=0.999, eps=1e-8):
@@ -89,3 +92,5 @@ for t in range(1, 11):
     x, m, v = simple_adam_step(x, grad, m, v, t)
     if t % 2 == 0:
         print(f"Step {t}: x = {x:.6f}, f(x) = {quadratic_bowl(x):.6f}")
+
+viz_stage("stage_final", locals())

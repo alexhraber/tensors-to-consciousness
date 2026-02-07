@@ -4,7 +4,7 @@ import tensorflow as tf
 import keras
 from keras import ops
 
-from utils import DTYPE, normal, scalar, softmax
+from utils import DTYPE, normal, scalar, softmax, viz_stage
 
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES (Keras)")
 print("=" * 50)
@@ -38,6 +38,7 @@ fisher_min = ops.min(fisher_matrix)
 condition_number = fisher_max / (ops.abs(fisher_min) + 1e-8)
 print(f"Fisher matrix condition number: {scalar(condition_number):.2f}")
 
+viz_stage("stage_1", locals())
 print("\n--- Algorithmic Information Theory ---")
 
 
@@ -90,6 +91,7 @@ print(f"Structured data complexity: {structured_complexity}")
 entropy_ratio = random_complexity["entropy"] / (structured_complexity["entropy"] + 1e-8)
 print(f"Compression ratio (random vs structured): {entropy_ratio:.2f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Quantum-Inspired Computation ---")
 
 
@@ -118,6 +120,7 @@ print(f"Quantum output shape: {quantum_output.shape}")
 print(f"Probability conservation check: {ops.sum(quantum_probs, axis=1)}")
 print(f"Quantum coherence measure: {scalar(ops.std(quantum_probs)):.4f}")
 
+viz_stage("stage_3", locals())
 print("\n--- Integrated Information Theory (Φ) ---")
 
 
@@ -151,6 +154,7 @@ print(f"Disconnected network Φ: {phi_disconnected:.4f}, connectivity: {conn_dis
 consciousness_ratio = phi_connected / (phi_disconnected + 1e-8)
 print(f"Consciousness ratio: {consciousness_ratio:.2f}")
 
+viz_stage("stage_4", locals())
 print("\n--- Universal Approximation at Infinite Width ---")
 
 
@@ -184,6 +188,7 @@ print("Universal approximation convergence:")
 for width, error in zip(widths, errors):
     print(f"Width {width:4d}: Error = {error:.6f}")
 
+viz_stage("stage_5", locals())
 print("\n--- Thermodynamics of Learning ---")
 
 
@@ -218,3 +223,5 @@ thermodynamics = {
 print("Learning thermodynamics:")
 for key, value in thermodynamics.items():
     print(f"{key}: {value:.6f}")
+
+viz_stage("stage_final", locals())

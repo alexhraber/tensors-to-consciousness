@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+from scripts.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = np.float32
 RNG = np.random.default_rng(0)
@@ -89,3 +90,21 @@ def finite_diff_grad_dict(loss_fn, params, eps=1e-4):
             grad[idx] = (lp - lm) / (2 * eps)
         grads[name] = grad
     return grads
+
+
+def _to_numpy(value):
+    if isinstance(value, np.ndarray):
+        return value
+    if np.isscalar(value):
+        return None
+    try:
+        arr = np.asarray(value)
+        if arr.dtype == np.dtype("O"):
+            return None
+        return arr
+    except Exception:
+        return None
+
+
+def viz_stage(stage, scope):
+    _common_viz_stage(stage, scope, _to_numpy, framework="numpy")

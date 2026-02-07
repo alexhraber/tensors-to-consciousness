@@ -2,7 +2,7 @@
 import jax
 import jax.numpy as jnp
 
-from utils import DTYPE
+from utils import DTYPE, viz_stage
 
 print("∇ AUTOMATIC DIFFERENTIATION THEORY (JAX)")
 print("=" * 50)
@@ -28,6 +28,7 @@ print(f"f'({x}) automatic = {f_prime_automatic:.6f}")
 print(f"f'({x}) analytical = {f_prime_analytical:.6f}")
 print(f"Error: {jnp.abs(f_prime_automatic - f_prime_analytical):.10f}")
 
+viz_stage("stage_1", locals())
 print("\n--- Multivariable Gradients ---")
 
 
@@ -45,3 +46,5 @@ gradient = grad_rosenbrock(point)
 print(f"Rosenbrock at {point}: f = {value:.6f}")
 print(f"Gradient: ∇f = {gradient}")
 print(f"Gradient magnitude: ||∇f|| = {jnp.sqrt(jnp.sum(gradient**2)):.6f}")
+
+viz_stage("stage_final", locals())

@@ -1,6 +1,7 @@
 # 4_advanced_theory.py
 import mlx.core as mx
 import mlx.nn as nn
+from utils import viz_stage
 
 print("🔬 ADVANCED COMPUTATIONAL THEORY")
 print("=" * 50)
@@ -29,6 +30,7 @@ print(f"Intrinsic dimension: 2, Ambient dimension: 3")
 print(f"Data range: [{mx.min(swiss_data):.2f}, {mx.max(swiss_data):.2f}]")
 
 # 2. INFORMATION BOTTLENECK: Compression vs prediction tradeoff
+viz_stage("stage_1", locals())
 print("\n--- Information Bottleneck Theory ---")
 
 class InformationBottleneck(nn.Module):
@@ -63,6 +65,7 @@ for name, model in models.items():
     print(f"{name}: compression {compression_ratio:.1f}x, info={bottleneck_info:.4f}")
 
 # 3. ATTENTION MECHANISMS: Query-Key-Value and information routing
+viz_stage("stage_2", locals())
 print("\n--- Attention Theory ---")
 
 def attention_mechanism(queries, keys, values, temperature=1.0):
@@ -94,6 +97,7 @@ print(f"Attention weights (row sums): {mx.sum(weights, axis=1)}")  # Should be ~
 print(f"Max attention per query: {mx.max(weights, axis=1)}")
 
 # 4. GRADIENT FLOWS ON MANIFOLDS: Advanced optimization geometry
+viz_stage("stage_3", locals())
 print("\n--- Riemannian Optimization ---")
 
 def project_to_sphere(x):
@@ -133,3 +137,5 @@ for i in range(10):
         print(f"Step {i+1}: obj={obj_val:.6f}, constraint_error={constraint_violation:.8f}")
 
 print(f"Final point: {x}")
+
+viz_stage("stage_final", locals())

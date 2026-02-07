@@ -1,5 +1,6 @@
 # 1_automatic_differentiation.py
 import mlx.core as mx
+from utils import viz_stage
 
 print("∇ AUTOMATIC DIFFERENTIATION THEORY")
 print("=" * 50)
@@ -30,6 +31,7 @@ print(f"f'({x}) analytical = {f_prime_analytical:.6f}")
 print(f"Error: {abs(f_prime_automatic - f_prime_analytical):.10f}")
 
 # 2. MULTIVARIABLE GRADIENTS: The foundation of optimization
+viz_stage("stage_1", locals())
 print("\n--- Multivariable Gradients ---")
 
 def rosenbrock(params):
@@ -48,3 +50,5 @@ gradient = grad_rosenbrock(point)
 print(f"Rosenbrock at {point}: f = {value:.6f}")
 print(f"Gradient: ∇f = {gradient}")
 print(f"Gradient magnitude: ||∇f|| = {mx.sqrt(mx.sum(gradient**2)):.6f}")
+
+viz_stage("stage_final", locals())

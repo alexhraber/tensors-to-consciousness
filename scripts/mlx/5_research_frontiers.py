@@ -1,6 +1,7 @@
 # 5_research_frontiers.py
 import mlx.core as mx
 import mlx.nn as nn
+from utils import viz_stage
 
 print("🚀 RESEARCH FRONTIERS")
 print("=" * 50)
@@ -41,6 +42,7 @@ print(f"Adapted output norm: {mx.sqrt(mx.sum(adapted_output**2)):.4f}")
 print(f"Adaptation magnitude: {mx.sqrt(mx.sum((adapted_output - base_output)**2)):.4f}")
 
 # 2. NEURAL SCALING LAWS: How performance scales with size
+viz_stage("stage_1", locals())
 print("\n--- Neural Scaling Laws ---")
 
 def estimate_scaling_law(model_sizes, data_sizes):
@@ -72,6 +74,7 @@ for (model_size, data_size), loss in list(scaling_results.items())[:4]:
     print(f"Model: {model_size:.0e}, Data: {data_size:.0e} → Loss: {loss:.4f}")
 
 # 3. LOTTERY TICKET HYPOTHESIS: Sparse networks within dense ones
+viz_stage("stage_2", locals())
 print("\n--- Lottery Ticket Hypothesis ---")
 
 def find_lottery_ticket(model, pruning_ratio=0.9):
@@ -112,6 +115,7 @@ test_model = nn.Linear(100, 50)
 lottery_mask = find_lottery_ticket(test_model)
 
 # 4. GROKKING: Sudden generalization after memorization
+viz_stage("stage_3", locals())
 print("\n--- Grokking Phenomenon ---")
 
 def simulate_grokking_dynamics(steps=1000):
@@ -154,6 +158,7 @@ print(f"Post-grokking test loss: {test_losses[-1]:.4f}")
 print(f"Generalization improvement: {test_losses[300] / test_losses[-1]:.1f}x")
 
 # 5. EMERGENCE: Phase transitions in neural networks
+viz_stage("stage_4", locals())
 print("\n--- Emergent Capabilities ---")
 
 def model_capability_curve(model_sizes, task_complexity):
@@ -189,3 +194,5 @@ for task_name, complexity in tasks.items():
     for i, (size, capability) in enumerate(zip(model_sizes_array, capabilities)):
         if i % 2 == 0:  # Print every other size
             print(f"{task_name} @ {size:.0e} params: {capability:.3f}")
+
+viz_stage("stage_final", locals())

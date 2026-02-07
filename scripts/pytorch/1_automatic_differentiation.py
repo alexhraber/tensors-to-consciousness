@@ -1,7 +1,7 @@
 # 1_automatic_differentiation.py (PyTorch)
 import torch
 
-from utils import DTYPE, scalar
+from utils import DTYPE, scalar, viz_stage
 
 print("∇ AUTOMATIC DIFFERENTIATION THEORY (PyTorch)")
 print("=" * 50)
@@ -28,6 +28,7 @@ print(f"f'({scalar(x):.1f}) automatic = {scalar(f_prime_automatic):.6f}")
 print(f"f'({scalar(x):.1f}) analytical = {scalar(f_prime_analytical):.6f}")
 print(f"Error: {abs(scalar(f_prime_automatic - f_prime_analytical)):.10f}")
 
+viz_stage("stage_1", locals())
 print("\n--- Multivariable Gradients ---")
 
 
@@ -45,3 +46,5 @@ gradient = point.grad.detach().clone()
 print(f"Rosenbrock at {point.detach()}: f = {scalar(value):.6f}")
 print(f"Gradient: ∇f = {gradient}")
 print(f"Gradient magnitude: ||∇f|| = {scalar(torch.sqrt(torch.sum(gradient**2))):.6f}")
+
+viz_stage("stage_final", locals())

@@ -2,7 +2,7 @@
 import jax
 import jax.numpy as jnp
 
-from utils import DTYPE, init_linear, linear, normal, softmax
+from utils import DTYPE, init_linear, linear, normal, softmax, viz_stage
 
 print("🌌 THEORETICAL LIMITS & FUNDAMENTAL BOUNDARIES (JAX)")
 print("=" * 50)
@@ -37,6 +37,7 @@ fisher_min = jnp.min(fisher_matrix)
 condition_number = fisher_max / (jnp.abs(fisher_min) + 1e-8)
 print(f"Fisher matrix condition number: {condition_number:.2f}")
 
+viz_stage("stage_1", locals())
 print("\n--- Algorithmic Information Theory ---")
 
 
@@ -93,6 +94,7 @@ print(f"Structured data complexity: {structured_complexity}")
 entropy_ratio = random_complexity["entropy"] / (structured_complexity["entropy"] + 1e-8)
 print(f"Compression ratio (random vs structured): {entropy_ratio:.2f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Quantum-Inspired Computation ---")
 
 
@@ -122,6 +124,7 @@ print(f"Quantum output shape: {quantum_output.shape}")
 print(f"Probability conservation check: {jnp.sum(quantum_probs, axis=1)}")
 print(f"Quantum coherence measure: {jnp.std(quantum_probs):.4f}")
 
+viz_stage("stage_3", locals())
 print("\n--- Integrated Information Theory (Φ) ---")
 
 
@@ -155,6 +158,7 @@ print(f"Disconnected network Φ: {phi_disconnected:.4f}, connectivity: {conn_dis
 consciousness_ratio = phi_connected / (phi_disconnected + 1e-8)
 print(f"Consciousness ratio: {consciousness_ratio:.2f}")
 
+viz_stage("stage_4", locals())
 print("\n--- Universal Approximation at Infinite Width ---")
 
 
@@ -189,6 +193,7 @@ print("Universal approximation convergence:")
 for width, error in zip(widths, errors):
     print(f"Width {width:4d}: Error = {error:.6f}")
 
+viz_stage("stage_5", locals())
 print("\n--- Thermodynamics of Learning ---")
 
 
@@ -222,3 +227,5 @@ thermodynamics = compute_learning_thermodynamics(thermo_model, thermo_data, 0.01
 print("Learning thermodynamics:")
 for key, value in thermodynamics.items():
     print(f"{key}: {value:.6f}")
+
+viz_stage("stage_final", locals())

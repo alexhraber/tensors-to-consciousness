@@ -4,7 +4,7 @@ import tensorflow as tf
 import keras
 from keras import ops
 
-from utils import DTYPE, gelu, normal, relu, scalar, sigmoid, uniform
+from utils import DTYPE, gelu, normal, relu, scalar, sigmoid, uniform, viz_stage
 
 print("🧠 NEURAL NETWORK THEORY (Keras)")
 print("=" * 50)
@@ -53,6 +53,7 @@ test_input = normal((10, 1), dtype=DTYPE)
 _ = model(test_input)
 activations = analyze_layer_activations(model, test_input)
 
+viz_stage("stage_1", locals())
 print("\n--- Gradient Flow Analysis ---")
 
 
@@ -74,6 +75,7 @@ for var, grad in zip(model.trainable_variables, gradients):
         grad_norm = ops.sqrt(ops.sum(grad * grad))
         print(f"{var.name}: ||∇|| = {scalar(grad_norm):.6f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Activation Function Analysis ---")
 
 
@@ -93,3 +95,5 @@ def compare_activations(x):
 
 test_x = normal((1000,), dtype=DTYPE)
 compare_activations(test_x)
+
+viz_stage("stage_final", locals())

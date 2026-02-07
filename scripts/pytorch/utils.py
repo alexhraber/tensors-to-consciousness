@@ -1,5 +1,7 @@
 import torch
 import torch.nn.functional as F
+import numpy as np
+from scripts.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = torch.float32
 GENERATOR = torch.Generator().manual_seed(0)
@@ -54,3 +56,21 @@ def scalar(x):
     if isinstance(x, torch.Tensor):
         return float(x.detach().cpu())
     return float(x)
+
+
+def _to_numpy(value):
+    if isinstance(value, torch.Tensor):
+        return value.detach().cpu().numpy()
+    if isinstance(value, np.ndarray):
+        return value
+    try:
+        arr = np.asarray(value)
+        if arr.dtype == np.dtype("O"):
+            return None
+        return arr
+    except Exception:
+        return None
+
+
+def viz_stage(stage, scope):
+    _common_viz_stage(stage, scope, _to_numpy, framework="pytorch")

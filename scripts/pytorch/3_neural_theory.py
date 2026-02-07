@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 
-from utils import DTYPE, gelu, normal, scalar, sigmoid, tree_l2_norm, uniform
+from utils import DTYPE, gelu, normal, scalar, sigmoid, tree_l2_norm, uniform, viz_stage
 
 print("🧠 NEURAL NETWORK THEORY (PyTorch)")
 print("=" * 50)
@@ -52,6 +52,7 @@ model = UniversalApproximator(32).to(dtype=DTYPE)
 test_input = normal((10, 1), dtype=DTYPE)
 activations = analyze_layer_activations(model, test_input)
 
+viz_stage("stage_1", locals())
 print("\n--- Gradient Flow Analysis ---")
 
 
@@ -76,6 +77,7 @@ for name, param in model.named_parameters():
         grad_norm = tree_l2_norm([param.grad])
         print(f"{name}: ||∇|| = {scalar(grad_norm):.6f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Activation Function Analysis ---")
 
 
@@ -95,3 +97,5 @@ def compare_activations(x):
 
 test_x = normal((1000,), dtype=DTYPE)
 compare_activations(test_x)
+
+viz_stage("stage_final", locals())

@@ -1,6 +1,7 @@
 # 3_neural_theory.py
 import mlx.core as mx
 import mlx.nn as nn
+from utils import viz_stage
 
 print("🧠 NEURAL NETWORK THEORY")
 print("=" * 50)
@@ -35,6 +36,7 @@ class UniversalApproximator(nn.Module):
         return x
 
 # 2. INFORMATION FLOW: Forward and backward passes
+viz_stage("stage_1", locals())
 print("\n--- Information Flow Analysis ---")
 
 def analyze_layer_activations(model, x):
@@ -63,6 +65,7 @@ test_input = mx.random.normal((10, 1), dtype=DTYPE)
 activations = analyze_layer_activations(model, test_input)
 
 # 3. GRADIENT FLOW: How learning propagates
+viz_stage("stage_2", locals())
 print("\n--- Gradient Flow Analysis ---")
 
 def loss_function(model, x, y):
@@ -85,6 +88,7 @@ for name, grad in gradients.items():
         print(f"{name}: ||∇|| = {grad_norm:.6f}")
 
 # 4. ACTIVATION FUNCTIONS: Nonlinearity is key
+viz_stage("stage_3", locals())
 print("\n--- Activation Function Analysis ---")
 
 def compare_activations(x):
@@ -103,3 +107,5 @@ def compare_activations(x):
 
 test_x = mx.random.normal((1000,), dtype=DTYPE)
 compare_activations(test_x)
+
+viz_stage("stage_final", locals())

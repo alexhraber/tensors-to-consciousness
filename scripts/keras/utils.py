@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from keras import ops
+from scripts.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = "float32"
 RNG = tf.random.Generator.from_seed(0)
@@ -69,3 +70,18 @@ def finite_diff_grad_vector(f, x, eps=1e-4):
         xm[i] -= eps
         grad[i] = (f(xp) - f(xm)) / (2 * eps)
     return grad
+
+
+def _to_numpy(value):
+    try:
+        arr = ops.convert_to_numpy(value)
+        arr = np.asarray(arr)
+        if arr.dtype == np.dtype("O"):
+            return None
+        return arr
+    except Exception:
+        return None
+
+
+def viz_stage(stage, scope):
+    _common_viz_stage(stage, scope, _to_numpy, framework="keras")

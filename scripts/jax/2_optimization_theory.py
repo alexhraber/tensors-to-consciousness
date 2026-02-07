@@ -2,7 +2,7 @@
 import jax
 import jax.numpy as jnp
 
-from utils import DTYPE
+from utils import DTYPE, viz_stage
 
 print("🎯 OPTIMIZATION THEORY (JAX)")
 print("=" * 50)
@@ -30,6 +30,7 @@ for i in range(20):
     if i % 5 == 0:
         print(f"Step {i + 1}: x = {x:.6f}, f(x) = {quadratic_bowl(x):.6f}")
 
+viz_stage("stage_1", locals())
 print("\n--- Momentum Methods ---")
 
 
@@ -57,6 +58,7 @@ final_momentum, hist_momentum = gradient_descent_with_momentum(
 print(f"Vanilla GD final: x = {final_vanilla:.6f}")
 print(f"Momentum GD final: x = {final_momentum:.6f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Adaptive Optimization (Adam concept) ---")
 
 
@@ -79,3 +81,5 @@ for t in range(1, 11):
     x, m, v = simple_adam_step(x, grad, m, v, t)
     if t % 2 == 0:
         print(f"Step {t}: x = {x:.6f}, f(x) = {quadratic_bowl(x):.6f}")
+
+viz_stage("stage_final", locals())

@@ -1,7 +1,7 @@
 # 5_research_frontiers.py (JAX)
 import jax.numpy as jnp
 
-from utils import DTYPE, init_linear, linear, normal
+from utils import DTYPE, init_linear, linear, normal, viz_stage
 
 print("🚀 RESEARCH FRONTIERS (JAX)")
 print("=" * 50)
@@ -34,6 +34,7 @@ print(f"Base output norm: {jnp.sqrt(jnp.sum(base_output**2)):.4f}")
 print(f"Adapted output norm: {jnp.sqrt(jnp.sum(adapted_output**2)):.4f}")
 print(f"Adaptation magnitude: {jnp.sqrt(jnp.sum((adapted_output - base_output) ** 2)):.4f}")
 
+viz_stage("stage_1", locals())
 print("\n--- Neural Scaling Laws ---")
 
 
@@ -56,6 +57,7 @@ print("Scaling law predictions (loss vs model/data size):")
 for (model_size, data_size), loss in list(scaling_results.items())[:4]:
     print(f"Model: {model_size:.0e}, Data: {data_size:.0e} → Loss: {loss:.4f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Lottery Ticket Hypothesis ---")
 
 
@@ -78,6 +80,7 @@ def find_lottery_ticket(model, pruning_ratio=0.9):
 test_model = init_linear(100, 50)
 lottery_mask = find_lottery_ticket(test_model)
 
+viz_stage("stage_3", locals())
 print("\n--- Grokking Phenomenon ---")
 
 
@@ -114,6 +117,7 @@ print(f"Pre-grokking test loss: {test_losses[300]:.4f}")
 print(f"Post-grokking test loss: {test_losses[-1]:.4f}")
 print(f"Generalization improvement: {test_losses[300] / test_losses[-1]:.1f}x")
 
+viz_stage("stage_4", locals())
 print("\n--- Emergent Capabilities ---")
 
 
@@ -142,3 +146,5 @@ for task_name, complexity in tasks.items():
     for i, (size, capability) in enumerate(zip(model_sizes_array, capabilities)):
         if i % 2 == 0:
             print(f"{task_name} @ {size:.0e} params: {capability:.3f}")
+
+viz_stage("stage_final", locals())

@@ -3,7 +3,7 @@ import numpy as np
 import keras
 from keras import ops
 
-from utils import DTYPE, finite_diff_grad_vector, normal, scalar, softmax, uniform
+from utils import DTYPE, finite_diff_grad_vector, normal, scalar, softmax, uniform, viz_stage
 
 print("🔬 ADVANCED COMPUTATIONAL THEORY (Keras)")
 print("=" * 50)
@@ -27,6 +27,7 @@ print(f"Swiss roll shape: {swiss_data.shape}")
 print("Intrinsic dimension: 2, Ambient dimension: 3")
 print(f"Data range: [{scalar(ops.min(swiss_data)):.2f}, {scalar(ops.max(swiss_data)):.2f}]")
 
+viz_stage("stage_1", locals())
 print("\n--- Information Bottleneck Theory ---")
 
 
@@ -56,6 +57,7 @@ for name, model in models.items():
     bottleneck_info = ops.std(bottleneck)
     print(f"{name}: compression {compression_ratio:.1f}x, info={scalar(bottleneck_info):.4f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Attention Theory ---")
 
 
@@ -76,6 +78,7 @@ print(f"Attention weights shape: {weights.shape}")
 print(f"Attention weights (row sums): {ops.sum(weights, axis=1)}")
 print(f"Max attention per query: {ops.max(weights, axis=1)}")
 
+viz_stage("stage_3", locals())
 print("\n--- Riemannian Optimization ---")
 
 
@@ -107,3 +110,5 @@ for i in range(10):
         print(f"Step {i + 1}: obj={obj_val:.6f}, constraint_error={constraint_violation:.8f}")
 
 print(f"Final point: {x}")
+
+viz_stage("stage_final", locals())

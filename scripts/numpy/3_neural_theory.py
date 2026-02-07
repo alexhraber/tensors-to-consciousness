@@ -1,7 +1,7 @@
 # 3_neural_theory.py (NumPy)
 import numpy as np
 
-from utils import DTYPE, finite_diff_grad_dict, gelu, init_linear, linear, normal, relu, sigmoid, tree_l2_norm, uniform
+from utils import DTYPE, finite_diff_grad_dict, gelu, init_linear, linear, normal, relu, sigmoid, tree_l2_norm, uniform, viz_stage
 
 print("🧠 NEURAL NETWORK THEORY (NumPy)")
 print("=" * 50)
@@ -55,6 +55,7 @@ model = UniversalApproximator(16)
 test_input = normal((10, 1), dtype=DTYPE)
 activations = analyze_layer_activations(model, test_input)
 
+viz_stage("stage_1", locals())
 print("\n--- Gradient Flow Analysis ---")
 
 
@@ -98,6 +99,7 @@ print("Gradient magnitudes by parameter:")
 for name, grad in grads.items():
     print(f"{name}: ||∇|| = {tree_l2_norm([grad]):.6f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Activation Function Analysis ---")
 
 
@@ -117,3 +119,5 @@ def compare_activations(x):
 
 test_x = normal((1000,), dtype=DTYPE)
 compare_activations(test_x)
+
+viz_stage("stage_final", locals())

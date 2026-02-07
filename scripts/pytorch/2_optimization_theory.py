@@ -1,7 +1,7 @@
 # 2_optimization_theory.py (PyTorch)
 import torch
 
-from utils import DTYPE, scalar
+from utils import DTYPE, scalar, viz_stage
 
 print("🎯 OPTIMIZATION THEORY (PyTorch)")
 print("=" * 50)
@@ -31,6 +31,7 @@ for i in range(20):
     if i % 5 == 0:
         print(f"Step {i + 1}: x = {scalar(x):.6f}, f(x) = {scalar(quadratic_bowl(x)):.6f}")
 
+viz_stage("stage_1", locals())
 print("\n--- Momentum Methods ---")
 
 
@@ -62,6 +63,7 @@ final_momentum, hist_momentum = gradient_descent_with_momentum(
 print(f"Vanilla GD final: x = {scalar(final_vanilla):.6f}")
 print(f"Momentum GD final: x = {scalar(final_momentum):.6f}")
 
+viz_stage("stage_2", locals())
 print("\n--- Adaptive Optimization (Adam concept) ---")
 
 
@@ -88,3 +90,5 @@ for t in range(1, 11):
     x, m, v = simple_adam_step(x_var.detach(), grad, m, v, t)
     if t % 2 == 0:
         print(f"Step {t}: x = {scalar(x):.6f}, f(x) = {scalar(quadratic_bowl(x)):.6f}")
+
+viz_stage("stage_final", locals())

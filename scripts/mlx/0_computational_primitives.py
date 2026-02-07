@@ -1,5 +1,6 @@
 # 0_computational_primitives.py
 import mlx.core as mx
+from utils import viz_stage
 
 print("🧮 COMPUTATIONAL PRIMITIVES")
 print("=" * 50)
@@ -19,6 +20,7 @@ print(f"Matrix (2D): {matrix.shape} - represents linear transformations")
 print(f"3D Tensor: {tensor_3d.shape} - represents higher-dimensional data")
 
 # 2. OPERATIONS: How computation actually happens
+viz_stage("stage_1", locals())
 print("\n--- Fundamental Operations ---")
 
 # Element-wise operations (parallel computation)
@@ -40,6 +42,7 @@ C = mx.matmul(A, B)
 print(f"Matrix mult:\n{A} @\n{B} =\n{C}")
 
 # 3. REDUCTION OPERATIONS: From many to few
+viz_stage("stage_2", locals())
 print("\n--- Reduction Operations ---")
 data = mx.random.normal((1000,))
 
@@ -52,3 +55,5 @@ norm = mx.sqrt(mx.sum(data * data))
 print(f"Mean (central tendency): {mean:.4f}")
 print(f"Variance (spread): {variance:.4f}")
 print(f"L2 norm (magnitude): {norm:.4f}")
+
+viz_stage("stage_final", locals())

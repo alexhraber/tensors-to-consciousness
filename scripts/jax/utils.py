@@ -1,6 +1,8 @@
 import jax
 import jax.nn as jnn
 import jax.numpy as jnp
+import numpy as np
+from scripts.common_viz import viz_stage as _common_viz_stage
 
 DTYPE = jnp.float32
 _key = jax.random.PRNGKey(0)
@@ -49,3 +51,17 @@ def softmax(x, axis=-1):
 def tree_l2_norm(tree):
     leaves = jax.tree_util.tree_leaves(tree)
     return jnp.sqrt(sum(jnp.sum(leaf * leaf) for leaf in leaves))
+
+
+def _to_numpy(value):
+    try:
+        arr = np.asarray(value)
+        if arr.dtype == np.dtype("O"):
+            return None
+        return arr
+    except Exception:
+        return None
+
+
+def viz_stage(stage, scope):
+    _common_viz_stage(stage, scope, _to_numpy, framework="jax")
