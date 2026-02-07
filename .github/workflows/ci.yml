@@ -87,6 +87,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Mark job start
+        run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -114,6 +117,36 @@ jobs:
           python -m tools.validate --help
           python -m tools.viz_terminal --help
 
+      - name: Record timing metrics
+        if: always()
+        run: |
+          END_TS=$(date +%s)
+          DURATION=$((END_TS - JOB_START_TS))
+          mkdir -p ci-metrics
+          cat > "ci-metrics/test-matrix-py${{ matrix.python-version }}.json" <<EOF
+          {
+            "job": "test-matrix",
+            "python_version": "${{ matrix.python-version }}",
+            "duration_seconds": ${DURATION},
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "sha": "${{ github.sha }}"
+          }
+          EOF
+          {
+            echo "### CI Timing: test-matrix (py${{ matrix.python-version }})"
+            echo "- Duration: ${DURATION}s"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload timing metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-timing-test-matrix-py${{ matrix.python-version }}
+          path: ci-metrics/test-matrix-py${{ matrix.python-version }}.json
+          if-no-files-found: error
+          retention-days: 30
+
   viz-assets:
     name: Visualization Assets Integrity
     needs: changes
@@ -123,6 +156,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Mark job start
+        run: echo "JOB_START_TS=$(date +%s)" >> "$GITHUB_ENV"
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -173,3 +209,32 @@ jobs:
           sha256sum /tmp/viz-a/*.gif | sort | awk '{print $1}' > /tmp/viz_hashes_1.txt
           sha256sum /tmp/viz-b/*.gif | sort | awk '{print $1}' > /tmp/viz_hashes_2.txt
           diff -u /tmp/viz_hashes_1.txt /tmp/viz_hashes_2.txt
+
+      - name: Record timing metrics
+        if: always()
+        run: |
+          END_TS=$(date +%s)
+          DURATION=$((END_TS - JOB_START_TS))
+          mkdir -p ci-metrics
+          cat > "ci-metrics/viz-assets.json" <<EOF
+          {
+            "job": "viz-assets",
+            "duration_seconds": ${DURATION},
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "sha": "${{ github.sha }}"
+          }
+          EOF
+          {
+            echo "### CI Timing: viz-assets"
+            echo "- Duration: ${DURATION}s"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload timing metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-timing-viz-assets
+          path: ci-metrics/viz-assets.json
+          if-no-files-found: error
+          retention-days: 30
