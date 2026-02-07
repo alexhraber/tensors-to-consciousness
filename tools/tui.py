@@ -77,6 +77,11 @@ def parse_args() -> argparse.Namespace:
         "--transform",
         help="Initial transform selector key/title within the active transform set.",
     )
+    parser.add_argument(
+        "--start-explorer",
+        action="store_true",
+        help="Skip landing card and open directly into explorer view.",
+    )
     return parser.parse_args()
 
 
@@ -378,6 +383,7 @@ def _handoff_framework_switch(framework: str) -> int:
         "render",
         "--framework",
         framework,
+        "--start-explorer",
     ]
     return subprocess.run(cmdline, check=False).returncode
 
@@ -646,6 +652,7 @@ def _render_interactive(
     framework: str,
     initial_pipeline: tuple[str, ...],
     transform_selector: str | None = None,
+    start_on_landing: bool = True,
 ) -> int:
     state.view = shinkei.normalize_view(state.view)
     if not sys.stdin.isatty():
@@ -680,7 +687,7 @@ def _render_interactive(
     tick_refresh = False
     dynamic_lines = 0
     show_details = False
-    on_landing = True
+    on_landing = start_on_landing
     engine_cache: dict[str, FrameworkEngine] = {}
 
     def _engine_for(framework_name: str) -> FrameworkEngine:
@@ -1022,6 +1029,7 @@ def main() -> int:
         framework=framework,
         initial_pipeline=transform_keys,
         transform_selector=transform_selector,
+        start_on_landing=not bool(getattr(args, "start_explorer", False)),
     )
 
 

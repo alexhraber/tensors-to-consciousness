@@ -1,11 +1,23 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from tools import tui
 
 
 class TuiPipelineTests(unittest.TestCase):
+    def test_handoff_framework_switch_starts_explorer_directly(self) -> None:
+        with patch.object(tui.subprocess, "run") as run_mock:
+            run_mock.return_value.returncode = 0
+            rc = tui._handoff_framework_switch("jax")
+        self.assertEqual(rc, 0)
+        cmd = run_mock.call_args.args[0]
+        self.assertEqual(
+            cmd,
+            [tui.sys.executable, "explorer.py", "render", "--framework", "jax", "--start-explorer"],
+        )
+
     def test_toggle_pipeline_key_adds_and_removes(self) -> None:
         pipeline = ["tensor_ops", "chain_rule"]
         tui._toggle_pipeline_key(pipeline, "gradient_descent")

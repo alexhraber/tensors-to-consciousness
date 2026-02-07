@@ -70,6 +70,11 @@ def parse_args() -> argparse.Namespace:
         help="Initial focused transform selector for TUI (key or title fragment).",
     )
     parser.add_argument(
+        "--start-explorer",
+        action="store_true",
+        help="Skip TUI landing and open directly into explorer view.",
+    )
+    parser.add_argument(
         "--list-transforms",
         action="store_true",
         help="Print available transform keys and exit.",
@@ -152,6 +157,7 @@ def main() -> int:
     inputs = getattr(args, "inputs", None)
     transform_focus = getattr(args, "transform", None)
     transform_selector = getattr(args, "transforms", None)
+    start_explorer = bool(getattr(args, "start_explorer", False))
 
     existing_framework = None
     try:
@@ -207,6 +213,8 @@ def main() -> int:
             cmd.extend(["--transforms", transform_selector])
         if transform_focus:
             cmd.extend(["--transform", transform_focus])
+        if start_explorer:
+            cmd.append("--start-explorer")
         run_cmd(cmd, env=env)
         return 0
 
@@ -220,6 +228,8 @@ def main() -> int:
             cmd.extend(["--transforms", transform_selector])
         if transform_focus:
             cmd.extend(["--transform", transform_focus])
+        if start_explorer:
+            cmd.append("--start-explorer")
         run_cmd(cmd, env=env)
         return 0
 
