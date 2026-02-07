@@ -22,6 +22,21 @@
 
 ---
 
+## CLI-First Research Workflow
+
+This project is intentionally CLI-native.
+
+- No notebook dependency for normal operation
+- Single setup command per framework
+- Single runtime command for validation, execution, and terminal visualization
+
+Primary commands:
+
+```bash
+python -m tools.setup <framework>
+python t2c.py <target>
+```
+
 ## Overview
 
 This repository contains 7 theory-first research modules implemented across peer framework tracks:
@@ -36,13 +51,14 @@ This repository contains 7 theory-first research modules implemented across peer
 Top-level operational commands:
 
 - `python -m tools.setup <framework>`: install + validate selected framework and save active selection
-- `python t2c.py <target>`: run targets (`validate`, `0..6`, `all`) for active framework and auto-setup if needed
+- `python t2c.py <target>`: run targets (`validate`, `viz`, `0..6`, `all`) for active framework and auto-setup if needed
 
 The standard workflow is:
 
 1. `python -m tools.setup <framework>`
 2. `python t2c.py validate`
-3. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
+3. `python t2c.py viz`
+4. `python t2c.py 0` ... `python t2c.py 6` or `python t2c.py all`
 
 ## Research Module Sequence
 
@@ -76,6 +92,7 @@ python -m tools.setup mlx
 
 ```bash
 python t2c.py validate
+python t2c.py viz
 python t2c.py 0
 python t2c.py all
 ```
@@ -132,6 +149,7 @@ python t2c.py 4
 python t2c.py 5
 python t2c.py 6
 python t2c.py all
+python t2c.py viz
 ```
 
 Optional overrides:
@@ -163,6 +181,14 @@ All framework scripts live under `scripts/<framework>/`.
 | NumPy | `python -m tools.setup numpy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
 | Keras | `python -m tools.setup keras` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
 | CuPy | `python -m tools.setup cupy` | `python t2c.py validate` | `python t2c.py 0` ... `python t2c.py 6` |
+
+## Terminal Visualization
+
+`python t2c.py viz` renders a Matplotlib chart directly in your terminal as ASCII.
+
+- Works over SSH/headless sessions (no GUI required)
+- Uses Matplotlib backend rendering, then converts the figure to terminal characters
+- Great for quick signal checks while staying in CLI workflows
 
 ## Notes
 

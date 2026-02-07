@@ -33,7 +33,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "target",
-        help="One of: validate, 0,1,2,3,4,5,6, all",
+        help="One of: validate, viz, 0,1,2,3,4,5,6, all",
     )
     parser.add_argument(
         "--framework",
@@ -120,13 +120,16 @@ def main() -> int:
     if args.target == "validate":
         run_cmd([str(py), "-m", "tools.validate", "--framework", framework], env=env)
         return 0
+    if args.target == "viz":
+        run_cmd([str(py), "-m", "tools.viz_terminal", "--framework", framework], env=env)
+        return 0
     if args.target == "all":
         scripts = [f"scripts/{framework}/{name}" for name in CHAPTER_FILES]
     elif args.target in {str(i) for i in range(7)}:
         idx = int(args.target)
         scripts = [f"scripts/{framework}/{CHAPTER_FILES[idx]}"]
     else:
-        print("Invalid target. Use: validate, 0,1,2,3,4,5,6, all", file=sys.stderr)
+        print("Invalid target. Use: validate, viz, 0,1,2,3,4,5,6, all", file=sys.stderr)
         return 1
 
     for script in scripts:

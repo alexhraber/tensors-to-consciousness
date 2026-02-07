@@ -45,6 +45,7 @@ class SetupScriptTests(unittest.TestCase):
 
         self.assertEqual(calls[0][:4], ["uv", "pip", "install", "--python"])
         self.assertIn("jax[cpu]", calls[0])
+        self.assertIn("matplotlib", calls[0])
         self.assertEqual(calls[1][-2:], ["--framework", "jax"])
 
     def test_setup_one_skip_validate(self) -> None:
@@ -146,6 +147,24 @@ class T2CTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         cmd = run_cmd_mock.call_args[0][0]
         self.assertEqual(cmd, [".venv/bin/python", "-m", "tools.validate", "--framework", "mlx"])
+
+    def test_t2c_main_viz_path(self) -> None:
+        args = argparse.Namespace(
+            target="viz",
+            framework="jax",
+            venv=".venv-jax",
+            no_setup=True,
+        )
+        with patch.object(t2c, "parse_args", return_value=args):
+            with patch.object(
+                t2c, "ensure_setup_if_needed", return_value={"framework": "jax", "venv": ".venv-jax"}
+            ):
+                with patch.object(t2c, "run_cmd") as run_cmd_mock:
+                    with patch.object(t2c, "python_in_venv", return_value=Path(".venv-jax/bin/python")):
+                        rc = t2c.main()
+        self.assertEqual(rc, 0)
+        cmd = run_cmd_mock.call_args[0][0]
+        self.assertEqual(cmd, [".venv-jax/bin/python", "-m", "tools.viz_terminal", "--framework", "jax"])
 
 
 if __name__ == "__main__":

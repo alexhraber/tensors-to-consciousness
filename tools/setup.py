@@ -37,6 +37,7 @@ FRAMEWORK_CONFIG = {
         "deps": ["cupy-cuda12x"],
     },
 }
+COMMON_DEPS = ["matplotlib"]
 CONFIG_DIR = Path(".t2c")
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
@@ -59,7 +60,7 @@ def setup_one(framework: str, venv_dir: Path, skip_validate: bool) -> None:
     config = FRAMEWORK_CONFIG[framework]
     py = python_in_venv(venv_dir)
 
-    run_cmd(["uv", "pip", "install", "--python", str(py), *config["deps"]])
+    run_cmd(["uv", "pip", "install", "--python", str(py), *COMMON_DEPS, *config["deps"]])
 
     if skip_validate:
         return
@@ -112,6 +113,7 @@ def main() -> int:
         print(f"\nActive framework set to: {args.framework}")
         print("Use these commands:")
         print("  python t2c.py validate")
+        print("  python t2c.py viz")
         print("  python t2c.py 0")
         print("  python t2c.py all")
 
