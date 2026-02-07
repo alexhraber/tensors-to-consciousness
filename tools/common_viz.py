@@ -235,7 +235,14 @@ def _upsample_interp(arr: np.ndarray, out_h: int, out_w: int) -> np.ndarray:
     return out
 
 
-def _matplotlib_plot_png(arr: np.ndarray, width_px: int = 960, height_px: int = 540) -> bytes | None:
+def _matplotlib_plot_png(
+    arr: np.ndarray,
+    *,
+    stage: str,
+    tensor_name: str,
+    width_px: int = 1080,
+    height_px: int = 620,
+) -> bytes | None:
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -247,35 +254,105 @@ def _matplotlib_plot_png(arr: np.ndarray, width_px: int = 960, height_px: int = 
     if arr.ndim == 0 or arr.size == 0:
         return None
 
-    # Reduce >2D tensors to a plottable 2D view.
-    if arr.ndim > 2:
-        arr2 = arr.reshape(arr.shape[0], -1)
-    else:
-        arr2 = arr
-
+    # High-complexity rendering for later module stages.
+    high_stage = stage.endswith("4") or stage.endswith("5") or stage.endswith("final")
     dpi = 120
-    fig_w = max(4.0, width_px / dpi)
-    fig_h = max(2.5, height_px / dpi)
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=dpi)
-    fig.patch.set_facecolor("#0a0a0d")
-    ax.set_facecolor("#0f111a")
+    fig_w = max(6.0, width_px / dpi)
+    fig_h = max(3.5, height_px / dpi)
+    fig = plt.figure(figsize=(fig_w, fig_h), dpi=dpi)
+    fig.patch.set_facecolor("#080b15")
 
-    if arr2.ndim == 1 or 1 in arr2.shape:
-        y = np.ravel(arr2)
-        x = np.arange(y.size, dtype=np.int32)
-        ax.plot(x, y, color="#4ec9f5", linewidth=1.8)
-        ax.fill_between(x, y, np.min(y), color="#4ec9f5", alpha=0.15)
-        ax.set_title("Tensor Signal", color="#e6edf3", fontsize=11)
+    title = f"{tensor_name} · {stage} · {arr.shape}"
+    fig.suptitle(title, color="#dbe6ff", fontsize=12, y=0.98)
+
+    # Shared style language inspired by README GIF aesthetics.
+    grid_color = "#1e2840"
+    tick_color = "#92a3c6"
+    line_primary = "#57d8ff"
+    line_secondary = "#ff6bb3"
+    heat_cmap = "magma"
+
+    if arr.ndim == 1 or (arr.ndim == 2 and 1 in arr.shape):
+        y = np.ravel(arr).astype(np.float32)
+        if high_stage:
+            gs = fig.add_gridspec(2, 2, hspace=0.28, wspace=0.22)
+            axes = [
+                fig.add_subplot(gs[0, 0]),
+                fig.add_subplot(gs[0, 1]),
+                fig.add_subplot(gs[1, 0]),
+                fig.add_subplot(gs[1, 1]),
+            ]
+            x = np.arange(y.size, dtype=np.int32)
+            w = max(3, min(31, y.size // 12 if y.size >= 12 else 3))
+            kernel = np.ones(w, dtype=np.float32) / w
+            smooth = np.convolve(y, kernel, mode="same")
+
+            axes[0].plot(x, y, color=line_primary, linewidth=1.3, alpha=0.9)
+            axes[0].plot(x, smooth, color=line_secondary, linewidth=1.6, alpha=0.85)
+            axes[0].fill_between(x, smooth, np.min(y), color=line_secondary, alpha=0.08)
+            axes[0].set_title("Signal + Trend", color="#c8d6f2", fontsize=9)
+
+            axes[1].hist(y, bins=min(48, max(12, y.size // 8)), color="#47c8ff", alpha=0.85)
+            axes[1].set_title("Distribution", color="#c8d6f2", fontsize=9)
+
+            spec = np.abs(np.fft.rfft(y - np.mean(y)))
+            fx = np.arange(spec.size, dtype=np.int32)
+            axes[2].plot(fx, spec, color="#a080ff", linewidth=1.4)
+            axes[2].set_title("Frequency Spectrum", color="#c8d6f2", fontsize=9)
+
+            if y.size > 1:
+                axes[3].scatter(y[:-1], y[1:], s=4, alpha=0.5, c="#7af0a7")
+            axes[3].set_title("Phase Portrait", color="#c8d6f2", fontsize=9)
+            styled_axes = axes
+        else:
+            ax = fig.add_subplot(111)
+            x = np.arange(y.size, dtype=np.int32)
+            ax.plot(x, y, color=line_primary, linewidth=1.8)
+            ax.fill_between(x, y, np.min(y), color=line_primary, alpha=0.12)
+            ax.set_title("Tensor Signal", color="#c8d6f2", fontsize=10)
+            styled_axes = [ax]
     else:
-        im = ax.imshow(arr2, cmap="viridis", aspect="auto", interpolation="bilinear")
-        ax.set_title("Tensor Field", color="#e6edf3", fontsize=11)
-        cbar = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
-        cbar.ax.tick_params(colors="#9aa4b2", labelsize=8)
+        arr2 = arr.reshape(arr.shape[0], -1) if arr.ndim > 2 else arr
+        arr2 = np.asarray(arr2, dtype=np.float32)
+        if high_stage:
+            gs = fig.add_gridspec(2, 2, hspace=0.28, wspace=0.24)
+            ax_main = fig.add_subplot(gs[:, 0])
+            ax_prof = fig.add_subplot(gs[0, 1])
+            ax_hist = fig.add_subplot(gs[1, 1])
 
-    ax.tick_params(colors="#9aa4b2", labelsize=8)
-    for spine in ax.spines.values():
-        spine.set_color("#2a2f3a")
-    ax.grid(color="#1f2530", linewidth=0.4, alpha=0.6)
+            im = ax_main.imshow(arr2, cmap=heat_cmap, aspect="auto", interpolation="bilinear")
+            levels = np.linspace(np.min(arr2), np.max(arr2), num=8, dtype=np.float32)
+            if np.max(levels) > np.min(levels):
+                ax_main.contour(arr2, levels=levels, colors="#7fffd4", linewidths=0.4, alpha=0.55)
+            ax_main.set_title("Field + Contours", color="#c8d6f2", fontsize=9)
+            cbar = fig.colorbar(im, ax=ax_main, fraction=0.035, pad=0.02)
+            cbar.ax.tick_params(colors=tick_color, labelsize=7)
+
+            row_mean = np.mean(arr2, axis=1)
+            col_mean = np.mean(arr2, axis=0)
+            ax_prof.plot(np.arange(row_mean.size), row_mean, color=line_primary, linewidth=1.4, label="row mean")
+            ax_prof.plot(np.arange(col_mean.size), col_mean, color=line_secondary, linewidth=1.2, label="col mean")
+            ax_prof.legend(loc="upper right", fontsize=7, frameon=False, labelcolor=tick_color)
+            ax_prof.set_title("Marginal Profiles", color="#c8d6f2", fontsize=9)
+
+            ax_hist.hist(arr2.reshape(-1), bins=42, color="#6cf7b9", alpha=0.8)
+            ax_hist.set_title("Value Density", color="#c8d6f2", fontsize=9)
+            styled_axes = [ax_main, ax_prof, ax_hist]
+        else:
+            ax = fig.add_subplot(111)
+            im = ax.imshow(arr2, cmap=heat_cmap, aspect="auto", interpolation="bilinear")
+            ax.set_title("Tensor Field", color="#c8d6f2", fontsize=10)
+            cbar = fig.colorbar(im, ax=ax, fraction=0.045, pad=0.02)
+            cbar.ax.tick_params(colors=tick_color, labelsize=8)
+            styled_axes = [ax]
+
+    for ax in styled_axes:
+        ax.set_facecolor("#0d1325")
+        ax.tick_params(colors=tick_color, labelsize=7)
+        for spine in ax.spines.values():
+            spine.set_color("#2a3455")
+        ax.grid(color=grid_color, linewidth=0.35, alpha=0.55)
+
     fig.tight_layout()
 
     buf = io.BytesIO()
@@ -427,7 +504,13 @@ def viz_stage(
             else:
                 print(f"  -> {metadata[name]}")
         if chosen == "plots":
-            png_bytes = _matplotlib_plot_png(arr_f, width_px=960, height_px=540)
+            png_bytes = _matplotlib_plot_png(
+                arr_f,
+                stage=stage,
+                tensor_name=name,
+                width_px=1080,
+                height_px=620,
+            )
             if png_bytes is not None:
                 print(_kitty_from_png_bytes(png_bytes, cells_w=72, cells_h=22))
             else:
