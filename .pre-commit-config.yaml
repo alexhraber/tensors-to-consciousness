@@ -1,0 +1,49 @@
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.1
+    hooks:
+      - id: pyupgrade
+        args: [--py311-plus]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.5
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        args: [--quiet-level=2]
+        exclude: ^(assets/|docs/reference/)
+
+  - repo: local
+    hooks:
+      - id: generate-catalog-docs
+        name: Generate Catalog Docs
+        entry: python tools/generate_catalog_docs.py
+        language: system
+        pass_filenames: false
+        files: ^(transforms/transforms\.json|tools/generate_catalog_docs\.py|frameworks/|transforms/)
+
+      - id: verify-catalog-docs-clean
+        name: Verify Catalog Docs Committed
+        entry: bash -lc 'git diff --exit-code -- docs/reference/transforms.md docs/reference/frameworks.md'
+        language: system
+        pass_filenames: false
+        files: ^(transforms/transforms\.json|tools/generate_catalog_docs\.py|frameworks/|transforms/)

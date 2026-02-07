@@ -14,6 +14,8 @@ The repo is sandbox/playground based.
 
 ```bash
 python tools/install_githooks.py
+python -m pip install pre-commit
+pre-commit install
 python main.py
 python main.py run --transforms default
 python -m tests
@@ -25,6 +27,8 @@ Git hooks:
 - Local `pre-commit` hook lives in `.githooks/pre-commit`.
 - Install it once per clone with `python tools/install_githooks.py`.
 - The hook regenerates `docs/reference/transforms.md` and `docs/reference/frameworks.md` before each commit.
+- If `pre-commit` is installed, `.pre-commit-config.yaml` checks run automatically.
+- Run full checks manually with `pre-commit run --all-files`.
 
 ## Add or update a framework track
 
