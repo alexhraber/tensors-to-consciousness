@@ -1,0 +1,11 @@
+{
+  "title": "Attention dynamics",
+  "inputs": "examples/inputs.framework_matrix.json",
+  "transforms": [
+    "forward_pass",
+    "activation_flow",
+    "attention_surface",
+    "attention_message_passing"
+  ]
+}
+

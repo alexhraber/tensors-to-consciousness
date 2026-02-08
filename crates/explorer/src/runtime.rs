@@ -20,7 +20,13 @@ pub fn default_framework_for_platform() -> &'static str {
     }
 }
 
-pub fn repo_root() -> Result<PathBuf> {
+pub fn repo_root_strict() -> Result<PathBuf> {
+    if let Ok(v) = std::env::var("EXPLORER_ROOT") {
+        let v = v.trim();
+        if !v.is_empty() {
+            return Ok(PathBuf::from(v));
+        }
+    }
     let out = Command::new("git")
         .args(["rev-parse", "--show-toplevel"])
         .output()
@@ -31,6 +37,15 @@ pub fn repo_root() -> Result<PathBuf> {
         ));
     }
     Ok(PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()))
+}
+
+pub fn repo_root() -> Result<PathBuf> {
+    // Explorer can run outside a git checkout (Docker bind mounts, packaged binaries).
+    // Prefer a strict git-derived root when available, but fall back to cwd.
+    if let Ok(p) = repo_root_strict() {
+        return Ok(p);
+    }
+    Ok(std::env::current_dir().context("current_dir")?)
 }
 
 pub fn load_active_config(root: &Path) -> Option<ActiveConfig> {
@@ -93,7 +108,7 @@ pub fn resolve_runtime(
     }
 }
 
-pub fn ensure_setup(bootstrap: &str, rt: &ResolvedRuntime) -> Result<()> {
+pub fn ensure_setup(root: &Path, bootstrap: &str, rt: &ResolvedRuntime) -> Result<()> {
     if rt.engine.exists() {
         return Ok(());
     }
@@ -153,7 +168,7 @@ pub fn ensure_setup(bootstrap: &str, rt: &ResolvedRuntime) -> Result<()> {
 
     // Record active config.
     save_active_config(
-        &repo_root()?,
+        root,
         &ActiveConfig {
             framework: rt.framework.clone(),
             venv: rt.venv_dir.to_string_lossy().to_string(),

@@ -1,0 +1,12 @@
+{
+  "title": "Stability focus",
+  "inputs": "examples/inputs.stability_focus.json",
+  "transforms": [
+    "norms",
+    "manifold_field",
+    "topology_regularization",
+    "constraint_projection",
+    "information_bound"
+  ]
+}
+

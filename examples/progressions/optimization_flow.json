@@ -1,0 +1,12 @@
+{
+  "title": "Optimization flow",
+  "inputs": "examples/inputs.example.json",
+  "transforms": [
+    "tensor_ops",
+    "chain_rule",
+    "gradient_descent",
+    "momentum",
+    "adam"
+  ]
+}
+

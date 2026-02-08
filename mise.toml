@@ -204,7 +204,7 @@ python tools/generate_render_assets.py \
   --fps 12 \
   --width 320 \
   --height 180 \
-  --only optimization_flow attention_dynamics phase_portraits tui_explorer \
+  --only optimization_flow attention_dynamics phase_portraits stability_focus noise_storm geometry_unfolding tui_explorer \
   --tui-capture synthetic
 '''
 

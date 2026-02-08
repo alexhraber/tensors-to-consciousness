@@ -19,6 +19,15 @@ Three progression examples (used in README):
 python tools/generate_render_assets.py --only optimization_flow attention_dynamics phase_portraits --framework numpy
 ```
 
+The asset catalog lives under `examples/progressions/` (one JSON spec per asset). Add a new
+spec there to create a new reproducible render progression.
+
+Additional progression examples (not in README):
+
+```bash
+python tools/generate_render_assets.py --only stability_focus noise_storm geometry_unfolding --framework numpy
+```
+
 Interactive TUI example:
 
 ```bash
