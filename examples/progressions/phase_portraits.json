@@ -1,0 +1,12 @@
+{
+  "title": "Phase portraits",
+  "inputs": "examples/inputs.spectral_sweep.json",
+  "transforms": [
+    "laplacian_diffusion",
+    "reaction_diffusion",
+    "spectral_filter",
+    "wave_propagation",
+    "entropy_flow"
+  ]
+}
+

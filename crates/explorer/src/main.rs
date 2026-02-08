@@ -223,7 +223,7 @@ fn main() -> Result<()> {
             inputs,
         } => {
             let rt = runtime::resolve_runtime(&root, Some(&framework), venv.as_deref());
-            runtime::ensure_setup(&cli.bootstrap, &rt)?;
+            runtime::ensure_setup(&root, &cli.bootstrap, &rt)?;
             let mut engine = py_rpc::PyEngine::spawn(rt.engine.to_string_lossy().as_ref())?;
             let params = json!({
                 "framework": rt.framework,
@@ -291,7 +291,7 @@ fn main() -> Result<()> {
         }
         Command::Validate { framework, venv } => {
             let rt = runtime::resolve_runtime(&root, framework.as_deref(), venv.as_deref());
-            runtime::ensure_setup(&cli.bootstrap, &rt)?;
+            runtime::ensure_setup(&root, &cli.bootstrap, &rt)?;
             let status = std::process::Command::new(&rt.engine)
                 .args([format!("frameworks/{}/test_setup.py", rt.framework)])
                 .status()

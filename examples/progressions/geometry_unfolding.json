@@ -1,0 +1,11 @@
+{
+  "title": "Geometry unfolding",
+  "inputs": "examples/inputs.stability_focus.json",
+  "transforms": [
+    "manifold_field",
+    "tensor_decomposition",
+    "topology_regularization",
+    "constraint_projection"
+  ]
+}
+

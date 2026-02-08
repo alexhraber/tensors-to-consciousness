@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import math
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -24,6 +25,7 @@ from tools.headless_capture import (
     capture_tui_session_gif,
 )
 from frameworks.engine import FrameworkEngine
+from tools import input_controls
 from transforms.contracts import TensorField
 from transforms.definitions import get_transform_definition
 
@@ -313,7 +315,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fps", type=int, default=12, help="GIF fps.")
     parser.add_argument("--width", type=int, default=320, help="Frame width.")
     parser.add_argument("--height", type=int, default=180, help="Frame height.")
-    parser.add_argument("--framework", default="numpy", help="Framework backend used for pipeline renders.")
+    parser.add_argument("--framework", default="numpy", help="Default framework backend used for pipeline renders.")
+    parser.add_argument(
+        "--spec-dir",
+        default="examples/progressions",
+        help="Directory containing progression spec JSON files (one per asset).",
+    )
     parser.add_argument(
         "--tui-capture",
         choices=["headless", "synthetic"],
@@ -323,10 +330,56 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--only",
         nargs="+",
-        choices=["optimization_flow", "attention_dynamics", "phase_portraits", "tui_explorer"],
-        help="Generate only selected assets.",
+        help="Generate only selected assets (by spec filename stem, plus 'tui_explorer').",
     )
     return parser.parse_args()
+
+
+def _load_specs(spec_dir: Path) -> dict[str, dict[str, object]]:
+    if not spec_dir.exists():
+        raise RuntimeError(f"spec dir not found: {spec_dir}")
+    out: dict[str, dict[str, object]] = {}
+    for p in sorted(spec_dir.glob("*.json")):
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            raise RuntimeError(f"invalid spec (expected object): {p}")
+        name = p.stem
+        transforms = raw.get("transforms")
+        if isinstance(transforms, str):
+            transforms_list = [t.strip() for t in transforms.split(",") if t.strip()]
+        elif isinstance(transforms, list) and all(isinstance(x, str) for x in transforms):
+            transforms_list = [x.strip() for x in transforms if x.strip()]
+        else:
+            raise RuntimeError(f"invalid spec transforms in {p} (expected string or list[str])")
+        if not transforms_list:
+            raise RuntimeError(f"empty transforms in spec: {p}")
+        inputs = raw.get("inputs")
+        if inputs is not None and not isinstance(inputs, str):
+            raise RuntimeError(f"invalid inputs in spec: {p} (expected string)")
+        framework = raw.get("framework")
+        if framework is not None and not isinstance(framework, str):
+            raise RuntimeError(f"invalid framework in spec: {p} (expected string)")
+        title = raw.get("title")
+        if title is not None and not isinstance(title, str):
+            raise RuntimeError(f"invalid title in spec: {p} (expected string)")
+        out[name] = {
+            "title": title or name.replace("_", " ").title(),
+            "framework": framework,
+            "inputs": inputs,
+            "transforms": transforms_list,
+        }
+    if not out:
+        raise RuntimeError(f"no specs found in {spec_dir}")
+    return out
+
+
+def _apply_inputs_blob(inputs: str | None) -> None:
+    # tools.input_controls caches config; clear between assets so INPUTS changes take effect.
+    input_controls._load_config.cache_clear()
+    if not inputs:
+        os.environ.pop("INPUTS", None)
+        return
+    os.environ["INPUTS"] = inputs
 
 
 def main() -> int:
@@ -337,22 +390,8 @@ def main() -> int:
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    progression_specs: dict[str, dict[str, str | None]] = {
-        "optimization_flow": {
-            "transforms": "tensor_ops,chain_rule,gradient_descent,momentum,adam",
-            "inputs": "examples/inputs.example.json",
-        },
-        "attention_dynamics": {
-            "transforms": "forward_pass,activation_flow,attention_surface,attention_message_passing",
-            "inputs": "examples/inputs.framework_matrix.json",
-        },
-        "phase_portraits": {
-            "transforms": "laplacian_diffusion,reaction_diffusion,spectral_filter,wave_propagation,entropy_flow",
-            "inputs": "examples/inputs.spectral_sweep.json",
-        },
-    }
-
-    all_assets = ["optimization_flow", "attention_dynamics", "phase_portraits", "tui_explorer"]
+    specs = _load_specs(Path(args.spec_dir))
+    all_assets = sorted(specs.keys()) + ["tui_explorer"]
     selected = args.only if args.only else all_assets
 
     with tempfile.TemporaryDirectory(prefix="explorer_render_") as td:
@@ -397,13 +436,20 @@ def main() -> int:
                 print(f"wrote {output_gif}")
                 continue
 
-            spec = progression_specs[name]
-            pipeline = tuple(str(spec["transforms"]).split(","))
+            if name not in specs:
+                raise RuntimeError(f"unknown asset '{name}' (no spec found in {args.spec_dir})")
+            spec = specs[name]
+            pipeline = tuple(spec["transforms"])
             frames_dir = tmp / name
             frames_dir.mkdir(parents=True, exist_ok=True)
 
-            engine = FrameworkEngine(args.framework)
-            _reset_framework_rng(engine, seed=_stable_seed(args.framework, name, ",".join(pipeline)))
+            # Apply spec inputs (path or raw JSON string) to influence distributions.
+            inputs = spec.get("inputs")
+            _apply_inputs_blob(str(inputs) if inputs else None)
+
+            fw = str(spec.get("framework") or args.framework)
+            engine = FrameworkEngine(fw)
+            _reset_framework_rng(engine, seed=_stable_seed(fw, name, ",".join(pipeline)))
             n = max(48, min(192, int(max(args.width, args.height) * 0.24)))
             field = TensorField(tensor=engine._normal((n, n)))
             op_index = 0

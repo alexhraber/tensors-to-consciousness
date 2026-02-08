@@ -89,7 +89,7 @@ pub fn run_tui(
 ) -> Result<()> {
     let root = runtime::repo_root()?;
     let rt = runtime::resolve_runtime(&root, framework_override, venv_override);
-    runtime::ensure_setup(bootstrap, &rt)?;
+    runtime::ensure_setup(&root, bootstrap, &rt)?;
 
     // List transforms using the active engine python (ensures optional deps can import cleanly later).
     let mut engine_for_list = PyEngine::spawn(rt.engine.to_string_lossy().as_ref())?;
@@ -487,8 +487,9 @@ fn maybe_force_compute(
         let bootstrap = app.bootstrap.clone();
         let rt = app.rt.clone();
         let setup_tx = setup_tx.clone();
+        let root = app.root.clone();
         thread::spawn(move || {
-            let res = runtime::ensure_setup(&bootstrap, &rt);
+            let res = runtime::ensure_setup(&root, &bootstrap, &rt);
             let _ = setup_tx.send((rt.framework.clone(), res));
         });
         return Ok(());

@@ -1,0 +1,11 @@
+{
+  "title": "Noise storm",
+  "inputs": "examples/inputs.noise_storm.json",
+  "transforms": [
+    "stochastic_process",
+    "entropy_flow",
+    "wave_propagation",
+    "reaction_diffusion"
+  ]
+}
+
