@@ -4,10 +4,10 @@ Canonical path: `.decapod/generated/specs/`.
 These files are the project-local contract for humans and agents.
 
 ## Snapshot
-- Project: this repository
-- Outcome: Define the intended user-visible outcome.
-- Detected languages: not detected yet
-- Detected surfaces: not detected yet
+- Project: tensors-to-consciousness
+- Outcome: Interactive terminal system for exploring tensor transforms across multiple compute frameworks.
+- Detected languages: Python, Rust
+- Detected surfaces: cargo, maturin, python, pyproject
 
 ## How to use this folder
 - [INTENT.md](./INTENT.md): what success means and what is explicitly out of scope.

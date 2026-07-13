@@ -22,31 +22,35 @@
 - Migration and rollback treatment MUST match the selected storage technology
 <!-- decapod:capability-overlay:persistent-state:end -->
 ## Direction
-webapp
+TUI/CLI tensor exploration tool with hybrid Python/Rust architecture. Rust host manages CLI/TUI lifecycle, Python provides framework-abstracted tensor transforms via maturin extension.
 
 ## What This Project Is
-tensors-to-consciousness is a service_or_library project built using Python.
-webapp
+tensors-to-consciousness is a CLI+TUI application with a Rust host that drives Python tensor transform pipelines via PyO3/maturin.
 
 Architectural principles:
-- **Simplicity**: Keep components focused and reusable.
-- **Modularity**: Clearly defined interface boundaries and dependency separation.
-- **Reliability**: Graceful failure handling and thorough verification.
+- **Simplicity**: Framework adapters with a unified interface contract.
+- **Modularity**: Clear separation between Rust CLI/TUI and Python transform engine.
+- **Reliability**: Graceful degradation when framework backends are unavailable.
 
 ## Current Facts
-- Runtime/languages: Python
-- Detected surfaces/framework hints: cargo, python, rust, shell
-- Product type: service_or_library
+- Runtime/languages: Python (transforms), Rust (CLI/TUI host)
+- Detected surfaces/framework hints: cargo, maturin, python, pyproject
+- Product type: CLI/TUI application
 
 ## Architecture Map
 This project's architecture consists of the following key layers/directories:
-- `src/`: Main source directory containing primary logic.
-- `tests/`: Integration and unit test suite.
+- `frameworks/`: Framework-specific adapters (numpy, pytorch, jax, keras, mlx, cupy)
+- `transforms/`: Transform catalog, registry, and definition system
+- `tools/`: Core tooling, diagnostics, and headless utilities
+- `crates/explorer/`: Rust TUI/CLI host (maturin/PyO3)
+- `crates/core/`: Rust core library (PyO3 extension)
+- `tests/`: Integration and unit test suite
 
 ## Data Flows
-- Inbound request/command parses and validates at the entrypoint.
-- Core runtime handles business logic and initiates queries or state changes.
-- Storage adapter reads or writes data to the underlying persistence layers.
+- User invokes Rust CLI/TUI (`explorer run`, `explorer tui`).
+- Rust host spawns Python engine via PyO3 RPC.
+- Python `FrameworkEngine` executes transform pipeline against selected backend (MLX/JAX/PyTorch/NumPy/Keras/CuPy).
+- Results returned as tensors; Rust renders ASCII heatmap or TUI.
 
 ## Strongest Existing Primitives
 - Define the strongest existing primitives in the codebase (e.g., helper utilities, base controllers, data access layers).

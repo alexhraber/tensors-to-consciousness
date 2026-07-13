@@ -19,12 +19,11 @@
 - `tensors-to-consciousness` is an interactive terminal system for exploring tensor transforms across multiple compute frameworks.
 
 ## What This Project Is
-tensors-to-consciousness is a service_or_library project built using Python.
-`tensors-to-consciousness` is an interactive terminal system for exploring tensor transforms across multiple compute frameworks.
+tensors-to-consciousness is a hybrid Python/Rust CLI+TUI project for exploring tensor transforms across multiple compute frameworks (MLX, JAX, PyTorch, NumPy, Keras, CuPy).
 
 Key operating facts:
-- **Primary languages**: Python
-- **Detected surfaces**: cargo, python, rust, shell
+- **Primary languages**: Python (transform catalog and framework adapters), Rust (TUI/CLI host via maturin/PyO3)
+- **Detected surfaces**: cargo, maturin, python, pyproject
 
 ## Product View
 ```mermaid

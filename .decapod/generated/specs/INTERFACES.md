@@ -50,10 +50,10 @@ Generated interface specs should include:
 | `TODO` | `TODO` | `TODO` | `TODO` | `TODO` |
 
 ## Inbound Contracts
-- API / RPC entrypoints:
-- CLI surfaces:
-- Event/webhook consumers:
-- Repository-detected surfaces: cargo, python, rust, shell
+- API / RPC entrypoints: Rust CLI commands (run, tui, list-transforms, validate, render-tensor)
+- CLI surfaces: `explorer [run|tui|list-transforms|validate|render-tensor|ops]`
+- Event/webhook consumers: None (CLI tool, not a service)
+- Repository-detected surfaces: cargo, maturin, python, pyproject
 
 ## Data Ownership
 - Source-of-truth tables/collections:
