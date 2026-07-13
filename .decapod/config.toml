@@ -1,0 +1,39 @@
+schema_version = "1.0.0"
+
+[init]
+specs = true
+ci = true
+diagram_style = "ascii"
+entrypoints = [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    "CODEX.md",
+]
+
+[repo]
+product_name = "tensors-to-consciousness"
+product_summary = "`tensors-to-consciousness` is an interactive terminal system for exploring tensor transforms across multiple compute frameworks."
+architecture_direction = "webapp"
+product_type = "service_or_library"
+done_criteria = "Decapod validate passes, required tests pass, and promotion-relevant artifacts are present."
+primary_languages = ["Python"]
+detected_surfaces = [
+    "cargo",
+    "python",
+    "rust",
+    "shell",
+]
+external_tracker = false
+container_workspaces = true
+mode = "local"
+declared_capabilities = [
+    "authentication",
+    "background-processing",
+    "event-driven",
+    "external-integrations",
+    "infrastructure-management",
+    "persistent-state",
+    "public-api",
+    "secrets-handling",
+]
