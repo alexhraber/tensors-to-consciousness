@@ -16,6 +16,7 @@
   <a href="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/alexhraber/tensors-to-consciousness/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Python 3.14" src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white">
   <img alt="Rust stable" src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=white">
+  <img alt="Decapod" src="https://img.shields.io/badge/Decapod-v0.66.3-4A90D9?logo=gear&logoColor=white">
 </p>
 
 </div>
