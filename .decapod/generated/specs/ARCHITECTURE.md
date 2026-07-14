@@ -124,3 +124,11 @@ sequenceDiagram
 |---|---|---|---|
 | Contract drift across components | Medium | High | Spec + schema checks in CI |
 | Runtime saturation under peak load | Medium | High | Capacity model + load tests |
+
+<!-- decapod:codebase-attestation:start -->
+## Codebase Attestation
+
+- Repository signal fingerprint: `1e9f42833a8b5f6f33cf5478f761f0e7406b2d391779f229609a1635898af2f5`
+- Significant implementation surfaces: `.github/` (3 files), `Cargo.lock/` (1 files), `Cargo.toml/` (1 files), `Dockerfile/` (1 files), `README.md/` (1 files), `crates/` (2 files), `docker-compose.yml/` (1 files), `docs/` (1 files), `examples/` (1 files), `pyproject.toml/` (1 files)
+- Refreshed from the current codebase by `decapod specs.refresh`
+<!-- decapod:codebase-attestation:end -->
